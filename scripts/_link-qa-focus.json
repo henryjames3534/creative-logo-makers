@@ -1,0 +1,849 @@
+{
+  "ok": 0,
+  "broken": [
+    {
+      "path": "/",
+      "status": 500
+    },
+    {
+      "path": "/3d-architectural-rendering/details",
+      "status": 500
+    },
+    {
+      "path": "/3d-design/details",
+      "status": 500
+    },
+    {
+      "path": "/about",
+      "status": 500
+    },
+    {
+      "path": "/account",
+      "status": 500
+    },
+    {
+      "path": "/album-cover-design/details",
+      "status": 500
+    },
+    {
+      "path": "/android-app-design/details",
+      "status": 500
+    },
+    {
+      "path": "/app-icon-design/details",
+      "status": 500
+    },
+    {
+      "path": "/bag-tote-design/details",
+      "status": 500
+    },
+    {
+      "path": "/banner-ad-design/details",
+      "status": 500
+    },
+    {
+      "path": "/banner-design/details",
+      "status": 500
+    },
+    {
+      "path": "/beer-label-design/details",
+      "status": 500
+    },
+    {
+      "path": "/beverage-label-design/details",
+      "status": 500
+    },
+    {
+      "path": "/billboard-design/details",
+      "status": 500
+    },
+    {
+      "path": "/blog-design/details",
+      "status": 500
+    },
+    {
+      "path": "/book-cover-design/details",
+      "status": 500
+    },
+    {
+      "path": "/book-illustration/details",
+      "status": 500
+    },
+    {
+      "path": "/book-layout-design/details",
+      "status": 500
+    },
+    {
+      "path": "/booklet-design/details",
+      "status": 500
+    },
+    {
+      "path": "/box-design/details",
+      "status": 500
+    },
+    {
+      "path": "/brand-guide/details",
+      "status": 500
+    },
+    {
+      "path": "/brand-launch-pack/details",
+      "status": 500
+    },
+    {
+      "path": "/brand-starter-pack/details",
+      "status": 500
+    },
+    {
+      "path": "/brochure-design/details",
+      "status": 500
+    },
+    {
+      "path": "/business-card-design/details",
+      "status": 500
+    },
+    {
+      "path": "/business-illustration/details",
+      "status": 500
+    },
+    {
+      "path": "/cap-design/details",
+      "status": 500
+    },
+    {
+      "path": "/car-truck-van-wrap-design/details",
+      "status": 500
+    },
+    {
+      "path": "/card-invitation-design/details",
+      "status": 500
+    },
+    {
+      "path": "/categories",
+      "status": 500
+    },
+    {
+      "path": "/character-mascot-design/details",
+      "status": 500
+    },
+    {
+      "path": "/clothing-apparel-design/details",
+      "status": 500
+    },
+    {
+      "path": "/contact",
+      "status": 500
+    },
+    {
+      "path": "/contests",
+      "status": 500
+    },
+    {
+      "path": "/cosmetics-packaging-design/details",
+      "status": 500
+    },
+    {
+      "path": "/cup-mug-design/details",
+      "status": 500
+    },
+    {
+      "path": "/designers",
+      "status": 500
+    },
+    {
+      "path": "/designers/search",
+      "status": 500
+    },
+    {
+      "path": "/direct-mail-design/details",
+      "status": 500
+    },
+    {
+      "path": "/ebook-cover-design/details",
+      "status": 500
+    },
+    {
+      "path": "/email-design/details",
+      "status": 500
+    },
+    {
+      "path": "/email-newsletter-design/details",
+      "status": 500
+    },
+    {
+      "path": "/facebook-cover-design/details",
+      "status": 500
+    },
+    {
+      "path": "/flyer-design/details",
+      "status": 500
+    },
+    {
+      "path": "/food-label-design/details",
+      "status": 500
+    },
+    {
+      "path": "/food-packaging-design/details",
+      "status": 500
+    },
+    {
+      "path": "/form-design/details",
+      "status": 500
+    },
+    {
+      "path": "/full-service-branding/details",
+      "status": 500
+    },
+    {
+      "path": "/get-started",
+      "status": 500
+    },
+    {
+      "path": "/greeting-card-design/details",
+      "status": 500
+    },
+    {
+      "path": "/how-it-works",
+      "status": 500
+    },
+    {
+      "path": "/icon-button-design/details",
+      "status": 500
+    },
+    {
+      "path": "/illustrations/details",
+      "status": 500
+    },
+    {
+      "path": "/infographic-design/details",
+      "status": 500
+    },
+    {
+      "path": "/inspiration",
+      "status": 500
+    },
+    {
+      "path": "/interior-book-design/details",
+      "status": 500
+    },
+    {
+      "path": "/invitation-design/details",
+      "status": 500
+    },
+    {
+      "path": "/ios-app-design/details",
+      "status": 500
+    },
+    {
+      "path": "/jersey-design/details",
+      "status": 500
+    },
+    {
+      "path": "/landing-page-design/details",
+      "status": 500
+    },
+    {
+      "path": "/launch/3d-architectural-rendering",
+      "status": 500
+    },
+    {
+      "path": "/launch/3d-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/album-cover-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/android-app-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/app-icon-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/bag-tote-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/banner-ad-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/banner-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/beer-label-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/beverage-label-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/billboard-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/blog-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/book-cover-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/book-illustration",
+      "status": 500
+    },
+    {
+      "path": "/launch/book-layout-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/booklet-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/box-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/brand-guide",
+      "status": 500
+    },
+    {
+      "path": "/launch/brand-launch-pack",
+      "status": 500
+    },
+    {
+      "path": "/launch/brand-starter-pack",
+      "status": 500
+    },
+    {
+      "path": "/launch/brochure-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/business-card-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/business-illustration",
+      "status": 500
+    },
+    {
+      "path": "/launch/cap-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/car-truck-van-wrap-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/card-invitation-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/character-mascot-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/clothing-apparel-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/cosmetics-packaging-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/cup-mug-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/direct-mail-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/ebook-cover-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/email-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/email-newsletter-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/facebook-cover-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/flyer-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/food-label-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/food-packaging-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/form-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/full-service-branding",
+      "status": 500
+    },
+    {
+      "path": "/launch/greeting-card-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/icon-button-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/illustrations",
+      "status": 500
+    },
+    {
+      "path": "/launch/infographic-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/interior-book-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/invitation-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/ios-app-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/jersey-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/landing-page-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/leaflet-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/logo-brand-guide",
+      "status": 500
+    },
+    {
+      "path": "/launch/logo-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/logo-website-squarespace",
+      "status": 500
+    },
+    {
+      "path": "/launch/magazine-cover-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/menu-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/merchandise-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/mobile-app-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/other-art-illustration",
+      "status": 500
+    },
+    {
+      "path": "/launch/other-book-magazine-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/other-business-advertising",
+      "status": 500
+    },
+    {
+      "path": "/launch/other-clothing-merchandise-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/other-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/other-packaging-label-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/other-website-app-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/pamphlet-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/pattern-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/podcast-cover-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/postcard-flyer-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/poster-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/powerpoint-template-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/product-label-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/product-packaging-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/resume-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/retail-packaging-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/shopping-bag-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/signage-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/social-media-page-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/stationery-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/sticker-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/t-shirt-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/tattoo-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/trade-show-banner-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/trade-show-booth-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/twitter-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/web-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/website-builders",
+      "status": 500
+    },
+    {
+      "path": "/launch/website-header-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/website-icon-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/website-illustration-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/website-redesign",
+      "status": 500
+    },
+    {
+      "path": "/launch/wedding-invitation-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/wine-label-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/word-template-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/wordpress-theme-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/youtube-channel-design",
+      "status": 500
+    },
+    {
+      "path": "/leaflet-design/details",
+      "status": 500
+    },
+    {
+      "path": "/login",
+      "status": 500
+    },
+    {
+      "path": "/logo-brand-guide/details",
+      "status": 500
+    },
+    {
+      "path": "/logo-design/details",
+      "status": 500
+    },
+    {
+      "path": "/logo-maker",
+      "status": 500
+    },
+    {
+      "path": "/logo-website-squarespace/details",
+      "status": 500
+    },
+    {
+      "path": "/magazine-cover-design/details",
+      "status": 500
+    },
+    {
+      "path": "/menu-design/details",
+      "status": 500
+    },
+    {
+      "path": "/merchandise-design/details",
+      "status": 500
+    },
+    {
+      "path": "/mobile-app-design/details",
+      "status": 500
+    },
+    {
+      "path": "/other-art-illustration/details",
+      "status": 500
+    },
+    {
+      "path": "/other-book-magazine-design/details",
+      "status": 500
+    },
+    {
+      "path": "/other-business-advertising/details",
+      "status": 500
+    },
+    {
+      "path": "/other-clothing-merchandise-design/details",
+      "status": 500
+    },
+    {
+      "path": "/other-design/details",
+      "status": 500
+    },
+    {
+      "path": "/other-packaging-label-design/details",
+      "status": 500
+    },
+    {
+      "path": "/other-website-app-design/details",
+      "status": 500
+    },
+    {
+      "path": "/pamphlet-design/details",
+      "status": 500
+    },
+    {
+      "path": "/pattern-design/details",
+      "status": 500
+    },
+    {
+      "path": "/podcast-cover-design/details",
+      "status": 500
+    },
+    {
+      "path": "/postcard-flyer-design/details",
+      "status": 500
+    },
+    {
+      "path": "/poster-design/details",
+      "status": 500
+    },
+    {
+      "path": "/powerpoint-template-design/details",
+      "status": 500
+    },
+    {
+      "path": "/pricing",
+      "status": 500
+    },
+    {
+      "path": "/product-label-design/details",
+      "status": 500
+    },
+    {
+      "path": "/product-packaging-design/details",
+      "status": 500
+    },
+    {
+      "path": "/projects",
+      "status": 500
+    },
+    {
+      "path": "/resume-design/details",
+      "status": 500
+    },
+    {
+      "path": "/retail-packaging-design/details",
+      "status": 500
+    },
+    {
+      "path": "/shopping-bag-design/details",
+      "status": 500
+    },
+    {
+      "path": "/signage-design/details",
+      "status": 500
+    },
+    {
+      "path": "/signup",
+      "status": 500
+    },
+    {
+      "path": "/social-media-page-design/details",
+      "status": 500
+    },
+    {
+      "path": "/stationery-design/details",
+      "status": 500
+    },
+    {
+      "path": "/sticker-design/details",
+      "status": 500
+    },
+    {
+      "path": "/studio",
+      "status": 500
+    },
+    {
+      "path": "/studio/brand-strategy",
+      "status": 500
+    },
+    {
+      "path": "/studio/full-brand-identity",
+      "status": 500
+    },
+    {
+      "path": "/studio/launch-packages",
+      "status": 500
+    },
+    {
+      "path": "/studio/talk-to-strategist",
+      "status": 500
+    },
+    {
+      "path": "/t-shirt-design/details",
+      "status": 500
+    },
+    {
+      "path": "/tattoo-design/details",
+      "status": 500
+    },
+    {
+      "path": "/trade-show-banner-design/details",
+      "status": 500
+    },
+    {
+      "path": "/trade-show-booth-design/details",
+      "status": 500
+    },
+    {
+      "path": "/twitter-design/details",
+      "status": 500
+    },
+    {
+      "path": "/web-design/details",
+      "status": 500
+    },
+    {
+      "path": "/website-builders/details",
+      "status": 500
+    },
+    {
+      "path": "/website-header-design/details",
+      "status": 500
+    },
+    {
+      "path": "/website-icon-design/details",
+      "status": 500
+    },
+    {
+      "path": "/website-illustration-design/details",
+      "status": 500
+    },
+    {
+      "path": "/website-redesign/details",
+      "status": 500
+    },
+    {
+      "path": "/wedding-invitation-design/details",
+      "status": 500
+    },
+    {
+      "path": "/wine-label-design/details",
+      "status": 500
+    },
+    {
+      "path": "/word-template-design/details",
+      "status": 500
+    },
+    {
+      "path": "/wordpress-theme-design/details",
+      "status": 500
+    },
+    {
+      "path": "/youtube-channel-design/details",
+      "status": 500
+    }
+  ]
+}

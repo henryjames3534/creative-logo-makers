@@ -1,0 +1,37 @@
+{
+  "ok": 226,
+  "broken": [
+    {
+      "path": "/admin/designers",
+      "status": 500
+    },
+    {
+      "path": "/admin/leads",
+      "status": 500
+    },
+    {
+      "path": "/admin/live-chat",
+      "status": 500
+    },
+    {
+      "path": "/admin/orders",
+      "status": 500
+    },
+    {
+      "path": "/admin/pipeline",
+      "status": 500
+    },
+    {
+      "path": "/admin/projects",
+      "status": 500
+    },
+    {
+      "path": "/launch/3d-design",
+      "status": 500
+    },
+    {
+      "path": "/launch/banner-ad-design",
+      "status": 500
+    }
+  ]
+}
