@@ -101,9 +101,11 @@ export type SessionUser = Omit<AuthUser, "passwordHash">;
 
 const USERS_KEY = "clm_users_v2";
 const USERS_KEY_LEGACY = "clm_users_v1";
+const USERS_UPDATED_KEY = "clm_users_updated_at";
 const SESSION_KEY = "clm_session_v1";
 const PENDING_BRIEF_KEY = "clm_pending_brief_v1";
 const GOOGLE_ACCOUNTS_KEY = "clm_google_accounts_v1";
+export const USERS_HYDRATED_EVENT = "clm_users_hydrated";
 
 export type RememberedGoogleAccount = {
   email: string;
@@ -313,7 +315,36 @@ function readUsers(): AuthUser[] {
 }
 
 function writeUsers(users: AuthUser[]) {
+  const updatedAt = new Date().toISOString();
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  localStorage.setItem(USERS_UPDATED_KEY, updatedAt);
+  void import("@/lib/db-sync").then(({ scheduleStorePush }) => {
+    scheduleStorePush("users", users);
+  });
+}
+
+/** Sync accounts + customer projects/revisions from Postgres. */
+export async function hydrateUsersFromServer(): Promise<AuthUser[]> {
+  if (typeof window === "undefined") return [];
+  const { hydrateStoreKey } = await import("@/lib/db-sync");
+  await hydrateStoreKey({
+    key: "users",
+    localRaw: localStorage.getItem(USERS_KEY),
+    localUpdatedAt: localStorage.getItem(USERS_UPDATED_KEY),
+    writeLocal: (raw, updatedAt) => {
+      localStorage.setItem(USERS_KEY, raw);
+      localStorage.setItem(USERS_UPDATED_KEY, updatedAt);
+    },
+  });
+  const users = readUsers();
+  try {
+    window.dispatchEvent(
+      new CustomEvent(USERS_HYDRATED_EVENT, { detail: users }),
+    );
+  } catch {
+    /* ignore */
+  }
+  return users;
 }
 
 function toSession(user: AuthUser): SessionUser {

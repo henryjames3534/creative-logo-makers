@@ -312,7 +312,9 @@ export type CrmState = {
 };
 
 const CRM_KEY = "clm_crm_v1";
+const CRM_UPDATED_KEY = "clm_crm_updated_at";
 const ADMIN_SESSION_KEY = "clm_admin_session_v1";
+export const CRM_HYDRATED_EVENT = "clm_crm_hydrated";
 
 export const DEAL_STAGES: { id: DealStage; label: string; color: string }[] = [
   { id: "lead", label: "New lead", color: "#6b6a68" },
@@ -979,6 +981,15 @@ function readRaw(): CrmState | null {
   }
 }
 
+function readCrmUpdatedAt(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(CRM_UPDATED_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export function loadCrm(): CrmState {
   const existing = readRaw();
   if (existing?.version === 1) {
@@ -1050,7 +1061,41 @@ function normalizeOrder(o: CrmOrder): CrmOrder {
 
 export function saveCrm(state: CrmState) {
   if (typeof window === "undefined") return;
+  const updatedAt = new Date().toISOString();
   localStorage.setItem(CRM_KEY, JSON.stringify(state));
+  localStorage.setItem(CRM_UPDATED_KEY, updatedAt);
+  // Lazy-import to avoid circular deps at module init
+  void import("@/lib/db-sync").then(({ scheduleStorePush }) => {
+    scheduleStorePush("crm", state);
+  });
+}
+
+/** Pull CRM from Postgres (or push local if server empty / older). */
+export async function hydrateCrmFromServer(): Promise<CrmState> {
+  if (typeof window === "undefined") return seed();
+  const { hydrateStoreKey } = await import("@/lib/db-sync");
+  await hydrateStoreKey({
+    key: "crm",
+    localRaw: localStorage.getItem(CRM_KEY),
+    localUpdatedAt: readCrmUpdatedAt(),
+    writeLocal: (raw, updatedAt) => {
+      localStorage.setItem(CRM_KEY, raw);
+      localStorage.setItem(CRM_UPDATED_KEY, updatedAt);
+    },
+  });
+  const state = loadCrm();
+  emitCrm(CRM_HYDRATED_EVENT, state);
+  return state;
+}
+
+export function onCrmHydrated(cb: (state: CrmState) => void) {
+  if (typeof window === "undefined") return () => {};
+  const handler = (e: Event) => {
+    const detail = (e as CustomEvent<CrmState>).detail;
+    if (detail) cb(detail);
+  };
+  window.addEventListener(CRM_HYDRATED_EVENT, handler);
+  return () => window.removeEventListener(CRM_HYDRATED_EVENT, handler);
 }
 
 export function resetCrm() {

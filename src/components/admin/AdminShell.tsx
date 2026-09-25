@@ -7,8 +7,10 @@ import {
   adminLogin,
   adminLogout,
   getAdminSession,
+  hydrateCrmFromServer,
 } from "@/lib/crm-storage";
 import {
+  hydrateChatFromServer,
   onLiveChatOpened,
   onLiveChatUpdated,
   unreadChatCount,
@@ -48,8 +50,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [chatToast, setChatToast] = useState<LiveChatSession | null>(null);
 
   useEffect(() => {
-    setSession(getAdminSession());
-    setReady(true);
+    let cancelled = false;
+    (async () => {
+      await Promise.all([
+        hydrateCrmFromServer().catch(() => null),
+        hydrateChatFromServer().catch(() => null),
+      ]);
+      if (cancelled) return;
+      setSession(getAdminSession());
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

@@ -97,3 +97,29 @@ export async function clmCreateLead(input: {
     body: JSON.stringify(input),
   });
 }
+
+export async function clmGetDocument(key: "crm" | "users" | "chat" | string) {
+  return clmApiFetch<{
+    id?: string;
+    payload?: unknown;
+    updatedAt?: string | null;
+  }>(`/${key}`);
+}
+
+export async function clmPutDocument(
+  key: "crm" | "users" | "chat" | string,
+  payload: unknown,
+  updatedAt?: string,
+) {
+  return clmApiFetch<{
+    id?: string;
+    payload?: unknown;
+    updatedAt?: string | null;
+  }>(`/${key}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      payload,
+      updatedAt: updatedAt || new Date().toISOString(),
+    }),
+  });
+}

@@ -29,6 +29,7 @@ import {
 } from "@/lib/auth-storage";
 import { pushCustomerInbox, submitProjectReview } from "@/lib/crm-storage";
 import { migrateLegacyStorage } from "@/lib/migrate-legacy-storage";
+import { hydrateAllFromDb } from "@/lib/hydrate-db";
 
 type AuthContextValue = {
   user: SessionUser | null;
@@ -87,15 +88,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    migrateLegacyStorage();
-    const current = getCurrentUser();
-    if (current) {
-      const claimed = claimPending(current.email);
-      setUser(claimed ?? current);
-    } else {
-      setUser(null);
-    }
-    setReady(true);
+    let cancelled = false;
+    (async () => {
+      migrateLegacyStorage();
+      await hydrateAllFromDb();
+      if (cancelled) return;
+      const current = getCurrentUser();
+      if (current) {
+        const claimed = claimPending(current.email);
+        setUser(claimed ?? current);
+      } else {
+        setUser(null);
+      }
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const signUp = useCallback(

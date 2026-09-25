@@ -3,7 +3,9 @@ import { clmDbHealth, clmDbMigrate } from "@/lib/clm-api";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/db-health — probes Verpex → PostgreSQL bridge */
+/** GET /api/db-health — probes Verpex → PostgreSQL bridge
+ *  ?migrate=1 also runs schema migrations (documents, orders, …)
+ */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const migrate = url.searchParams.get("migrate") === "1";

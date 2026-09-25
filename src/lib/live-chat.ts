@@ -1,8 +1,10 @@
 /** Proactive visitor live chat — localStorage + admin alerts */
 
 const CHAT_KEY = "clm_live_chat_v1";
+const CHAT_UPDATED_KEY = "clm_live_chat_updated_at";
 export const LIVE_CHAT_EVENT = "clm_live_chat";
 export const LIVE_CHAT_OPEN_EVENT = "clm_live_chat_open";
+export const LIVE_CHAT_HYDRATED_EVENT = "clm_live_chat_hydrated";
 
 export type ChatRole = "bot" | "visitor" | "admin";
 
@@ -50,8 +52,33 @@ function loadStore(): ChatStore {
 
 function saveStore(store: ChatStore) {
   if (typeof window === "undefined") return;
+  const updatedAt = new Date().toISOString();
   localStorage.setItem(CHAT_KEY, JSON.stringify(store));
+  localStorage.setItem(CHAT_UPDATED_KEY, updatedAt);
   window.dispatchEvent(new CustomEvent(LIVE_CHAT_EVENT));
+  void import("@/lib/db-sync").then(({ scheduleStorePush }) => {
+    scheduleStorePush("chat", store);
+  });
+}
+
+export async function hydrateChatFromServer(): Promise<ChatStore> {
+  if (typeof window === "undefined") return { sessions: [] };
+  const { hydrateStoreKey } = await import("@/lib/db-sync");
+  await hydrateStoreKey({
+    key: "chat",
+    localRaw: localStorage.getItem(CHAT_KEY),
+    localUpdatedAt: localStorage.getItem(CHAT_UPDATED_KEY),
+    writeLocal: (raw, updatedAt) => {
+      localStorage.setItem(CHAT_KEY, raw);
+      localStorage.setItem(CHAT_UPDATED_KEY, updatedAt);
+    },
+  });
+  const store = loadStore();
+  window.dispatchEvent(
+    new CustomEvent(LIVE_CHAT_HYDRATED_EVENT, { detail: store }),
+  );
+  window.dispatchEvent(new CustomEvent(LIVE_CHAT_EVENT));
+  return store;
 }
 
 function emitOpen(session: LiveChatSession) {
