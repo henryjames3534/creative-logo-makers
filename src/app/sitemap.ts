@@ -2,12 +2,19 @@ import type { MetadataRoute } from "next";
 import { categories } from "@/data/categories";
 import { designers } from "@/data/designers";
 import { studioServices } from "@/data/studio";
+import { USA_INTENTS, intentPath } from "@/data/usa-intents";
 import {
   LOCATION_SEO_SERVICES,
   US_CITIES,
   cityPath,
   locationPath,
 } from "@/data/us-locations";
+import {
+  STATE_SEO_SERVICES,
+  US_STATES,
+  statePath,
+  stateServicePath,
+} from "@/data/us-states";
 import { SITE_URL } from "@/lib/seo";
 
 const now = new Date();
@@ -32,6 +39,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [
     entry("/", { changeFrequency: "daily", priority: 1 }),
     entry("/us", { changeFrequency: "weekly", priority: 0.95 }),
+    entry("/usa", { changeFrequency: "weekly", priority: 0.95 }),
     entry("/categories", { priority: 0.95 }),
     entry("/how-it-works", { priority: 0.85 }),
     entry("/pricing", { priority: 0.9 }),
@@ -92,6 +100,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   );
 
+  const stateHubs = US_STATES.map((s) =>
+    entry(statePath(s.slug), { priority: 0.85, changeFrequency: "weekly" }),
+  );
+
+  const stateServicePages = US_STATES.flatMap((state) =>
+    STATE_SEO_SERVICES.map((service) => {
+      const hot =
+        service === "logo-design" ||
+        service === "web-design" ||
+        service === "mobile-app-design";
+      return entry(stateServicePath(state.slug, service), {
+        priority: hot ? 0.9 : 0.75,
+        changeFrequency: "weekly",
+      });
+    }),
+  );
+
+  const intentPages = USA_INTENTS.map((i) =>
+    entry(intentPath(i.slug), { priority: 0.92, changeFrequency: "weekly" }),
+  );
+
   const designerPages = [...designers]
     .sort((a, b) => b.rating - a.rating || b.reviews - a.reviews)
     .slice(0, 200)
@@ -109,6 +138,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...studioPages,
     ...cityHubs,
     ...locationPages,
+    ...stateHubs,
+    ...stateServicePages,
+    ...intentPages,
     ...designerPages,
   ];
 }

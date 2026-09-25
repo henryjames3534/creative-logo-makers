@@ -144,6 +144,37 @@ export function LocationServicePage({
       <section className="py-14 md:py-16">
         <Container>
           <h2 className="text-3xl font-medium tracking-tight text-ink">
+            Industries we serve in {city.name}
+          </h2>
+          <ul className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+            {seo.industries.map((item) => (
+              <li
+                key={item}
+                className="rounded-2xl border border-line bg-white px-4 py-4 text-[15px] font-medium text-ink shadow-sm"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+          <h2 className="mt-12 text-2xl font-medium text-ink">
+            Related searches for {seo.cluster.primary} in {city.name}
+          </h2>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {seo.relatedSearches.map((phrase) => (
+              <span
+                key={phrase}
+                className="rounded-full border border-line bg-paper-soft px-4 py-2 text-sm text-ink/80"
+              >
+                {phrase}
+              </span>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="py-14 md:py-16">
+        <Container>
+          <h2 className="text-3xl font-medium tracking-tight text-ink">
             {seo.label} FAQs for {city.name}
           </h2>
           <div className="mx-auto mt-8 max-w-3xl space-y-3">

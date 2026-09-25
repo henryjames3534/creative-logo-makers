@@ -90,7 +90,7 @@ export function servicePageMetadata(slug: string, path: string): Metadata {
     title: seo.title,
     description: seo.description,
     path,
-    keywords: allKeywordsForSlug(slug, 48),
+    keywords: allKeywordsForSlug(slug, 80),
   });
 }
 

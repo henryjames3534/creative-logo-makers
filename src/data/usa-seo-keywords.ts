@@ -427,9 +427,36 @@ export function getUsaSeoForSlug(slug: string): UsaSeoCluster {
   return cluster;
 }
 
-export function allKeywordsForSlug(slug: string, limit = 40): string[] {
+export function allKeywordsForSlug(slug: string, limit = 80): string[] {
   const c = getUsaSeoForSlug(slug);
-  const all = [c.primary, ...c.secondary, ...c.longTail];
+  const base = c.primary;
+  const modifiers = [
+    "near me",
+    "USA",
+    "United States",
+    "company",
+    "agency",
+    "services",
+    "cost",
+    "price",
+    "cheap",
+    "affordable",
+    "professional",
+    "best",
+    "top",
+    "hire",
+    "freelance",
+    "online",
+    "for small business",
+    "for startups",
+    "contest",
+    "2026",
+  ];
+  const expanded = modifiers.flatMap((m) => [
+    `${base} ${m}`,
+    `${m} ${base}`,
+  ]);
+  const all = [c.primary, ...c.secondary, ...c.longTail, ...expanded];
   return [...new Set(all.map((k) => k.trim()).filter(Boolean))].slice(0, limit);
 }
 
@@ -454,6 +481,11 @@ export const USA_SEO_PILLARS = {
       "UI UX design",
       "logo design USA",
       "web design company",
+      "logo design near me",
+      "hire logo designer",
+      "affordable website design",
+      "branding agency USA",
+      "app design services",
       "Creative Logo Makers",
     ],
   },
