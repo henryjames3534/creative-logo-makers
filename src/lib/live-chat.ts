@@ -1,4 +1,9 @@
-/** Proactive visitor live chat — localStorage + admin alerts */
+import {
+  LIVE_CHAT_KNOWLEDGE,
+  type ChatKnowledgeTopic,
+} from "@/lib/live-chat-knowledge";
+
+/** Proactive visitor live chat — localStorage + admin alerts + smart replies */
 
 const CHAT_KEY = "clm_live_chat_v1";
 const CHAT_UPDATED_KEY = "clm_live_chat_updated_at";
@@ -28,6 +33,8 @@ export type LiveChatSession = {
   messages: ChatMessage[];
   /** Admin has seen this session */
   seenByAdmin?: boolean;
+  /** Sticky support agent name for this chat (human feel) */
+  agentName?: string;
 };
 
 type ChatStore = {
@@ -128,9 +135,9 @@ export function unreadChatCount(): number {
 }
 
 export const LIVE_CHAT_WELCOME =
-  "Hey! 👋 Welcome to Creative Logo Makers — ask about logos, websites, packaging, pricing, or contests and we’ll help right away.";
+  "Hey — thanks for stopping by Creative Logo Makers. I can help with logos, websites, packaging, pricing, contests, or hiring a designer. What are you working on?";
 
-/** Support agents shown on handoff when we can’t answer confidently */
+/** Support agents shown on replies (human feel) */
 export const LIVE_CHAT_AGENTS = [
   "Mike",
   "Judiyan",
@@ -148,109 +155,108 @@ export function pickRandomAgent(): string {
   return LIVE_CHAT_AGENTS[Math.floor(Math.random() * LIVE_CHAT_AGENTS.length)]!;
 }
 
-type ReplyRule = {
-  keys: string[];
-  reply: string;
-};
+function pickOne<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]!;
+}
 
-const REPLY_RULES: ReplyRule[] = [
-  {
-    keys: ["logo", "logotype", "brand mark", "wordmark", "emblem"],
-    reply:
-      "We can start a logo contest or match you with a 1-to-1 designer. Most logo packages begin around $175 — and up to 70% off is running now. Want contest or a dedicated designer?",
-  },
-  {
-    keys: ["website", "web design", "landing", "wordpress", "shopify", "squarespace"],
-    reply:
-      "We design websites and landing pages alongside branding. Tell me if you need a new site, a redesign, or logo + website together and I’ll point you to the right package.",
-  },
-  {
-    keys: ["packaging", "label", "box", "product pack"],
-    reply:
-      "Packaging & label design is one of our specialties — food, beverage, cosmetics, and retail. Share your product type and I’ll suggest a package.",
-  },
-  {
-    keys: ["price", "pricing", "cost", "budget", "how much", "rate", "charges", "fee"],
-    reply:
-      "Pricing depends on the service: logos often start near $175, with Essential / Growth / Pro tiers and up to 70% off right now. What are you looking to design?",
-  },
-  {
-    keys: ["contest", "competition", "multiple designers"],
-    reply:
-      "In a contest, multiple designers submit concepts and you pick a winner. It’s great for variety and fast ideas. Want me to help you start a brief?",
-  },
-  {
-    keys: ["designer", "hire", "1-to-1", "1 to 1", "one on one", "dedicated"],
-    reply:
-      "You can hire a designer 1-to-1 for focused collaboration. Browse designers on the site, or tell me your industry and style and I’ll recommend a few.",
-  },
-  {
-    keys: ["discount", "offer", "promo", "70%", "sale", "deal", "off"],
-    reply:
-      "Yes — up to 70% off is live on select packages. Locking in sooner helps while the promo lasts. Which service are you interested in?",
-  },
-  {
-    keys: ["time", "how long", "turnaround", "delivery", "deadline", "days", "week"],
-    reply:
-      "Typical logo contests move in a few days; 1-to-1 projects depend on scope. Share your deadline and we’ll plan around it.",
-  },
-  {
-    keys: ["contact", "phone", "email", "call", "whatsapp", "address"],
-    reply:
-      "You can reach us via this chat, the Contact page, or leave your email/phone here and an agent will follow up shortly.",
-  },
-  {
-    keys: ["clothing", "tshirt", "t-shirt", "apparel", "merchandise", "merch"],
-    reply:
-      "We do clothing & merch design (tees, apparel branding, product graphics). Tell me the item and vibe you want — modern, street, luxury, etc.",
-  },
-  {
-    keys: ["branding", "brand identity", "brand guide", "stationery", "business card"],
-    reply:
-      "Full branding can include logo, colors, fonts, stationery, and guidelines. Are you starting fresh or refreshing an existing brand?",
-  },
-  {
-    keys: ["social", "instagram", "facebook", "banner", "ads", "flyer", "poster"],
-    reply:
-      "We design social creatives, ads, flyers, and posters. Share the platform and goal (launch, sale, awareness) and I’ll guide the next step.",
-  },
-  {
-    keys: ["hello", "hi", "hey", "salam", "assalam", "good morning", "good evening"],
-    reply:
-      "Hi there! How can we help — logo, website, packaging, branding, or something else?",
-  },
-  {
-    keys: ["thank", "thanks", "thx", "appreciate"],
-    reply:
-      "You’re welcome! Anything else you want to know before we get started?",
-  },
-];
+function normalizeChatText(input: string) {
+  return input
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s%$+-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Score how well a topic matches the visitor message. */
+function scoreTopic(text: string, topic: ChatKnowledgeTopic): number {
+  let best = 0;
+  for (const q of topic.questions) {
+    const needle = q.toLowerCase().trim();
+    if (!needle) continue;
+    if (text === needle) {
+      best = Math.max(best, 100 + needle.length);
+      continue;
+    }
+    if (text.includes(needle)) {
+      best = Math.max(best, 40 + needle.length);
+      continue;
+    }
+    const tokens = needle.split(" ").filter((t) => t.length > 2);
+    if (tokens.length === 0) continue;
+    const hits = tokens.filter((t) => text.includes(t)).length;
+    if (hits === 0) continue;
+    const ratio = hits / tokens.length;
+    if (ratio >= 0.6) {
+      best = Math.max(best, Math.round(20 + ratio * 25 + needle.length * 0.3));
+    }
+  }
+  return best;
+}
+
+/**
+ * Human-like reply delay (ms): reads the message, then "types".
+ * Longer visitor messages → slightly longer wait.
+ */
+export function humanReplyDelayMs(visitorMessage: string): number {
+  const len = visitorMessage.trim().length;
+  const readMs = Math.min(1800, 400 + len * 28);
+  const typeMs = 1600 + Math.random() * 3200;
+  const jitter = Math.random() * 900;
+  return Math.round(readMs + typeMs + jitter);
+}
 
 /**
  * Relevant bot reply for a visitor message.
- * Returns `{ body, agentName? }` — agentName set when handing off.
+ * agentName is set on every reply for a human feel.
  */
-export function generateBotReply(visitorMessage: string): {
+export function generateBotReply(
+  visitorMessage: string,
+  preferredAgent?: string,
+): {
   body: string;
   agentName?: string;
 } {
-  const text = visitorMessage.toLowerCase().replace(/\s+/g, " ").trim();
+  const agentName = preferredAgent || pickRandomAgent();
+  const text = normalizeChatText(visitorMessage);
   if (!text) {
     return {
-      body: "Go ahead and tell us what you need — logo, website, packaging, or pricing.",
+      agentName,
+      body: "No rush — just tell me what you need: logo, website, packaging, or pricing.",
     };
   }
 
-  for (const rule of REPLY_RULES) {
-    if (rule.keys.some((k) => text.includes(k))) {
-      return { body: rule.reply };
+  let bestTopic: ChatKnowledgeTopic | null = null;
+  let bestScore = 0;
+  for (const topic of LIVE_CHAT_KNOWLEDGE) {
+    const score = scoreTopic(text, topic);
+    if (score > bestScore) {
+      bestScore = score;
+      bestTopic = topic;
     }
   }
 
-  const agentName = pickRandomAgent();
+  if (bestTopic && bestScore >= 28) {
+    return {
+      agentName,
+      body: pickOne(bestTopic.replies),
+    };
+  }
+
+  if (bestTopic && bestScore >= 16) {
+    return {
+      agentName,
+      body: `${pickOne(bestTopic.replies)} If I misunderstood, just rephrase and I will adjust.`,
+    };
+  }
+
+  const fallbacks = [
+    `Got it — I want to answer that properly. Are you asking about pricing, turnaround, contests, or hiring a designer?`,
+    `Thanks for the note. Quick check so I can help: is this for a logo, website, packaging, or branding?`,
+    `I can help with that. Share a bit more — budget, deadline, or the service you need — and I will give you a clear next step.`,
+  ];
   return {
     agentName,
-    body: `Connecting you with ${agentName} — they’ll join this chat shortly to help with your question.`,
+    body: pickOne(fallbacks),
   };
 }
 
@@ -267,12 +273,14 @@ export function openLiveChat(input?: {
     existing.path = input?.path || existing.path;
     existing.updatedAt = new Date().toISOString();
     existing.seenByAdmin = false;
+    if (!existing.agentName) existing.agentName = pickRandomAgent();
     saveStore(store);
     emitOpen(existing);
     return existing;
   }
 
   const now = new Date().toISOString();
+  const agentName = pickRandomAgent();
   const session: LiveChatSession = {
     id: uid("chat"),
     visitorKey,
@@ -280,12 +288,14 @@ export function openLiveChat(input?: {
     status: "open",
     createdAt: now,
     updatedAt: now,
+    agentName,
     messages: [
       {
         id: uid("msg"),
         role: "bot",
         body: LIVE_CHAT_WELCOME,
         createdAt: now,
+        agentName,
       },
     ],
     seenByAdmin: false,
@@ -327,12 +337,22 @@ export function postChatMessage(input: {
   return session;
 }
 
-/** Post a contextual bot reply (or agent handoff) for the visitor's last message. */
+/** Post a contextual bot reply for the visitor's last message. */
 export function postBotReply(
   sessionId: string,
   visitorMessage: string,
 ): LiveChatSession | null {
-  const { body, agentName } = generateBotReply(visitorMessage);
+  const store = loadStore();
+  const session = store.sessions.find((s) => s.id === sessionId);
+  if (!session) return null;
+  if (!session.agentName) {
+    session.agentName = pickRandomAgent();
+    saveStore(store);
+  }
+  const { body, agentName } = generateBotReply(
+    visitorMessage,
+    session.agentName,
+  );
   return postChatMessage({ sessionId, role: "bot", body, agentName });
 }
 

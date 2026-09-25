@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   getOpenSessionForVisitor,
   getVisitorChatKey,
+  humanReplyDelayMs,
   onLiveChatUpdated,
   openLiveChat,
   postBotReply,
@@ -13,8 +14,7 @@ import {
 } from "@/lib/live-chat";
 
 /** Wait until after first paint so chat doesn't compete with hydration. */
-const AUTO_OPEN_DELAY_MS = 7000;
-const BOT_REPLY_DELAY_MS = 700;
+const AUTO_OPEN_DELAY_MS = 9000;
 
 export function LiveChatWidget() {
   const pathname = usePathname();
@@ -25,6 +25,7 @@ export function LiveChatWidget() {
   const [session, setSession] = useState<LiveChatSession | null>(null);
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
+  const [typingName, setTypingName] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const openedOnce = useRef(false);
   const replyTimer = useRef<number | null>(null);
@@ -81,7 +82,7 @@ export function LiveChatWidget() {
 
   function onSend(e: FormEvent) {
     e.preventDefault();
-    if (!session || !text.trim()) return;
+    if (!session || !text.trim() || typing) return;
     const visitorText = text.trim();
     const updated = postChatMessage({
       sessionId: session.id,
@@ -92,16 +93,22 @@ export function LiveChatWidget() {
     if (updated) setSession({ ...updated, messages: [...updated.messages] });
 
     if (replyTimer.current) window.clearTimeout(replyTimer.current);
+    const agent = session.agentName || updated?.agentName || "Support";
+    setTypingName(agent);
     setTyping(true);
     const sid = session.id;
+    const delay = humanReplyDelayMs(visitorText);
     replyTimer.current = window.setTimeout(() => {
       const withReply = postBotReply(sid, visitorText);
       setTyping(false);
+      setTypingName(null);
       if (withReply) {
         setSession({ ...withReply, messages: [...withReply.messages] });
       }
-    }, BOT_REPLY_DELAY_MS);
+    }, delay);
   }
+
+  const headerAgent = session?.agentName || "Support";
 
   return (
     <div className="pointer-events-none fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-[90] flex flex-col items-end gap-3">
@@ -109,9 +116,9 @@ export function LiveChatWidget() {
         <div className="pointer-events-auto flex h-[min(520px,min(70vh,calc(100dvh-6rem)))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-2xl">
           <div className="flex items-center justify-between bg-ink px-4 py-3 !text-white">
             <div>
-              <p className="text-sm font-semibold">Live design help</p>
+              <p className="text-sm font-semibold">Chat with {headerAgent}</p>
               <p className="text-[11px] text-white/65">
-                Ask anything · agents online
+                {typing ? `${typingName || headerAgent} is typing…` : "Usually replies in a few seconds"}
               </p>
             </div>
             <button
@@ -146,9 +153,7 @@ export function LiveChatWidget() {
                 >
                   {m.role === "bot" ? (
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-coral">
-                      {m.agentName
-                        ? `${m.agentName} · Agent`
-                        : "Creative Logo Makers"}
+                      {m.agentName || headerAgent}
                     </p>
                   ) : null}
                   {m.role === "admin" ? (
@@ -162,8 +167,15 @@ export function LiveChatWidget() {
             ))}
             {typing ? (
               <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-md bg-white px-3.5 py-2 text-sm text-muted shadow-sm ring-1 ring-line">
-                  Typing…
+                <div className="rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-sm text-muted shadow-sm ring-1 ring-line">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-coral">
+                    {typingName || headerAgent}
+                  </p>
+                  <span className="inline-flex items-center gap-1" aria-label="Typing">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted" />
+                  </span>
                 </div>
               </div>
             ) : null}
@@ -177,11 +189,13 @@ export function LiveChatWidget() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Ask about logos, pricing…"
-              className="flex-1 rounded-full border border-line px-3.5 py-2.5 text-sm outline-none focus:border-ink"
+              disabled={typing}
+              className="flex-1 rounded-full border border-line px-3.5 py-2.5 text-sm outline-none focus:border-ink disabled:opacity-60"
             />
             <button
               type="submit"
-              className="rounded-full bg-cta px-4 py-2.5 text-sm font-semibold !text-white hover:bg-cta-hover"
+              disabled={typing || !text.trim()}
+              className="rounded-full bg-cta px-4 py-2.5 text-sm font-semibold !text-white hover:bg-cta-hover disabled:opacity-50"
             >
               Send
             </button>
