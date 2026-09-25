@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Container } from "@/components/Section";
@@ -9,6 +10,8 @@ import {
   filterSuggestions,
   popularSearchLinks,
   resolveSearch,
+  searchQuickActions,
+  searchTrending,
   type SearchSuggestion,
 } from "@/data/search";
 
@@ -151,7 +154,10 @@ export function HeroBanner() {
   const [index, setIndex] = useState(0);
   const [fade, setFade] = useState(true);
 
-  const suggestions = filterSuggestions(query, 6);
+  const trimmed = query.trim();
+  const suggestions = filterSuggestions(query, trimmed ? 8 : 6);
+  const showBrowse = open && !trimmed;
+  const showResults = open && trimmed.length > 0;
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -182,7 +188,7 @@ export function HeroBanner() {
   function onSearch(e: FormEvent) {
     e.preventDefault();
     const picked = suggestions[activeIdx];
-    if (open && picked && query.trim()) {
+    if (open && picked && trimmed) {
       go(picked.href);
       return;
     }
@@ -348,33 +354,158 @@ export function HeroBanner() {
                 </button>
               </form>
 
-              {open && suggestions.length > 0 ? (
-                <ul
+              {showBrowse ? (
+                <div
                   id={listId}
                   role="listbox"
-                  className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 overflow-hidden rounded-2xl border border-line bg-white py-2 shadow-[0_16px_40px_rgba(49,48,48,0.14)]"
+                  aria-label="Advanced design search"
+                  className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 max-h-[min(70vh,520px)] overflow-y-auto rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)]"
                 >
-                  {suggestions.map((s, i) => (
-                    <li key={s.href + s.label} role="option" aria-selected={i === activeIdx}>
-                      <button
-                        type="button"
-                        id={`${listId}-${i}`}
-                        onMouseEnter={() => setActiveIdx(i)}
-                        onClick={() => pickSuggestion(s)}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
-                          i === activeIdx
-                            ? "bg-hero/10 text-ink"
-                            : "text-ink hover:bg-paper-soft"
-                        }`}
+                  <div className="border-b border-line bg-gradient-to-br from-[#faf8fc] to-white px-4 py-3 sm:px-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-hero">
+                          Advanced search
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold text-ink">
+                          Pick a service or start a workflow
+                        </p>
+                      </div>
+                      <Link
+                        href="/categories"
+                        onClick={() => setOpen(false)}
+                        className="shrink-0 text-xs font-semibold text-hero hover:underline"
                       >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-paper-soft text-muted">
-                          <SearchIcon />
-                        </span>
-                        <span className="font-medium">{s.label}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        All categories →
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="px-3 py-3 sm:px-4">
+                    <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+                      Trending now
+                    </p>
+                    <div className="mb-3 flex flex-wrap gap-1.5 px-1">
+                      {searchTrending.map((t) => (
+                        <button
+                          key={t.label}
+                          type="button"
+                          onClick={() => pickSuggestion(t)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper-soft px-2.5 py-1 text-[11px] font-semibold text-ink transition hover:border-hero/35 hover:bg-hero/5 hover:text-hero"
+                        >
+                          <span
+                            className="h-1.5 w-1.5 rounded-full bg-coral"
+                            aria-hidden
+                          />
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+                      Services
+                    </p>
+                    <ul className="grid gap-0.5 sm:grid-cols-2">
+                      {suggestions.map((s, i) => (
+                        <li
+                          key={s.href + s.label}
+                          role="option"
+                          aria-selected={i === activeIdx}
+                        >
+                          <SuggestionRow
+                            id={`${listId}-${i}`}
+                            suggestion={s}
+                            active={i === activeIdx}
+                            onHover={() => setActiveIdx(i)}
+                            onPick={() => pickSuggestion(s)}
+                            compact
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="border-t border-line bg-paper-soft/60 px-3 py-3 sm:px-4">
+                    <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+                      Quick start
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {searchQuickActions.map((a) => (
+                        <button
+                          key={a.href}
+                          type="button"
+                          onClick={() => pickSuggestion(a)}
+                          className="flex items-start gap-2 rounded-xl border border-line bg-white px-3 py-2.5 text-left transition hover:border-hero/30 hover:shadow-sm"
+                        >
+                          <span
+                            className={`marketing-icon marketing-icon--${a.icon} mt-0.5 !text-[22px] before:!text-[22px] text-hero`}
+                            aria-hidden
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-xs font-bold text-ink">
+                              {a.label}
+                            </span>
+                            <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                              {a.blurb}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {showResults ? (
+                <div
+                  id={listId}
+                  role="listbox"
+                  className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)]"
+                >
+                  <div className="border-b border-line px-4 py-2.5">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                      {suggestions.length
+                        ? `${suggestions.length} match${suggestions.length === 1 ? "" : "es"}`
+                        : "No exact match"}
+                    </p>
+                  </div>
+                  {suggestions.length > 0 ? (
+                    <ul className="py-1">
+                      {suggestions.map((s, i) => (
+                        <li
+                          key={s.href + s.label}
+                          role="option"
+                          aria-selected={i === activeIdx}
+                        >
+                          <SuggestionRow
+                            id={`${listId}-${i}`}
+                            suggestion={s}
+                            active={i === activeIdx}
+                            onHover={() => setActiveIdx(i)}
+                            onPick={() => pickSuggestion(s)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-4 py-4 text-sm text-muted">
+                      Try “logo”, “website”, or “packaging” — or browse all
+                      categories.
+                    </p>
+                  )}
+                  <div className="border-t border-line bg-paper-soft/50 px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => go(resolveSearch(query))}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-hero hover:bg-white"
+                    >
+                      <span className="truncate">
+                        Search all for “{trimmed}”
+                      </span>
+                      <span aria-hidden>→</span>
+                    </button>
+                  </div>
+                </div>
               ) : null}
             </div>
 
@@ -410,6 +541,69 @@ export function HeroBanner() {
         </div>
       </Container>
     </section>
+  );
+}
+
+function SuggestionRow({
+  id,
+  suggestion: s,
+  active,
+  onHover,
+  onPick,
+  compact,
+}: {
+  id: string;
+  suggestion: SearchSuggestion;
+  active: boolean;
+  onHover: () => void;
+  onPick: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      id={id}
+      onMouseEnter={onHover}
+      onClick={onPick}
+      className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors ${
+        active ? "bg-hero/10 text-ink" : "text-ink hover:bg-paper-soft"
+      }`}
+    >
+      <span
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+          active ? "bg-white shadow-sm" : "bg-paper-soft"
+        }`}
+      >
+        <span
+          className={`marketing-icon marketing-icon--${s.icon} !text-[22px] before:!text-[22px] ${
+            active ? "text-hero" : "text-ink/70"
+          }`}
+          aria-hidden
+        />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="truncate text-sm font-semibold">{s.label}</span>
+          {s.trending && !compact ? (
+            <span className="rounded bg-coral/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-coral">
+              Hot
+            </span>
+          ) : null}
+        </span>
+        <span className="mt-0.5 block truncate text-[12px] text-muted">
+          {s.blurb}
+        </span>
+      </span>
+      {s.price ? (
+        <span className="hidden shrink-0 text-right text-[11px] font-semibold text-ink/70 sm:block">
+          {s.price}
+        </span>
+      ) : (
+        <span className="hidden shrink-0 text-[11px] font-semibold text-hero sm:block">
+          Open
+        </span>
+      )}
+    </button>
   );
 }
 
