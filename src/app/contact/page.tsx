@@ -1,17 +1,35 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/Button";
+import {
+  RecaptchaField,
+  verifyRecaptchaToken,
+  type RecaptchaHandle,
+} from "@/components/RecaptchaField";
 import { Container } from "@/components/Section";
 import { media } from "@/data/media";
 import { brand } from "@/data/site";
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<RecaptchaHandle>(null);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
+    if (!check.ok) {
+      setError(check.error);
+      setLoading(false);
+      captchaRef.current?.reset();
+      return;
+    }
+    setLoading(false);
     setSent(true);
   }
 
@@ -150,11 +168,16 @@ export default function ContactPage() {
                     className="focus-ring mt-2 w-full resize-y rounded-xl border border-line px-4 py-3 outline-none focus:border-hero"
                   />
                 </label>
+                <RecaptchaField ref={captchaRef} />
+                {error ? (
+                  <p className="text-sm font-medium text-coral">{error}</p>
+                ) : null}
                 <button
                   type="submit"
-                  className="focus-ring w-full rounded-full bg-cta py-3.5 text-sm font-semibold !text-white hover:bg-cta-hover"
+                  disabled={loading}
+                  className="focus-ring w-full rounded-full bg-cta py-3.5 text-sm font-semibold !text-white hover:bg-cta-hover disabled:opacity-60"
                 >
-                  Send message
+                  {loading ? "Verifying…" : "Send message"}
                 </button>
               </form>
             )}

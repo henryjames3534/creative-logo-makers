@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import {
+  RecaptchaField,
+  verifyRecaptchaToken,
+  type RecaptchaHandle,
+} from "@/components/RecaptchaField";
 import { Container } from "@/components/Section";
 import { captureTypedEmail } from "@/lib/capture-visitor";
 
@@ -19,6 +24,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const captureTimer = useRef<number | null>(null);
+  const captchaRef = useRef<RecaptchaHandle>(null);
 
   useEffect(() => {
     if (ready && user) router.replace(next);
@@ -36,11 +42,19 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
+    if (!check.ok) {
+      setError(check.error);
+      setLoading(false);
+      captchaRef.current?.reset();
+      return;
+    }
     captureTypedEmail(email, "login_form");
     const res = await signIn({ email, password });
     setLoading(false);
     if (!res.ok) {
       setError(res.error);
+      captchaRef.current?.reset();
       return;
     }
     router.push(next);
@@ -121,6 +135,8 @@ export function LoginForm() {
               {error ? (
                 <p className="text-sm font-medium text-coral">{error}</p>
               ) : null}
+
+              <RecaptchaField ref={captchaRef} />
 
               <button
                 type="submit"

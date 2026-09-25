@@ -1,13 +1,30 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { Button } from "@/components/Button";
+import {
+  RecaptchaField,
+  verifyRecaptchaToken,
+  type RecaptchaHandle,
+} from "@/components/RecaptchaField";
 
 export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<RecaptchaHandle>(null);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
+    if (!check.ok) {
+      setError(check.error);
+      setLoading(false);
+      captchaRef.current?.reset();
+      return;
+    }
     const fd = new FormData(e.currentTarget);
     try {
       sessionStorage.setItem(
@@ -23,6 +40,7 @@ export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
     } catch {
       /* ignore */
     }
+    setLoading(false);
     setSent(true);
   }
 
@@ -76,11 +94,14 @@ export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
           className="mt-1.5 w-full rounded-lg border border-line px-3 py-2.5 outline-none focus:border-violet"
         />
       </label>
+      <RecaptchaField ref={captchaRef} />
+      {error ? <p className="text-sm font-medium text-coral">{error}</p> : null}
       <button
         type="submit"
-        className="focus-ring inline-flex w-full items-center justify-center rounded-full bg-cta px-7 py-3.5 text-sm font-semibold !text-white transition-colors hover:bg-cta-hover"
+        disabled={loading}
+        className="focus-ring inline-flex w-full items-center justify-center rounded-full bg-cta px-7 py-3.5 text-sm font-semibold !text-white transition-colors hover:bg-cta-hover disabled:opacity-60"
       >
-        Request a call
+        {loading ? "Verifying…" : "Request a call"}
       </button>
       <p className="text-center text-xs text-muted">
         Circlemakers Studio · English & German
