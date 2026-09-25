@@ -153,11 +153,23 @@ export function HeroBanner() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [index, setIndex] = useState(0);
   const [fade, setFade] = useState(true);
+  const [placeholder, setPlaceholder] = useState("What do you need designed?");
 
   const trimmed = query.trim();
   const suggestions = filterSuggestions(query, trimmed ? 8 : 6);
   const showBrowse = open && !trimmed;
   const showResults = open && trimmed.length > 0;
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const apply = () =>
+      setPlaceholder(
+        mq.matches ? "Need a design?" : "What do you need designed?",
+      );
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -227,7 +239,7 @@ export function HeroBanner() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-white pb-14 pt-8 md:pb-20 md:pt-10">
+    <section className="relative overflow-x-clip overflow-y-visible bg-white pb-14 pt-8 md:pb-20 md:pt-10">
       <Container className="relative z-10">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-8">
           <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
@@ -313,14 +325,14 @@ export function HeroBanner() {
               Because good design makes great business.
             </p>
 
-            <div ref={wrapRef} className="relative mt-8 max-w-xl">
+            <div ref={wrapRef} className="relative z-30 mt-8 w-full max-w-xl">
               <form
                 onSubmit={onSearch}
-                className="hero-search group flex flex-col overflow-hidden rounded-full border border-line bg-white shadow-[0_8px_28px_rgba(49,48,48,0.08)] transition-[border-color,box-shadow] focus-within:border-hero focus-within:shadow-[0_10px_32px_rgba(131,70,146,0.18)] sm:flex-row sm:items-stretch"
+                className="hero-search group flex w-full min-w-0 items-center rounded-full border border-line bg-white pl-1 pr-1 shadow-[0_8px_28px_rgba(49,48,48,0.08)] transition-[border-color,box-shadow] focus-within:border-hero focus-within:shadow-[0_10px_32px_rgba(131,70,146,0.18)]"
                 role="search"
               >
-                <label className="relative flex-1">
-                  <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-muted transition-colors group-focus-within:text-hero">
+                <label className="relative min-w-0 flex-1">
+                  <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted transition-colors group-focus-within:text-hero sm:left-4">
                     <SearchIcon />
                   </span>
                   <input
@@ -332,8 +344,9 @@ export function HeroBanner() {
                     }}
                     onFocus={() => setOpen(true)}
                     onKeyDown={onKeyDown}
-                    placeholder="What do you need designed?"
+                    placeholder={placeholder}
                     autoComplete="off"
+                    enterKeyHint="search"
                     role="combobox"
                     aria-expanded={open}
                     aria-controls={listId}
@@ -343,14 +356,15 @@ export function HeroBanner() {
                         ? `${listId}-${activeIdx}`
                         : undefined
                     }
-                    className="w-full border-0 bg-transparent py-4 pl-11 pr-4 text-[15px] text-ink outline-none placeholder:text-muted"
+                    className="hero-search-input w-full min-w-0 border-0 bg-transparent py-3.5 pl-10 pr-2 text-base text-ink outline-none placeholder:text-muted sm:py-4 sm:pl-11 sm:pr-3 sm:text-[15px]"
                   />
                 </label>
                 <button
                   type="submit"
-                  className="focus-ring m-1.5 shrink-0 rounded-full bg-cta px-7 py-3 text-sm font-semibold !text-white transition-colors hover:bg-cta-hover sm:m-1.5"
+                  className="focus-ring my-1 mr-0.5 shrink-0 rounded-full bg-cta px-3.5 py-2.5 text-xs font-semibold !text-white transition-colors hover:bg-cta-hover sm:my-1.5 sm:mr-0 sm:px-7 sm:py-3 sm:text-sm"
                 >
-                  Get a design
+                  <span className="sm:hidden">Search</span>
+                  <span className="hidden sm:inline">Get a design</span>
                 </button>
               </form>
 
@@ -359,39 +373,39 @@ export function HeroBanner() {
                   id={listId}
                   role="listbox"
                   aria-label="Advanced design search"
-                  className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 max-h-[min(70vh,520px)] overflow-y-auto rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)]"
+                  className="absolute inset-x-0 top-[calc(100%+8px)] z-40 max-h-[min(58dvh,440px)] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)] sm:max-h-[min(62dvh,480px)]"
                 >
-                  <div className="border-b border-line bg-gradient-to-br from-[#faf8fc] to-white px-4 py-3 sm:px-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-hero">
+                  <div className="sticky top-0 z-10 border-b border-line bg-gradient-to-br from-[#faf8fc] to-white px-3 py-2.5 sm:px-5 sm:py-3">
+                    <div className="flex items-start justify-between gap-2 sm:items-center sm:gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-hero sm:text-[11px]">
                           Advanced search
                         </p>
-                        <p className="mt-0.5 text-sm font-semibold text-ink">
+                        <p className="mt-0.5 truncate text-sm font-semibold text-ink">
                           Pick a service or start a workflow
                         </p>
                       </div>
                       <Link
                         href="/categories"
                         onClick={() => setOpen(false)}
-                        className="shrink-0 text-xs font-semibold text-hero hover:underline"
+                        className="shrink-0 text-[11px] font-semibold text-hero hover:underline sm:text-xs"
                       >
-                        All categories →
+                        All →
                       </Link>
                     </div>
                   </div>
 
-                  <div className="px-3 py-3 sm:px-4">
+                  <div className="px-2.5 py-2.5 sm:px-4 sm:py-3">
                     <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-muted">
                       Trending now
                     </p>
-                    <div className="mb-3 flex flex-wrap gap-1.5 px-1">
+                    <div className="-mx-0.5 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       {searchTrending.map((t) => (
                         <button
                           key={t.label}
                           type="button"
                           onClick={() => pickSuggestion(t)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper-soft px-2.5 py-1 text-[11px] font-semibold text-ink transition hover:border-hero/35 hover:bg-hero/5 hover:text-hero"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-paper-soft px-2.5 py-1.5 text-[11px] font-semibold text-ink transition hover:border-hero/35 hover:bg-hero/5 hover:text-hero"
                         >
                           <span
                             className="h-1.5 w-1.5 rounded-full bg-coral"
@@ -405,7 +419,7 @@ export function HeroBanner() {
                     <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-muted">
                       Services
                     </p>
-                    <ul className="grid gap-0.5 sm:grid-cols-2">
+                    <ul className="grid grid-cols-1 gap-0.5 sm:grid-cols-2">
                       {suggestions.map((s, i) => (
                         <li
                           key={s.href + s.label}
@@ -425,27 +439,27 @@ export function HeroBanner() {
                     </ul>
                   </div>
 
-                  <div className="border-t border-line bg-paper-soft/60 px-3 py-3 sm:px-4">
+                  <div className="border-t border-line bg-paper-soft/60 px-2.5 py-2.5 sm:px-4 sm:py-3">
                     <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-muted">
                       Quick start
                     </p>
-                    <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                       {searchQuickActions.map((a) => (
                         <button
                           key={a.href}
                           type="button"
                           onClick={() => pickSuggestion(a)}
-                          className="flex items-start gap-2 rounded-xl border border-line bg-white px-3 py-2.5 text-left transition hover:border-hero/30 hover:shadow-sm"
+                          className="flex min-w-0 items-center gap-2 rounded-xl border border-line bg-white px-3 py-2.5 text-left transition hover:border-hero/30 hover:shadow-sm sm:items-start"
                         >
                           <span
-                            className={`marketing-icon marketing-icon--${a.icon} mt-0.5 !text-[22px] before:!text-[22px] text-hero`}
+                            className={`marketing-icon marketing-icon--${a.icon} shrink-0 !text-[20px] before:!text-[20px] text-hero sm:mt-0.5 sm:!text-[22px] sm:before:!text-[22px]`}
                             aria-hidden
                           />
                           <span className="min-w-0">
                             <span className="block text-xs font-bold text-ink">
                               {a.label}
                             </span>
-                            <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                            <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-muted">
                               {a.blurb}
                             </span>
                           </span>
@@ -460,9 +474,9 @@ export function HeroBanner() {
                 <div
                   id={listId}
                   role="listbox"
-                  className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)]"
+                  className="absolute inset-x-0 top-[calc(100%+8px)] z-40 max-h-[min(50dvh,380px)] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)] sm:max-h-[min(55dvh,420px)]"
                 >
-                  <div className="border-b border-line px-4 py-2.5">
+                  <div className="border-b border-line px-3 py-2.5 sm:px-4">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
                       {suggestions.length
                         ? `${suggestions.length} match${suggestions.length === 1 ? "" : "es"}`
@@ -497,20 +511,24 @@ export function HeroBanner() {
                     <button
                       type="button"
                       onClick={() => go(resolveSearch(query))}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-hero hover:bg-white"
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2.5 text-left text-sm font-semibold text-hero hover:bg-white"
                     >
-                      <span className="truncate">
+                      <span className="min-w-0 truncate">
                         Search all for “{trimmed}”
                       </span>
-                      <span aria-hidden>→</span>
+                      <span className="shrink-0" aria-hidden>
+                        →
+                      </span>
                     </button>
                   </div>
                 </div>
               ) : null}
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2.5">
-              <span className="text-sm font-medium text-muted">Popular:</span>
+            <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5 sm:gap-2.5">
+              <span className="w-full text-xs font-medium text-muted sm:w-auto sm:text-sm">
+                Popular:
+              </span>
               {popularSearchLinks.map((s) => {
                 const active =
                   query.toLowerCase() === s.query.toLowerCase() ||
@@ -520,7 +538,7 @@ export function HeroBanner() {
                     key={s.label}
                     type="button"
                     onClick={() => pickPopular(s.query, s.href)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold shadow-sm transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-all sm:px-3.5 sm:py-2 sm:text-sm ${
                       active
                         ? "bg-hero !text-white shadow-md ring-2 ring-hero/25"
                         : "border border-line bg-paper-soft text-ink hover:-translate-y-0.5 hover:border-hero/30 hover:bg-white hover:text-hero hover:shadow-md"
@@ -565,37 +583,39 @@ function SuggestionRow({
       id={id}
       onMouseEnter={onHover}
       onClick={onPick}
-      className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors ${
+      className={`flex w-full min-w-0 items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors sm:gap-3 sm:px-2.5 sm:py-2.5 ${
         active ? "bg-hero/10 text-ink" : "text-ink hover:bg-paper-soft"
       }`}
     >
       <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10 ${
           active ? "bg-white shadow-sm" : "bg-paper-soft"
         }`}
       >
         <span
-          className={`marketing-icon marketing-icon--${s.icon} !text-[22px] before:!text-[22px] ${
+          className={`marketing-icon marketing-icon--${s.icon} !text-[18px] before:!text-[18px] sm:!text-[22px] sm:before:!text-[22px] ${
             active ? "text-hero" : "text-ink/70"
           }`}
           aria-hidden
         />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold">{s.label}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-[13px] font-semibold sm:text-sm">
+            {s.label}
+          </span>
           {s.trending && !compact ? (
             <span className="rounded bg-coral/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-coral">
               Hot
             </span>
           ) : null}
         </span>
-        <span className="mt-0.5 block truncate text-[12px] text-muted">
+        <span className="mt-0.5 block truncate text-[11px] text-muted sm:text-[12px]">
           {s.blurb}
         </span>
       </span>
       {s.price ? (
-        <span className="hidden shrink-0 text-right text-[11px] font-semibold text-ink/70 sm:block">
+        <span className="shrink-0 text-right text-[10px] font-semibold text-ink/70 sm:text-[11px]">
           {s.price}
         </span>
       ) : (
