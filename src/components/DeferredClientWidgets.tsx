@@ -33,18 +33,16 @@ function onIdle(cb: () => void, timeoutMs: number) {
   return () => globalThis.clearTimeout(t);
 }
 
-/** Non-critical widgets — idle-deferred so they don't block first paint / TTI. */
+/** Non-critical widgets — chat idle-deferred; One Tap mounts ASAP. */
 export function DeferredClientWidgets() {
-  const [ready, setReady] = useState(false);
+  const [chatReady, setChatReady] = useState(false);
 
-  useEffect(() => onIdle(() => setReady(true), 3500), []);
-
-  if (!ready) return null;
+  useEffect(() => onIdle(() => setChatReady(true), 3500), []);
 
   return (
     <>
-      <LiveChatWidget />
       <GoogleContinuePrompt />
+      {chatReady ? <LiveChatWidget /> : null}
     </>
   );
 }

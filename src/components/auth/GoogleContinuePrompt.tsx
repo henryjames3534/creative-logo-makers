@@ -16,7 +16,7 @@ const DISMISS_KEY = "clm_google_onetap_dismissed";
 const CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim();
 
 /** Prevent Strict Mode / remount from firing two FedCM get() calls */
-let oneTapLock = false;
+let oneTapGeneration = 0;
 
 type GoogleJwtPayload = {
   email?: string;
@@ -59,6 +59,22 @@ function parseJwt(token: string) {
   const part = token.split(".")[1];
   const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
   return JSON.parse(json) as GoogleJwtPayload;
+}
+
+function markDismissed() {
+  try {
+    sessionStorage.setItem(DISMISS_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+function wasDismissed() {
+  try {
+    return sessionStorage.getItem(DISMISS_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -153,24 +169,17 @@ export function GoogleContinuePrompt() {
       } catch {
         /* ignore */
       }
-      oneTapLock = false;
       return;
     }
 
-    try {
-      if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
-    } catch {
-      /* ignore */
-    }
+    if (wasDismissed()) return;
 
-    if (oneTapLock) return;
-    oneTapLock = true;
-
+    const generation = ++oneTapGeneration;
     let cancelled = false;
     let fallbackTimer = 0;
 
     const showPrompt = (useFedcm: boolean) => {
-      if (cancelled) return;
+      if (cancelled || generation !== oneTapGeneration) return;
       const gsi = window.google?.accounts.id;
       if (!gsi) return;
 
@@ -191,21 +200,20 @@ export function GoogleContinuePrompt() {
       });
 
       gsi.prompt((notification) => {
-        if (cancelled) return;
+        if (cancelled || generation !== oneTapGeneration) return;
 
         if (notification.isNotDisplayed()) {
           const reason = notification.getNotDisplayedReason?.() ?? "unknown";
-          // Quiet: avoid console noise that Lighthouse flags as browser errors
           const fedcmBlocked =
             useFedcm &&
-            /fedcm|secure|browser|suppressed|opt_out|unknown|issuenotdisplayed/i.test(
+            /fedcm|secure|browser|suppressed|opt_out|unknown|issuenotdisplayed|display_not_exist/i.test(
               reason,
             );
 
           if (fedcmBlocked) {
             // Wait until any outstanding FedCM get() settles, then retry classic once
             fallbackTimer = window.setTimeout(() => {
-              if (cancelled) return;
+              if (cancelled || generation !== oneTapGeneration) return;
               try {
                 window.google?.accounts.id.cancel();
               } catch {
@@ -216,31 +224,34 @@ export function GoogleContinuePrompt() {
             return;
           }
 
-          if (
-            reason === "suppressed_by_user" ||
-            reason === "opt_out_or_no_session" ||
-            reason === "unknown"
-          ) {
-            try {
-              sessionStorage.setItem(DISMISS_KEY, "1");
-            } catch {
-              /* ignore */
-            }
+          // Only persist dismiss for explicit user opt-out — not transient "unknown"
+          if (reason === "suppressed_by_user") {
+            markDismissed();
+          }
+        }
+
+        if (notification.isSkippedMoment()) {
+          const reason = notification.getSkippedReason?.() ?? "";
+          if (reason === "user_cancel" || reason === "tap_outside") {
+            markDismissed();
           }
         }
 
         if (notification.isDismissedMoment()) {
-          try {
-            sessionStorage.setItem(DISMISS_KEY, "1");
-          } catch {
-            /* ignore */
+          const reason = notification.getDismissedReason?.() ?? "";
+          if (
+            reason === "credential_returned" ||
+            reason === "cancel_called"
+          ) {
+            return;
           }
+          markDismissed();
         }
       });
     };
 
     // Delay so Strict Mode remount + paint settle; only one FedCM get at a time
-    const startTimer = window.setTimeout(() => showPrompt(true), 500);
+    const startTimer = window.setTimeout(() => showPrompt(true), 400);
 
     return () => {
       cancelled = true;
@@ -251,7 +262,6 @@ export function GoogleContinuePrompt() {
       } catch {
         /* ignore */
       }
-      oneTapLock = false;
     };
   }, [gisReady, ready, user, hideOnAuthPages, handleCredential]);
 
@@ -339,7 +349,7 @@ export function GoogleContinuePrompt() {
   return (
     <Script
       src="https://accounts.google.com/gsi/client"
-      strategy="lazyOnload"
+      strategy="afterInteractive"
       onLoad={() => setGisReady(true)}
     />
   );
