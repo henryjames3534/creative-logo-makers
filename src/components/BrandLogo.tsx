@@ -45,13 +45,15 @@ export function BrandLogo({
     <Link
       href="/"
       className={`inline-flex shrink-0 items-center ${className}`}
-      aria-label="Creative Logo Makers"
+      aria-label="Creative Logo Makers home"
+      title="Creative Logo Makers"
     >
+      <span className="sr-only">Creative Logo Makers home</span>
       {ready && isData ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
-          alt="Creative Logo Makers"
+          alt=""
           width={width}
           height={height}
           className={`h-auto w-auto object-contain object-left ${
@@ -61,7 +63,7 @@ export function BrandLogo({
       ) : (
         <Image
           src={src.startsWith("data:") ? DEFAULT_SITE_LOGO : src}
-          alt="Creative Logo Makers"
+          alt=""
           width={width}
           height={height}
           priority

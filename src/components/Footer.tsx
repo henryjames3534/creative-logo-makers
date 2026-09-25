@@ -114,8 +114,10 @@ export function Footer() {
                     key={s.label}
                     href={s.href}
                     aria-label={s.label}
+                    title={s.label}
                     className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-white/60 text-ink/70 shadow-sm backdrop-blur-sm transition-all hover:border-ink/25 hover:bg-white hover:text-ink"
                   >
+                    <span className="sr-only">{s.label}</span>
                     <SocialIcon name={s.icon} />
                   </Link>
                 ))}
