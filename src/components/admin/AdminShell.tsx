@@ -42,8 +42,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<{ email: string; name: string } | null>(
     null,
   );
-  const [email, setEmail] = useState("admin@creativelogomakers.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [mobileNav, setMobileNav] = useState(false);
   const [chatUnread, setChatUnread] = useState(0);
@@ -146,9 +146,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             Advanced CRM for leads, pipeline, orders, and designers.
           </p>
           <label className="mt-6 block">
-            <span className="text-xs font-medium text-white/50">Email</span>
+            <span className="text-xs font-medium text-white/50">Username</span>
             <input
-              type="email"
+              type="text"
+              name="username"
+              autoComplete="username"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -159,6 +161,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <span className="text-xs font-medium text-white/50">Password</span>
             <input
               type="password"
+              name="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -167,11 +171,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </label>
           {error ? (
             <p className="mt-3 text-sm text-[#fe5f50]">{error}</p>
-          ) : (
-            <p className="mt-3 text-[11px] text-white/40">
-              Demo: admin@creativelogomakers.com / admin123
-            </p>
-          )}
+          ) : null}
           <button
             type="submit"
             className="mt-6 w-full rounded-full bg-[#00a581] py-3 text-sm font-semibold text-white hover:bg-[#008f70]"

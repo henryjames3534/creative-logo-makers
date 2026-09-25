@@ -207,13 +207,10 @@ export function AdminSettings() {
       </AdminCard>
 
       <AdminCard className="p-5">
-        <SectionTitle title="Demo access" />
+        <SectionTitle title="Data controls" />
         <p className="text-sm text-white/60">
-          Sign in with{" "}
-          <span className="font-medium text-white">
-            admin@creativelogomakers.com
-          </span>{" "}
-          / <span className="font-medium text-white">admin123</span>
+          Reset local CRM seed data (leads, deals, sample records). Live chat
+          and visitor captures are not wiped by this action.
         </p>
         <button
           type="button"

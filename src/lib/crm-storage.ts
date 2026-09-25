@@ -1115,15 +1115,19 @@ export function getAdminSession(): { email: string; name: string } | null {
 }
 
 export function adminLogin(email: string, password: string) {
-  const e = email.trim().toLowerCase();
+  const user = email.trim();
+  const pass = password;
+  /** Strong admin login — not shown on the sign-in screen */
   const ok =
-    (e === "admin@creativelogomakers.com" && password === "admin123") ||
-    (e === "sara@creativelogomakers.com" && password === "sara123");
+    user === "CLM.Admin.XR74K9M2" && pass === "Qk8mR2nP7xA4";
   if (!ok) return { ok: false as const, error: "Invalid admin credentials." };
-  const name = e.startsWith("sara") ? "Sara Khan" : "Admin";
   sessionStorage.setItem(
     ADMIN_SESSION_KEY,
-    JSON.stringify({ email: e, name }),
+    JSON.stringify({
+      email: "admin@creativelogomakers.com",
+      name: "Admin",
+      username: user,
+    }),
   );
   return { ok: true as const };
 }
