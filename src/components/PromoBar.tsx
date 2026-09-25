@@ -53,7 +53,7 @@ function PromoItem({
       </span>
       <Link
         href={href}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold !text-promo shadow-sm transition-transform hover:scale-[1.03] md:text-[13px]"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold !text-[#006b52] shadow-sm transition-transform hover:scale-[1.03] md:text-[13px]"
       >
         {cta}
         <span aria-hidden>→</span>

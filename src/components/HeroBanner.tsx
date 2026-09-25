@@ -267,19 +267,24 @@ export function HeroBanner() {
               </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-center gap-2 lg:justify-start">
+            <div className="mt-5 flex items-center justify-center gap-1 lg:justify-start">
               {slides.map((s, i) => (
                 <button
                   key={s.brand}
                   type="button"
                   aria-label={`Show ${s.brand}`}
+                  aria-current={i === index ? "true" : undefined}
                   onClick={() => goTo(i)}
-                  className={`h-2.5 rounded-full transition-all ${
-                    i === index
-                      ? "w-8 bg-ink"
-                      : "w-2.5 bg-ink/25 hover:bg-ink/50"
-                  }`}
-                />
+                  className="flex h-7 min-w-7 items-center justify-center rounded-full px-1"
+                >
+                  <span
+                    className={`block h-2.5 rounded-full transition-all ${
+                      i === index
+                        ? "w-8 bg-ink"
+                        : "w-2.5 bg-ink/35 hover:bg-ink/55"
+                    }`}
+                  />
+                </button>
               ))}
             </div>
             <p

@@ -30,7 +30,11 @@ export function RatingStrip() {
             Excellent
           </p>
 
-          <div className="mt-4 flex items-center gap-1.5" aria-label="5 out of 5 stars">
+          <div
+            className="mt-4 flex items-center gap-1.5"
+            role="img"
+            aria-label="5 out of 5 stars"
+          >
             {Array.from({ length: 5 }).map((_, i) => (
               <span
                 key={i}

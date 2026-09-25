@@ -22,7 +22,7 @@ export function CtaBand({
 
           <div className="grid items-center md:grid-cols-[1.15fr_1fr]">
             <div className="relative z-10 p-8 md:p-12 lg:p-14">
-              <p className="mb-3 text-sm font-medium text-white/70">
+              <p className="mb-3 text-sm font-medium text-white">
                 Weekend vibes · great design
               </p>
               <h2 className="max-w-md text-[1.85rem] font-medium leading-tight tracking-tight md:text-[2.35rem]">

@@ -287,26 +287,31 @@ export function StoriesCarousel() {
           </div>
 
           {/* Indicators */}
-          <div className="mt-12 flex items-center justify-center gap-2.5">
+          <div className="mt-12 flex items-center justify-center gap-1">
             {stories.map((s, i) => (
               <button
                 key={s.name}
                 type="button"
                 aria-label={`Story ${i + 1}`}
+                aria-current={i === index ? "true" : undefined}
                 onClick={() => jumpTo(i)}
-                className="group relative h-2.5 overflow-hidden rounded-full transition-all"
-                style={{
-                  width: i === index ? 36 : 10,
-                  backgroundColor:
-                    i === index ? story.accent : "rgba(49,48,48,0.2)",
-                }}
+                className="group flex h-7 min-w-7 items-center justify-center rounded-full px-1"
               >
-                {i === index && !paused ? (
-                  <span
-                    className="story-progress absolute inset-y-0 left-0 bg-ink/30"
-                    key={animKey + mode}
-                  />
-                ) : null}
+                <span
+                  className="relative block h-2.5 overflow-hidden rounded-full transition-all"
+                  style={{
+                    width: i === index ? 36 : 10,
+                    backgroundColor:
+                      i === index ? story.accent : "rgba(49,48,48,0.35)",
+                  }}
+                >
+                  {i === index && !paused ? (
+                    <span
+                      className="story-progress absolute inset-y-0 left-0 bg-ink/30"
+                      key={animKey + mode}
+                    />
+                  ) : null}
+                </span>
               </button>
             ))}
           </div>
@@ -375,7 +380,7 @@ function StatSlide({ story }: { story: Story }) {
 
       <div className="relative z-10 rounded-3xl border border-white/60 bg-white/75 px-6 py-10 shadow-[0_20px_50px_rgba(49,48,48,0.08)] backdrop-blur-md md:px-12 md:py-12">
         <span
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white"
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-ink"
           style={{ backgroundColor: story.accent }}
         >
           <StatIcon kind={story.statKind} />
