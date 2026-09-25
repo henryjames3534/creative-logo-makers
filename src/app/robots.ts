@@ -21,6 +21,7 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
+    // Host must be bare hostname (no protocol) for crawlers that still read it
+    host: "www.creativelogomakers.com",
   };
 }
