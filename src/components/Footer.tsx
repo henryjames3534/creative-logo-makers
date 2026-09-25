@@ -163,10 +163,10 @@ export function Footer() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#5c5b59]">
-            <Link href="/contact" className="hover:text-ink">
+            <Link href="/terms" className="hover:text-ink">
               Terms and Conditions
             </Link>
-            <Link href="/contact" className="hover:text-ink">
+            <Link href="/privacy" className="hover:text-ink">
               Privacy
             </Link>
             <Link href="/categories" className="hover:text-ink">

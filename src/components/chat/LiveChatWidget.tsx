@@ -5,17 +5,16 @@ import { usePathname } from "next/navigation";
 import {
   getOpenSessionForVisitor,
   getVisitorChatKey,
-  LIVE_CHAT_QUESTIONS,
   onLiveChatUpdated,
   openLiveChat,
-  postBotQuestion,
+  postBotReply,
   postChatMessage,
   type LiveChatSession,
 } from "@/lib/live-chat";
 
-const QUESTION_INTERVAL_MS = 4000;
 /** Wait until after first paint so chat doesn't compete with hydration. */
 const AUTO_OPEN_DELAY_MS = 7000;
+const BOT_REPLY_DELAY_MS = 700;
 
 export function LiveChatWidget() {
   const pathname = usePathname();
@@ -25,15 +24,10 @@ export function LiveChatWidget() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<LiveChatSession | null>(null);
   const [text, setText] = useState("");
-  const [qIndex, setQIndex] = useState(1);
+  const [typing, setTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const openedOnce = useRef(false);
-  const sessionIdRef = useRef<string | null>(null);
-  const qIndexRef = useRef(1);
-
-  useEffect(() => {
-    sessionIdRef.current = session?.id || null;
-  }, [session?.id]);
+  const replyTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (hide) return;
@@ -41,9 +35,6 @@ export function LiveChatWidget() {
     const existing = getOpenSessionForVisitor(key);
     if (existing) {
       setSession(existing);
-      const bots = existing.messages.filter((m) => m.role === "bot").length;
-      setQIndex(Math.max(1, bots));
-      qIndexRef.current = Math.max(1, bots);
     }
 
     const t = window.setTimeout(() => {
@@ -52,8 +43,6 @@ export function LiveChatWidget() {
       const s = openLiveChat({ path: pathname || "/" });
       setSession(s);
       setOpen(true);
-      setQIndex(1);
-      qIndexRef.current = 1;
     }, AUTO_OPEN_DELAY_MS);
 
     return () => window.clearTimeout(t);
@@ -68,27 +57,18 @@ export function LiveChatWidget() {
     });
   }, [hide]);
 
-  // Every 4s ask a new bot question while chat is open
   useEffect(() => {
-    if (hide || !open) return;
-    const id = window.setInterval(() => {
-      const sid = sessionIdRef.current;
-      if (!sid) return;
-      const idx = qIndexRef.current;
-      const updated = postBotQuestion(sid, idx);
-      qIndexRef.current = idx + 1;
-      setQIndex(idx + 1);
-      if (updated) setSession({ ...updated, messages: [...updated.messages] });
-    }, QUESTION_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [hide, open]);
+    return () => {
+      if (replyTimer.current) window.clearTimeout(replyTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     listRef.current?.scrollTo({
       top: listRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [session?.messages.length, open]);
+  }, [session?.messages.length, open, typing]);
 
   if (hide) return null;
 
@@ -96,22 +76,31 @@ export function LiveChatWidget() {
     const s = openLiveChat({ path: pathname || "/" });
     setSession(s);
     setOpen(true);
-    if (!openedOnce.current) {
-      openedOnce.current = true;
-      setQIndex(1);
-    }
+    openedOnce.current = true;
   }
 
   function onSend(e: FormEvent) {
     e.preventDefault();
     if (!session || !text.trim()) return;
+    const visitorText = text.trim();
     const updated = postChatMessage({
       sessionId: session.id,
       role: "visitor",
-      body: text,
+      body: visitorText,
     });
     setText("");
     if (updated) setSession({ ...updated, messages: [...updated.messages] });
+
+    if (replyTimer.current) window.clearTimeout(replyTimer.current);
+    setTyping(true);
+    const sid = session.id;
+    replyTimer.current = window.setTimeout(() => {
+      const withReply = postBotReply(sid, visitorText);
+      setTyping(false);
+      if (withReply) {
+        setSession({ ...withReply, messages: [...withReply.messages] });
+      }
+    }, BOT_REPLY_DELAY_MS);
   }
 
   return (
@@ -122,7 +111,7 @@ export function LiveChatWidget() {
             <div>
               <p className="text-sm font-semibold">Live design help</p>
               <p className="text-[11px] text-white/65">
-                70% off · usually replies in seconds
+                Ask anything · agents online
               </p>
             </div>
             <button
@@ -157,7 +146,9 @@ export function LiveChatWidget() {
                 >
                   {m.role === "bot" ? (
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-coral">
-                      Creative Logo Makers
+                      {m.agentName
+                        ? `${m.agentName} · Agent`
+                        : "Creative Logo Makers"}
                     </p>
                   ) : null}
                   {m.role === "admin" ? (
@@ -169,10 +160,13 @@ export function LiveChatWidget() {
                 </div>
               </div>
             ))}
-            <p className="px-1 text-center text-[10px] text-muted">
-              Tip: next tip in ~4s · {LIVE_CHAT_QUESTIONS.length} prompts
-              rotating
-            </p>
+            {typing ? (
+              <div className="flex justify-start">
+                <div className="rounded-2xl rounded-bl-md bg-white px-3.5 py-2 text-sm text-muted shadow-sm ring-1 ring-line">
+                  Typing…
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <form
@@ -182,7 +176,7 @@ export function LiveChatWidget() {
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Type your answer…"
+              placeholder="Ask about logos, pricing…"
               className="flex-1 rounded-full border border-line px-3.5 py-2.5 text-sm outline-none focus:border-ink"
             />
             <button

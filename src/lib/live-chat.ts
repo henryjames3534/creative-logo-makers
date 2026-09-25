@@ -11,6 +11,8 @@ export type ChatMessage = {
   role: ChatRole;
   body: string;
   createdAt: string;
+  /** Shown when bot hands off to a named agent */
+  agentName?: string;
 };
 
 export type LiveChatSession = {
@@ -98,21 +100,132 @@ export function unreadChatCount(): number {
   ).length;
 }
 
-/** Bot sales questions — every ~4s (English only) */
-export const LIVE_CHAT_QUESTIONS = [
-  "Hey! 👋 Welcome to Creative Logo Makers — what brings you here today?",
-  "What do you need — a logo, website, packaging, or something else?",
-  "Great news: we have up to 70% off running right now. Interested?",
-  "Would you prefer a design contest or a 1-to-1 designer?",
-  "Do you already have a brand name, or should we brainstorm first?",
-  "Roughly what budget are you thinking — Essential, Growth, or Pro?",
-  "When do you need the design — this week, or are you flexible?",
-  "What industry are you in (cafe, tech, fashion, etc.)?",
-  "Which logo style do you prefer — modern, luxury, playful, or minimal?",
-  "Shall I match you with a designer, or start a contest brief?",
-  "Anything specific we should know — colors, examples, competitors?",
-  "70% off packages can sell out fast — want to lock one in?",
+export const LIVE_CHAT_WELCOME =
+  "Hey! 👋 Welcome to Creative Logo Makers — ask about logos, websites, packaging, pricing, or contests and we’ll help right away.";
+
+/** Support agents shown on handoff when we can’t answer confidently */
+export const LIVE_CHAT_AGENTS = [
+  "Mike",
+  "Judiyan",
+  "Sarah",
+  "Alex",
+  "Emma",
+  "Daniel",
+  "Priya",
+  "Jordan",
+  "Maya",
+  "Chris",
 ];
+
+export function pickRandomAgent(): string {
+  return LIVE_CHAT_AGENTS[Math.floor(Math.random() * LIVE_CHAT_AGENTS.length)]!;
+}
+
+type ReplyRule = {
+  keys: string[];
+  reply: string;
+};
+
+const REPLY_RULES: ReplyRule[] = [
+  {
+    keys: ["logo", "logotype", "brand mark", "wordmark", "emblem"],
+    reply:
+      "We can start a logo contest or match you with a 1-to-1 designer. Most logo packages begin around $175 — and up to 70% off is running now. Want contest or a dedicated designer?",
+  },
+  {
+    keys: ["website", "web design", "landing", "wordpress", "shopify", "squarespace"],
+    reply:
+      "We design websites and landing pages alongside branding. Tell me if you need a new site, a redesign, or logo + website together and I’ll point you to the right package.",
+  },
+  {
+    keys: ["packaging", "label", "box", "product pack"],
+    reply:
+      "Packaging & label design is one of our specialties — food, beverage, cosmetics, and retail. Share your product type and I’ll suggest a package.",
+  },
+  {
+    keys: ["price", "pricing", "cost", "budget", "how much", "rate", "charges", "fee"],
+    reply:
+      "Pricing depends on the service: logos often start near $175, with Essential / Growth / Pro tiers and up to 70% off right now. What are you looking to design?",
+  },
+  {
+    keys: ["contest", "competition", "multiple designers"],
+    reply:
+      "In a contest, multiple designers submit concepts and you pick a winner. It’s great for variety and fast ideas. Want me to help you start a brief?",
+  },
+  {
+    keys: ["designer", "hire", "1-to-1", "1 to 1", "one on one", "dedicated"],
+    reply:
+      "You can hire a designer 1-to-1 for focused collaboration. Browse designers on the site, or tell me your industry and style and I’ll recommend a few.",
+  },
+  {
+    keys: ["discount", "offer", "promo", "70%", "sale", "deal", "off"],
+    reply:
+      "Yes — up to 70% off is live on select packages. Locking in sooner helps while the promo lasts. Which service are you interested in?",
+  },
+  {
+    keys: ["time", "how long", "turnaround", "delivery", "deadline", "days", "week"],
+    reply:
+      "Typical logo contests move in a few days; 1-to-1 projects depend on scope. Share your deadline and we’ll plan around it.",
+  },
+  {
+    keys: ["contact", "phone", "email", "call", "whatsapp", "address"],
+    reply:
+      "You can reach us via this chat, the Contact page, or leave your email/phone here and an agent will follow up shortly.",
+  },
+  {
+    keys: ["clothing", "tshirt", "t-shirt", "apparel", "merchandise", "merch"],
+    reply:
+      "We do clothing & merch design (tees, apparel branding, product graphics). Tell me the item and vibe you want — modern, street, luxury, etc.",
+  },
+  {
+    keys: ["branding", "brand identity", "brand guide", "stationery", "business card"],
+    reply:
+      "Full branding can include logo, colors, fonts, stationery, and guidelines. Are you starting fresh or refreshing an existing brand?",
+  },
+  {
+    keys: ["social", "instagram", "facebook", "banner", "ads", "flyer", "poster"],
+    reply:
+      "We design social creatives, ads, flyers, and posters. Share the platform and goal (launch, sale, awareness) and I’ll guide the next step.",
+  },
+  {
+    keys: ["hello", "hi", "hey", "salam", "assalam", "good morning", "good evening"],
+    reply:
+      "Hi there! How can we help — logo, website, packaging, branding, or something else?",
+  },
+  {
+    keys: ["thank", "thanks", "thx", "appreciate"],
+    reply:
+      "You’re welcome! Anything else you want to know before we get started?",
+  },
+];
+
+/**
+ * Relevant bot reply for a visitor message.
+ * Returns `{ body, agentName? }` — agentName set when handing off.
+ */
+export function generateBotReply(visitorMessage: string): {
+  body: string;
+  agentName?: string;
+} {
+  const text = visitorMessage.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!text) {
+    return {
+      body: "Go ahead and tell us what you need — logo, website, packaging, or pricing.",
+    };
+  }
+
+  for (const rule of REPLY_RULES) {
+    if (rule.keys.some((k) => text.includes(k))) {
+      return { body: rule.reply };
+    }
+  }
+
+  const agentName = pickRandomAgent();
+  return {
+    agentName,
+    body: `Connecting you with ${agentName} — they’ll join this chat shortly to help with your question.`,
+  };
+}
 
 export function openLiveChat(input?: {
   path?: string;
@@ -144,7 +257,7 @@ export function openLiveChat(input?: {
       {
         id: uid("msg"),
         role: "bot",
-        body: LIVE_CHAT_QUESTIONS[0],
+        body: LIVE_CHAT_WELCOME,
         createdAt: now,
       },
     ],
@@ -160,6 +273,7 @@ export function postChatMessage(input: {
   sessionId: string;
   role: ChatRole;
   body: string;
+  agentName?: string;
 }): LiveChatSession | null {
   const trimmed = input.body.trim();
   if (!trimmed) return null;
@@ -172,6 +286,7 @@ export function postChatMessage(input: {
     role: input.role,
     body: trimmed,
     createdAt: now,
+    ...(input.agentName ? { agentName: input.agentName } : {}),
   });
   session.updatedAt = now;
   if (input.role === "visitor") {
@@ -185,14 +300,13 @@ export function postChatMessage(input: {
   return session;
 }
 
-export function postBotQuestion(
+/** Post a contextual bot reply (or agent handoff) for the visitor's last message. */
+export function postBotReply(
   sessionId: string,
-  questionIndex: number,
+  visitorMessage: string,
 ): LiveChatSession | null {
-  const q =
-    LIVE_CHAT_QUESTIONS[questionIndex % LIVE_CHAT_QUESTIONS.length] ||
-    LIVE_CHAT_QUESTIONS[0];
-  return postChatMessage({ sessionId, role: "bot", body: q });
+  const { body, agentName } = generateBotReply(visitorMessage);
+  return postChatMessage({ sessionId, role: "bot", body, agentName });
 }
 
 export function markChatSeen(sessionId: string) {

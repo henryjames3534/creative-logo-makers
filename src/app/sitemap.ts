@@ -38,6 +38,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/studio", { priority: 0.9 }),
     entry("/about", { priority: 0.7 }),
     entry("/contact", { priority: 0.75 }),
+    entry("/terms", { priority: 0.5, changeFrequency: "yearly" }),
+    entry("/privacy", { priority: 0.5, changeFrequency: "yearly" }),
   ];
 
   const servicePages = categories.map((c) =>

@@ -41,21 +41,24 @@ type LocaleContextValue = {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-async function fetchCountryCode(): Promise<string | undefined> {
-  try {
-    const cached = sessionStorage.getItem("clm_visitor_geo_v2");
-    if (cached) {
-      const geo = JSON.parse(cached) as { countryCode?: string };
-      if (geo.countryCode) return geo.countryCode.toUpperCase();
-    }
-  } catch {
-    /* ignore */
-  }
+/** Always hit the live geo API — never trust sticky sessionStorage (VPN / travel). */
+async function fetchLiveCountryCode(): Promise<string | undefined> {
   try {
     const res = await fetch("/api/visitor-geo", { cache: "no-store" });
     if (!res.ok) return undefined;
-    const geo = (await res.json()) as { countryCode?: string };
-    return geo.countryCode?.toUpperCase();
+    const geo = (await res.json()) as { countryCode?: string; ip?: string };
+    const countryCode = geo.countryCode?.toUpperCase();
+    if (countryCode) {
+      try {
+        sessionStorage.setItem(
+          "clm_visitor_geo_v2",
+          JSON.stringify({ ...geo, countryCode, fetchedAt: Date.now() }),
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+    return countryCode;
   } catch {
     return undefined;
   }
@@ -93,24 +96,29 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
         : DEFAULT_LOCALE;
       const currencyLocked = Boolean(stored.currencyLocked);
 
+      // Until live geo returns: show USD (or locked pick) — never a stale PKR from last visit
+      const bootCurrency = currencyLocked
+        ? stored.currency || DEFAULT_CURRENCY
+        : DEFAULT_CURRENCY;
+
       setPrefs({
         language,
-        currency: stored.currency || DEFAULT_CURRENCY,
+        currency: bootCurrency,
         languageLocked: Boolean(stored.languageLocked),
         currencyLocked,
-        countryCode: stored.countryCode,
+        countryCode: currencyLocked ? stored.countryCode : undefined,
       });
       setGoogleTranslateCookie(language);
       setReady(true);
 
-      // Persist cleaned prefs (drops accidental geo-language from older builds)
+      // Persist cleaned prefs (drops accidental geo-language + sticky PKR)
       writeLocalePrefs({
         language,
-        currency: stored.currency || DEFAULT_CURRENCY,
+        currency: bootCurrency,
         languageLocked: Boolean(stored.languageLocked),
         currencyLocked,
-        countryCode: stored.countryCode,
-        detectedAt: stored.detectedAt,
+        countryCode: currencyLocked ? stored.countryCode : undefined,
+        detectedAt: currencyLocked ? stored.detectedAt : undefined,
       });
 
       // Clear leftover Google Translate if we're back on English by default
@@ -129,7 +137,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       // Currency only from location (skip if user already picked a currency)
       if (currencyLocked) return;
 
-      const countryCode = await fetchCountryCode();
+      const countryCode = await fetchLiveCountryCode();
       if (cancelled || !countryCode) return;
 
       const latest = readLocalePrefs();

@@ -114,6 +114,25 @@ async function lookupIpapi(): Promise<GeoPayload | null> {
 export async function GET(req: NextRequest) {
   const hinted = clientIp(req);
 
+  // Vercel / Cloudflare edge already know the visitor country — prefer that
+  const edgeCountry = (
+    req.headers.get("x-vercel-ip-country") ||
+    req.headers.get("cf-ipcountry") ||
+    ""
+  )
+    .trim()
+    .toUpperCase();
+
+  if (edgeCountry && edgeCountry !== "XX" && edgeCountry !== "T1") {
+    return NextResponse.json({
+      ip: hinted || undefined,
+      countryCode: edgeCountry,
+      country: edgeCountry,
+      city: req.headers.get("x-vercel-ip-city") || undefined,
+      region: req.headers.get("x-vercel-ip-country-region") || undefined,
+    } satisfies GeoPayload);
+  }
+
   try {
     let geo = await lookupIpwho(hinted || undefined);
     if (!geo?.country) {

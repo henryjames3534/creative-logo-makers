@@ -38,7 +38,10 @@ export function readLocalePrefs(): LocalePrefs {
   try {
     const raw = localStorage.getItem(LOCALE_STORAGE_KEY);
     if (!raw) return defaultPrefs();
-    const parsed = JSON.parse(raw) as Partial<LocalePrefs>;
+    const parsed = JSON.parse(raw) as Partial<LocalePrefs> & {
+      /** Old builds used a single `locked` for language+currency */
+      locked?: boolean;
+    };
     const storedLang = (parsed.language as LocaleCode) || DEFAULT_LOCALE;
     // Only keep a non-default language if the user explicitly chose it
     const languageLocked = Boolean(
@@ -46,12 +49,15 @@ export function readLocalePrefs(): LocalePrefs {
         (parsed.locked && storedLang !== DEFAULT_LOCALE),
     );
     const language = languageLocked ? storedLang : DEFAULT_LOCALE;
+    // Currency lock ONLY from explicit currencyLocked — never from legacy `locked`,
+    // otherwise a past PK visit freezes PKR even after the visitor is in the US.
+    const currencyLocked = Boolean(parsed.currencyLocked);
     return {
       language,
       currency: (parsed.currency as CurrencyCode) || DEFAULT_CURRENCY,
       locked: Boolean(parsed.locked),
       languageLocked,
-      currencyLocked: Boolean(parsed.currencyLocked || parsed.locked),
+      currencyLocked,
       countryCode: parsed.countryCode,
       detectedAt: parsed.detectedAt,
     };
