@@ -9,6 +9,11 @@ const securityHeaders = [
     value: "camera=(), microphone=(), geolocation=()",
   },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  { key: "Content-Security-Policy", value: "upgrade-insecure-requests" },
 ];
 
 const nextConfig: NextConfig = {
@@ -22,6 +27,7 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
     remotePatterns: [
       { protocol: "https", hostname: "creativelogomakers.com" },
+      { protocol: "https", hostname: "www.creativelogomakers.com" },
     ],
   },
   async headers() {

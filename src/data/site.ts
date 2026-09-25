@@ -2,7 +2,7 @@ export const brand = {
   name: "Creative Logo Makers",
   shortName: "Creative Logo Makers",
   tagline: "Logos, Web, Graphic Design & More.",
-  url: "https://creativelogomakers.com",
+  url: "https://www.creativelogomakers.com",
   /** Primary phone (display) */
   phone: "+14698515003",
   /** Secondary phone (display) */
