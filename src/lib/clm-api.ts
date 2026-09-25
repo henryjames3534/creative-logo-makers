@@ -3,7 +3,7 @@
  * Never connects to Postgres directly from Vercel.
  */
 
-const DEFAULT_BASE = "https://web.creativelogomakers.com/clm-api";
+const DEFAULT_BASE = "https://payment.creativelogomakers.com/clm-api";
 
 function apiBase() {
   return (process.env.CLM_API_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
