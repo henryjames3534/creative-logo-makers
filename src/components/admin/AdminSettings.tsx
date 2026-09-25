@@ -12,6 +12,7 @@ import {
   clearSiteLogo,
   DEFAULT_SITE_LOGO,
   getSiteLogo,
+  hydrateSiteLogoFromServer,
   onSiteLogoChange,
   readLogoFile,
   setSiteLogo,
@@ -29,6 +30,7 @@ export function AdminSettings() {
   useEffect(() => {
     setState(loadCrm());
     setLogo(getSiteLogo());
+    void hydrateSiteLogoFromServer().then((next) => setLogo(next));
     return onSiteLogoChange((next) => setLogo(next));
   }, []);
 
@@ -53,7 +55,19 @@ export function AdminSettings() {
       const src = await readLogoFile(file);
       const next = setSiteLogo({ src, fileName: file.name });
       setLogo(next);
-      setMsg("Logo updated — header & footer will show it immediately.");
+      // Ensure Postgres write finished (setSiteLogo also kicks this off)
+      const { putStoreDocument } = await import("@/lib/db-sync");
+      const saved = await putStoreDocument("brand", next, next.updatedAt);
+      if (!saved.ok) {
+        setLogoError(
+          "Logo saved on this device, but database sync failed. Try again.",
+        );
+        setMsg(null);
+      } else {
+        setMsg(
+          "Logo saved to database — all visitors will see it (may take a refresh).",
+        );
+      }
     } catch (e) {
       setLogoError(e instanceof Error ? e.message : "Upload failed.");
     } finally {
@@ -83,15 +97,15 @@ export function AdminSettings() {
       <div>
         <h1 className="text-2xl font-semibold text-white">Settings</h1>
         <p className="mt-1 text-sm text-white/50">
-          Brand logo, team, storage, and demo controls for this local CRM.
+          Brand logo, team, storage, and demo controls.
         </p>
       </div>
 
       <AdminCard className="p-5">
         <SectionTitle title="Site logo" />
         <p className="mb-4 text-sm text-white/50">
-          Upload a logo — it updates the header and footer across the site
-          instantly (saved in this browser).
+          Upload a logo — it saves to the database and shows on every device /
+          browser (header and footer).
         </p>
         <form
           onSubmit={onLogoSubmit}
@@ -186,9 +200,9 @@ export function AdminSettings() {
           </p>
         </div>
         <p className="mt-4 text-xs text-white/40">
-          Stored in browser localStorage key{" "}
-          <code className="text-white/60">clm_crm_v1</code>. Logo uses{" "}
-          <code className="text-white/60">clm_site_logo_v1</code>.
+          CRM syncs to Postgres. Logo is stored in the{" "}
+          <code className="text-white/60">brand</code> document so every
+          visitor sees the same header/footer logo.
         </p>
       </AdminCard>
 

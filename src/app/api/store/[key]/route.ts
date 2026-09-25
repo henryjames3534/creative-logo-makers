@@ -3,7 +3,7 @@ import { clmApiFetch } from "@/lib/clm-api";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED = new Set(["crm", "users", "chat"]);
+const ALLOWED = new Set(["crm", "users", "chat", "brand"]);
 
 type Ctx = { params: Promise<{ key: string }> };
 

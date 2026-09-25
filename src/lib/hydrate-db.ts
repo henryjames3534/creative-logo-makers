@@ -1,9 +1,10 @@
 /**
- * Boot-time hydrate: pull CRM / users / chat from Postgres into localStorage.
+ * Boot-time hydrate: pull CRM / users / chat / brand logo from Postgres.
  */
 import { hydrateCrmFromServer } from "@/lib/crm-storage";
 import { hydrateUsersFromServer } from "@/lib/auth-storage";
 import { hydrateChatFromServer } from "@/lib/live-chat";
+import { hydrateSiteLogoFromServer } from "@/lib/site-brand";
 
 let inflight: Promise<void> | null = null;
 
@@ -15,6 +16,7 @@ export function hydrateAllFromDb(): Promise<void> {
       hydrateCrmFromServer().catch(() => null),
       hydrateUsersFromServer().catch(() => null),
       hydrateChatFromServer().catch(() => null),
+      hydrateSiteLogoFromServer().catch(() => null),
     ]);
   })().finally(() => {
     inflight = null;

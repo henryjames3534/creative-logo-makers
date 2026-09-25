@@ -1,7 +1,7 @@
 /**
  * Client helpers: sync browser stores ↔ Postgres via Next.js /api/store.
  */
-export type StoreKey = "crm" | "users" | "chat";
+export type StoreKey = "crm" | "users" | "chat" | "brand";
 
 export type StoreDocument<T = unknown> = {
   ok: boolean;

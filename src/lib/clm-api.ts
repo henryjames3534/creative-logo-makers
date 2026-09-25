@@ -98,7 +98,7 @@ export async function clmCreateLead(input: {
   });
 }
 
-export async function clmGetDocument(key: "crm" | "users" | "chat" | string) {
+export async function clmGetDocument(key: "crm" | "users" | "chat" | "brand" | string) {
   return clmApiFetch<{
     id?: string;
     payload?: unknown;
@@ -107,7 +107,7 @@ export async function clmGetDocument(key: "crm" | "users" | "chat" | string) {
 }
 
 export async function clmPutDocument(
-  key: "crm" | "users" | "chat" | string,
+  key: "crm" | "users" | "chat" | "brand" | string,
   payload: unknown,
   updatedAt?: string,
 ) {
