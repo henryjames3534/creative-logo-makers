@@ -31,21 +31,36 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/contests", { priority: 0.9 }),
     entry("/projects", { priority: 0.85 }),
     entry("/get-started", { priority: 0.95 }),
-    entry("/logo-maker", { priority: 0.85 }),
+    entry("/logo-maker", { priority: 0.9 }),
     entry("/inspiration", { priority: 0.8 }),
     entry("/designers", { priority: 0.8 }),
     entry("/designers/search", { priority: 0.85 }),
     entry("/studio", { priority: 0.9 }),
     entry("/about", { priority: 0.7 }),
     entry("/contact", { priority: 0.75 }),
-    entry("/terms", { priority: 0.5, changeFrequency: "yearly" }),
-    entry("/privacy", { priority: 0.5, changeFrequency: "yearly" }),
+    entry("/terms", { priority: 0.3, changeFrequency: "yearly" }),
+    entry("/privacy", { priority: 0.3, changeFrequency: "yearly" }),
   ];
 
-  const servicePages = categories.map((c) =>
-    entry(`/${c.slug}/details`, {
+  const servicePages = categories.map((c) => {
+    const boost =
+      c.slug === "logo-design" ||
+      c.slug === "web-design" ||
+      c.slug === "mobile-app-design"
+        ? 0.99
+        : c.popular
+          ? 0.92
+          : 0.75;
+    return entry(`/${c.slug}/details`, {
       changeFrequency: "weekly",
-      priority: c.popular ? 0.9 : 0.75,
+      priority: boost,
+    });
+  });
+
+  const launchPages = categories.map((c) =>
+    entry(`/launch/${c.slug}`, {
+      changeFrequency: "weekly",
+      priority: 0.65,
     }),
   );
 
@@ -64,5 +79,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       }),
     );
 
-  return [...staticPages, ...servicePages, ...studioPages, ...designerPages];
+  return [
+    ...staticPages,
+    ...servicePages,
+    ...launchPages,
+    ...studioPages,
+    ...designerPages,
+  ];
 }

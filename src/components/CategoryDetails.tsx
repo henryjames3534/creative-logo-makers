@@ -8,6 +8,7 @@ import {
   categoryFaqs,
   type Category,
 } from "@/data/categories";
+import { getUsaSeoForSlug } from "@/data/usa-seo-keywords";
 import { categoryImages, groupImages } from "@/data/media";
 import { getContestPackages } from "@/data/packages";
 import { clm } from "@/data/clm-assets";
@@ -75,6 +76,13 @@ const reviews = [
 ];
 
 export function CategoryDetails({ cat }: { cat: Category }) {
+  const seo = getUsaSeoForSlug(cat.slug);
+  const faqs = [
+    ...seo.faqs.map((f) => ({ q: f.question, a: f.answer })),
+    ...categoryFaqs.filter(
+      (c) => !seo.faqs.some((s) => s.question.toLowerCase() === c.q.toLowerCase()),
+    ),
+  ];
   const used = new Set<string>();
 
   function pickImage(slug: string, group: string) {
@@ -143,8 +151,11 @@ export function CategoryDetails({ cat }: { cat: Category }) {
                 ← All categories
               </Link>
               <h1 className="mt-3 text-4xl font-medium tracking-tight text-ink md:text-5xl">
-                {cat.productName}
+                {seo.h1 || cat.productName}
               </h1>
+              <p className="mt-2 text-sm font-medium text-muted">
+                {seo.primary} · USA · Contests &amp; 1-to-1 projects
+              </p>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                 <span className="font-semibold text-ink">
                   ★ {cat.rating}
@@ -473,7 +484,7 @@ export function CategoryDetails({ cat }: { cat: Category }) {
             Frequently asked questions
           </h2>
           <div className="mx-auto mt-8 max-w-3xl space-y-3">
-            {categoryFaqs.map((faq) => (
+            {faqs.map((faq) => (
               <details
                 key={faq.q}
                 className="group rounded-2xl border border-line bg-white px-5 py-1 shadow-sm open:shadow-md"

@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { brand } from "@/data/site";
+import {
+  allKeywordsForSlug,
+  getUsaSeoForSlug,
+  USA_SEO_PILLARS,
+} from "@/data/usa-seo-keywords";
 
 export const SITE_URL = brand.url.replace(/\/$/, "");
 export const SITE_NAME = brand.name;
-export const DEFAULT_TITLE =
-  "Logo Design, Web Design & Graphic Design Contests | Creative Logo Makers";
-export const DEFAULT_DESCRIPTION =
-  "Hire vetted designers for logos, websites, packaging, and branding. Launch a contest or 1-to-1 project — professional design from Creative Logo Makers.";
+export const DEFAULT_TITLE = USA_SEO_PILLARS.home.title;
+export const DEFAULT_DESCRIPTION = USA_SEO_PILLARS.home.description;
 
 /** Default social / OG image (absolute via metadataBase) */
 export const DEFAULT_OG_IMAGE = "/showcase/hero-3.jpg";
@@ -25,7 +28,7 @@ type PageSeoInput = {
   keywords?: string[];
 };
 
-/** Consistent Metadata for marketing pages */
+/** Consistent Metadata for marketing pages (en_US) */
 export function pageMetadata({
   title,
   description,
@@ -41,7 +44,10 @@ export function pageMetadata({
     title,
     description,
     keywords: keywords?.length ? keywords : undefined,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      languages: { "en-US": url, en: url },
+    },
     openGraph: {
       title,
       description,
@@ -70,5 +76,33 @@ export function pageMetadata({
             "max-video-preview": -1,
           },
         },
+    other: {
+      "geo.region": "US",
+      "geo.placename": "United States",
+    },
   };
+}
+
+/** Metadata for /[service]/details from USA keyword map */
+export function servicePageMetadata(slug: string, path: string): Metadata {
+  const seo = getUsaSeoForSlug(slug);
+  return pageMetadata({
+    title: seo.title,
+    description: seo.description,
+    path,
+    keywords: allKeywordsForSlug(slug, 48),
+  });
+}
+
+export function pillarPageMetadata(
+  key: keyof typeof USA_SEO_PILLARS,
+  path: string,
+): Metadata {
+  const pillar = USA_SEO_PILLARS[key];
+  return pageMetadata({
+    title: pillar.title,
+    description: pillar.description,
+    path,
+    keywords: [...pillar.keywords],
+  });
 }

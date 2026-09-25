@@ -49,10 +49,14 @@ export function SiteJsonLd() {
         "@type": "ContactPoint",
         telephone: brand.phoneTel,
         contactType: "customer service",
-        areaServed: "Worldwide",
+        areaServed: ["US", "Worldwide"],
         availableLanguage: ["English"],
       },
     ],
+    areaServed: {
+      "@type": "Country",
+      name: "United States",
+    },
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: "4.8",
@@ -118,7 +122,10 @@ export function ServiceJsonLd({
           name: SITE_NAME,
           url: SITE_URL,
         },
-        areaServed: "Worldwide",
+        areaServed: [
+          { "@type": "Country", name: "United States" },
+          "Worldwide",
+        ],
         ...(amount
           ? {
               offers: {
@@ -131,6 +138,26 @@ export function ServiceJsonLd({
             }
           : {}),
         image: absoluteUrl(DEFAULT_OG_IMAGE),
+      }}
+    />
+  );
+}
+
+export function FaqJsonLd({ faqs }: { faqs: { question: string; answer: string }[] }) {
+  if (!faqs.length) return null;
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: f.answer,
+          },
+        })),
       }}
     />
   );

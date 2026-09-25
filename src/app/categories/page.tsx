@@ -4,14 +4,9 @@ import { CtaBand } from "@/components/CtaBand";
 import {
   type CategoryGroup,
 } from "@/data/categories";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Design Categories",
-  description:
-    "Browse all design categories — logos, websites, packaging, merchandise, illustration & more.",
-  path: "/categories",
-});
+export const metadata: Metadata = pillarPageMetadata("categories", "/categories");
 
 export default async function CategoriesPage({
   searchParams,

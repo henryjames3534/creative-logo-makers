@@ -13,15 +13,9 @@ import {
   studioServices,
   studioStrategists,
 } from "@/data/studio";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Creative Logo Makers Studio — Full-Service Branding",
-  description:
-    "Full-service branding with dedicated strategists — brand strategy, identity systems, and launch packages.",
-  path: "/studio",
-  keywords: ["brand studio", "full service branding", "brand strategist"],
-});
+export const metadata: Metadata = pillarPageMetadata("studio", "/studio");
 
 export default function StudioPage() {
   return (

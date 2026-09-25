@@ -14,15 +14,9 @@ import {
   projectPackages,
   studioPackages,
 } from "@/data/packages";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Pricing & Packages",
-  description:
-    "Transparent contest and project pricing — Bronze, Silver, Gold, and Platinum packages for every design category.",
-  path: "/pricing",
-  keywords: ["design pricing", "logo contest cost", "graphic design packages"],
-});
+export const metadata: Metadata = pillarPageMetadata("pricing", "/pricing");
 
 export default function PricingPage() {
   const logoPackages = getContestPackages("logo-design");

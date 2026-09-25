@@ -7,15 +7,9 @@ import { Testimonials } from "@/components/Testimonials";
 import { Container, SectionHeading } from "@/components/Section";
 import { media } from "@/data/media";
 import { contestPackages } from "@/data/packages";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Design Contests",
-  description:
-    "Launch a design contest and get dozens of custom concepts from vetted designers — pick a winner with confidence.",
-  path: "/contests",
-  keywords: ["design contest", "logo contest", "graphic design competition"],
-});
+export const metadata: Metadata = pillarPageMetadata("contests", "/contests");
 
 export default function ContestsPage() {
   return (

@@ -3,13 +3,15 @@ import { notFound } from "next/navigation";
 import { CategoryDetails } from "@/components/CategoryDetails";
 import {
   BreadcrumbJsonLd,
+  FaqJsonLd,
   ServiceJsonLd,
 } from "@/components/seo/JsonLd";
 import {
   allServicePaths,
   getCategoryByServicePath,
 } from "@/data/serviceRoutes";
-import { pageMetadata } from "@/lib/seo";
+import { getUsaSeoForSlug } from "@/data/usa-seo-keywords";
+import { servicePageMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ service: string }> };
 
@@ -21,17 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { service } = await params;
   const cat = getCategoryByServicePath(service);
   if (!cat) return { title: "Category" };
-  return pageMetadata({
-    title: `${cat.productName} — Contests & 1-to-1 Projects`,
-    description: cat.longDescription.slice(0, 160),
-    path: `/${cat.slug}/details`,
-    keywords: [
-      cat.productName,
-      `${cat.productName} contest`,
-      `hire ${cat.productName.toLowerCase()} designer`,
-      "Creative Logo Makers",
-    ],
-  });
+  return servicePageMetadata(cat.slug, `/${cat.slug}/details`);
 }
 
 /** Creative Logo Makers-style URL: /logo-design/details */
@@ -39,15 +31,17 @@ export default async function ServiceDetailsPage({ params }: Props) {
   const { service } = await params;
   const cat = getCategoryByServicePath(service);
   if (!cat) notFound();
+  const seo = getUsaSeoForSlug(cat.slug);
 
   return (
     <>
       <ServiceJsonLd
-        name={cat.productName}
-        description={cat.longDescription}
+        name={seo.primary}
+        description={seo.description}
         path={`/${cat.slug}/details`}
         price={cat.startingPrice}
       />
+      <FaqJsonLd faqs={seo.faqs} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", path: "/" },

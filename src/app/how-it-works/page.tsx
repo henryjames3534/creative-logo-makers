@@ -6,14 +6,9 @@ import { PageHero } from "@/components/PageHero";
 import { Container, SectionHeading } from "@/components/Section";
 import { media } from "@/data/media";
 import { howItWorksSteps, workModes } from "@/data/site";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "How It Works",
-  description:
-    "From brief to final files in four clear steps — contests, 1-to-1 projects, or Studio branding.",
-  path: "/how-it-works",
-});
+export const metadata: Metadata = pillarPageMetadata("how-it-works", "/how-it-works");
 
 export default function HowItWorksPage() {
   return (

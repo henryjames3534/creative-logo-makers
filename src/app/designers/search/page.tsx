@@ -4,15 +4,9 @@ import Link from "next/link";
 import { DesignerSearch } from "@/components/DesignerSearch";
 import { Container } from "@/components/Section";
 import { designerHeroImage } from "@/data/designers-meta";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Find a Designer",
-  description:
-    "Browse professional designers across 90+ skill sets. Filter by category, industry, level, and availability.",
-  path: "/designers/search",
-  keywords: ["hire graphic designer", "find logo designer", "freelance designer"],
-});
+export const metadata: Metadata = pillarPageMetadata("designers", "/designers/search");
 
 export default async function DesignersSearchPage({
   searchParams,

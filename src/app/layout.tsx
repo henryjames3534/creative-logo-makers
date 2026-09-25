@@ -17,6 +17,7 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo";
+import { USA_SEO_PILLARS } from "@/data/usa-seo-keywords";
 import "../styles/marketing-icons.css";
 import "./globals.css";
 
@@ -60,18 +61,10 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   category: "design",
-  keywords: [
-    "logo design",
-    "graphic design",
-    "web design",
-    "branding",
-    "design contest",
-    "hire designer",
-    "packaging design",
-    "Creative Logo Makers",
-  ],
+  keywords: [...USA_SEO_PILLARS.home.keywords],
   alternates: {
     canonical: SITE_URL,
+    languages: { "en-US": SITE_URL, en: SITE_URL },
   },
   openGraph: {
     type: "website",
@@ -85,7 +78,7 @@ export const metadata: Metadata = {
         url: DEFAULT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: `${SITE_NAME} — professional design contests & projects`,
+        alt: `${SITE_NAME} — logo, website & app design contests USA`,
       },
     ],
   },

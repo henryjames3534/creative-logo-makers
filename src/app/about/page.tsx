@@ -5,14 +5,9 @@ import { PageHero } from "@/components/PageHero";
 import { Container, SectionHeading } from "@/components/Section";
 import { media } from "@/data/media";
 import { brand, stats } from "@/data/site";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "About Creative Logo Makers",
-  description:
-    "Creative Logo Makers connects businesses with vetted designers worldwide for logos, branding, web, and packaging.",
-  path: "/about",
-});
+export const metadata: Metadata = pillarPageMetadata("about", "/about");
 
 export default function AboutPage() {
   return (

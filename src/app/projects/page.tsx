@@ -9,14 +9,9 @@ import { Container, SectionHeading } from "@/components/Section";
 import { getDesignerByHandle } from "@/data/designers";
 import { media } from "@/data/media";
 import { projectPackages } from "@/data/packages";
-import { pageMetadata } from "@/lib/seo";
+import { pillarPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "1-to-1 Design Projects",
-  description:
-    "Hire a dedicated designer for focused, collaborative logo, web, and branding projects.",
-  path: "/projects",
-});
+export const metadata: Metadata = pillarPageMetadata("projects", "/projects");
 
 export default async function ProjectsPage({
   searchParams,
