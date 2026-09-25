@@ -36,6 +36,7 @@ export const footerColumns = [
     links: [
       { href: "/about", label: "About" },
       { href: "/contact", label: "Contact" },
+      { href: "/us", label: "US cities & SEO pages" },
       { href: "/about", label: "Press releases" },
       { href: "/about", label: "In the media" },
       { href: "/inspiration", label: "Testimonials" },
@@ -61,13 +62,17 @@ export const footerColumns = [
     title: "Get a design",
     links: [
       { href: "/logo-design/details", label: "Logo design" },
-      { href: "/business-card-design/details", label: "Business card" },
       { href: "/web-design/details", label: "Web page design" },
+      { href: "/mobile-app-design/details", label: "Mobile app design" },
+      { href: "/us/new-york/logo-design", label: "Logo design New York" },
+      { href: "/us/los-angeles/web-design", label: "Website design LA" },
+      { href: "/business-card-design/details", label: "Business card" },
       { href: "/logo-brand-guide/details", label: "Brand guide" },
       { href: "/product-packaging-design/details", label: "Packaging design" },
       { href: "/t-shirt-design/details", label: "T-shirt design" },
       { href: "/book-cover-design/details", label: "Book cover design" },
       { href: "/categories", label: "Browse all categories" },
+      { href: "/us", label: "All US city pages" },
     ],
   },
   {

@@ -2,6 +2,12 @@ import type { MetadataRoute } from "next";
 import { categories } from "@/data/categories";
 import { designers } from "@/data/designers";
 import { studioServices } from "@/data/studio";
+import {
+  LOCATION_SEO_SERVICES,
+  US_CITIES,
+  cityPath,
+  locationPath,
+} from "@/data/us-locations";
 import { SITE_URL } from "@/lib/seo";
 
 const now = new Date();
@@ -25,6 +31,7 @@ function entry(
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [
     entry("/", { changeFrequency: "daily", priority: 1 }),
+    entry("/us", { changeFrequency: "weekly", priority: 0.95 }),
     entry("/categories", { priority: 0.95 }),
     entry("/how-it-works", { priority: 0.85 }),
     entry("/pricing", { priority: 0.9 }),
@@ -68,7 +75,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry(`/studio/${s.slug}`, { priority: 0.8 }),
   );
 
-  // Cap designer URLs so sitemap stays crawl-friendly
+  const cityHubs = US_CITIES.map((c) =>
+    entry(cityPath(c.slug), { priority: 0.8, changeFrequency: "weekly" }),
+  );
+
+  const locationPages = US_CITIES.flatMap((city) =>
+    LOCATION_SEO_SERVICES.map((service) => {
+      const hot =
+        service === "logo-design" ||
+        service === "web-design" ||
+        service === "mobile-app-design";
+      return entry(locationPath(city.slug, service), {
+        priority: hot ? 0.88 : 0.72,
+        changeFrequency: "weekly",
+      });
+    }),
+  );
+
   const designerPages = [...designers]
     .sort((a, b) => b.rating - a.rating || b.reviews - a.reviews)
     .slice(0, 200)
@@ -84,6 +107,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...servicePages,
     ...launchPages,
     ...studioPages,
+    ...cityHubs,
+    ...locationPages,
     ...designerPages,
   ];
 }

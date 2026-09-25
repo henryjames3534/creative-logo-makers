@@ -9,6 +9,11 @@ import {
   type Category,
 } from "@/data/categories";
 import { getUsaSeoForSlug } from "@/data/usa-seo-keywords";
+import {
+  US_CITIES,
+  isLocationService,
+  locationPath,
+} from "@/data/us-locations";
 import { categoryImages, groupImages } from "@/data/media";
 import { getContestPackages } from "@/data/packages";
 import { clm } from "@/data/clm-assets";
@@ -505,6 +510,37 @@ export function CategoryDetails({ cat }: { cat: Category }) {
           </div>
         </Container>
       </section>
+
+      {/* US city ranking pages */}
+      {isLocationService(cat.slug) ? (
+        <section className="border-t border-line bg-paper-soft py-14 md:py-16">
+          <Container>
+            <h2 className="text-3xl font-medium tracking-tight text-ink">
+              {cat.productName} across the USA
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm text-muted">
+              Local landing pages for major US cities — same contest &amp; 1-to-1
+              process, optimized for search in each market.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {US_CITIES.slice(0, 24).map((city) => (
+                <Link
+                  key={city.slug}
+                  href={locationPath(city.slug, cat.slug)}
+                  className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink hover:border-ink"
+                >
+                  {cat.productName} in {city.name}
+                </Link>
+              ))}
+            </div>
+            <p className="mt-6 text-sm">
+              <Link href="/us" className="font-semibold text-ink underline">
+                Browse all US cities →
+              </Link>
+            </p>
+          </Container>
+        </section>
+      ) : null}
 
       {/* You might also like */}
       <section className="py-14 md:py-16">
