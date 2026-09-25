@@ -99,6 +99,16 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+  verification: {
+    google: "nhuPMkb0KEHwxa7WSfTsy1pHrAl6g76RP6aX51Y58sQ",
+    ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
+      ? {
+          other: {
+            "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION,
+          },
+        }
+      : {}),
+  },
   formatDetection: {
     telephone: true,
     email: true,
