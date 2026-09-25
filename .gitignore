@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Verpex PHP bridge staging (contains DB secrets)
+verpex-api/
+.clm-api-key.tmp
+
