@@ -15,6 +15,9 @@ import {
 const DISMISS_KEY = "clm_google_onetap_dismissed";
 const CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim();
 
+/** Prevent Strict Mode / remount from firing two FedCM get() calls */
+let oneTapLock = false;
+
 type GoogleJwtPayload = {
   email?: string;
   name?: string;
@@ -59,9 +62,8 @@ function parseJwt(token: string) {
 }
 
 /**
- * Official Google One Tap — same UX as Creative Logo Makers:
- * page load → Chrome’s signed-in Google account bubble (“Continue as …”).
- * Requires NEXT_PUBLIC_GOOGLE_CLIENT_ID (Web OAuth client).
+ * Google One Tap — single initialize + prompt (no HTML g_id_onload).
+ * Avoids FedCM "Only one navigator.credentials.get request" console errors.
  */
 export function GoogleContinuePrompt() {
   const { user, ready, signInWithGoogle } = useAuth();
@@ -69,7 +71,6 @@ export function GoogleContinuePrompt() {
   const router = useRouter();
   const [gisReady, setGisReady] = useState(false);
   const [setupHint, setSetupHint] = useState(false);
-  const prompted = useRef(false);
   const signingIn = useRef(false);
 
   const hideOnAuthPages =
@@ -79,7 +80,6 @@ export function GoogleContinuePrompt() {
 
   const handleCredential = useCallback(
     async (response: CredentialResponse) => {
-      // Parse + CRM first — never block capture on sign-in
       let email = "";
       let name = "";
       let picture: string | undefined;
@@ -126,7 +126,6 @@ export function GoogleContinuePrompt() {
     [router, signInWithGoogle],
   );
 
-  // Sync any remembered Google emails into CRM on load
   useEffect(() => {
     if (!ready || hideOnAuthPages) return;
     try {
@@ -145,51 +144,82 @@ export function GoogleContinuePrompt() {
     }
   }, [ready, hideOnAuthPages]);
 
-  // Native One Tap prompt
   useEffect(() => {
     if (!CLIENT_ID || !gisReady || !ready) return;
+
     if (user || hideOnAuthPages) {
-      window.google?.accounts.id.cancel();
+      try {
+        window.google?.accounts.id.cancel();
+      } catch {
+        /* ignore */
+      }
+      oneTapLock = false;
       return;
     }
+
     try {
       if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
     } catch {
       /* ignore */
     }
-    if (prompted.current) return;
-    prompted.current = true;
 
-    const run = (useFedcm: boolean) => {
-      window.google?.accounts.id.initialize({
+    if (oneTapLock) return;
+    oneTapLock = true;
+
+    let cancelled = false;
+    let fallbackTimer = 0;
+
+    const showPrompt = (useFedcm: boolean) => {
+      if (cancelled) return;
+      const gsi = window.google?.accounts.id;
+      if (!gsi) return;
+
+      try {
+        gsi.cancel();
+      } catch {
+        /* ignore */
+      }
+
+      gsi.initialize({
         client_id: CLIENT_ID,
         callback: handleCredential,
-        auto_select: true,
-        cancel_on_tap_outside: false,
+        auto_select: false,
+        cancel_on_tap_outside: true,
         context: "signin",
         itp_support: true,
         use_fedcm_for_prompt: useFedcm,
-        // Shown in the official bubble: “Sign in to {origin} with google.com”
       });
 
-      window.google?.accounts.id.prompt((notification) => {
+      gsi.prompt((notification) => {
+        if (cancelled) return;
+
         if (notification.isNotDisplayed()) {
           const reason = notification.getNotDisplayedReason?.() ?? "unknown";
-          console.info("[Google One Tap] not displayed:", reason);
-          // FedCM blocked → retry classic One Tap once
-          if (useFedcm && /fedcm|secure|browser/i.test(reason)) {
-            prompted.current = false;
-            window.setTimeout(() => {
-              if (!prompted.current) {
-                prompted.current = true;
-                run(false);
+          // Quiet: avoid console noise that Lighthouse flags as browser errors
+          const fedcmBlocked =
+            useFedcm &&
+            /fedcm|secure|browser|suppressed|opt_out|unknown|issuenotdisplayed/i.test(
+              reason,
+            );
+
+          if (fedcmBlocked) {
+            // Wait until any outstanding FedCM get() settles, then retry classic once
+            fallbackTimer = window.setTimeout(() => {
+              if (cancelled) return;
+              try {
+                window.google?.accounts.id.cancel();
+              } catch {
+                /* ignore */
               }
-            }, 400);
+              window.setTimeout(() => showPrompt(false), 350);
+            }, 600);
             return;
           }
+
           if (
             reason === "suppressed_by_user" ||
-            reason === "opt_out_or_no_session"
+            reason === "opt_out_or_no_session" ||
+            reason === "unknown"
           ) {
             try {
               sessionStorage.setItem(DISMISS_KEY, "1");
@@ -198,12 +228,7 @@ export function GoogleContinuePrompt() {
             }
           }
         }
-        if (notification.isSkippedMoment()) {
-          console.info(
-            "[Google One Tap] skipped:",
-            notification.getSkippedReason?.(),
-          );
-        }
+
         if (notification.isDismissedMoment()) {
           try {
             sessionStorage.setItem(DISMISS_KEY, "1");
@@ -214,17 +239,22 @@ export function GoogleContinuePrompt() {
       });
     };
 
-    // Small delay so layout/paint settles (matches 99d feel on first paint)
-    const t = window.setTimeout(() => run(true), 280);
-    return () => window.clearTimeout(t);
+    // Delay so Strict Mode remount + paint settle; only one FedCM get at a time
+    const startTimer = window.setTimeout(() => showPrompt(true), 500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(startTimer);
+      window.clearTimeout(fallbackTimer);
+      try {
+        window.google?.accounts.id.cancel();
+      } catch {
+        /* ignore */
+      }
+      oneTapLock = false;
+    };
   }, [gisReady, ready, user, hideOnAuthPages, handleCredential]);
 
-  // Reset prompt flag when user logs out so it can show again next visit
-  useEffect(() => {
-    if (!user) prompted.current = false;
-  }, [user]);
-
-  // No Client ID → gentle one-time setup card (dev only feel)
   useEffect(() => {
     if (CLIENT_ID || !ready || user || hideOnAuthPages) {
       setSetupHint(false);
@@ -239,106 +269,78 @@ export function GoogleContinuePrompt() {
     return () => window.clearTimeout(t);
   }, [ready, user, hideOnAuthPages]);
 
-  if (!ready || user || hideOnAuthPages) {
-    return CLIENT_ID ? (
-      <Script
-        src="https://accounts.google.com/gsi/client"
-        strategy="afterInteractive"
-        onLoad={() => setGisReady(true)}
-      />
-    ) : null;
+  if (!CLIENT_ID) {
+    if (!ready || user || hideOnAuthPages || !setupHint) return null;
+    return (
+      <div
+        className="fixed right-3 top-[5.25rem] z-[100] w-[min(100vw-1.5rem,360px)] md:right-6 md:top-24"
+        style={{
+          animation: "googlePromptIn 0.38s cubic-bezier(0.2,0.8,0.2,1) both",
+        }}
+        role="status"
+      >
+        <div className="overflow-hidden rounded-2xl border border-[#dadce0] bg-white p-4 shadow-[0_12px_40px_rgba(60,64,67,0.28)]">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[13px] font-semibold text-[#202124]">
+              Google One Tap setup
+            </p>
+            <button
+              type="button"
+              className="text-[#5f6368] hover:text-[#202124]"
+              aria-label="Close"
+              onClick={() => {
+                setSetupHint(false);
+                try {
+                  sessionStorage.setItem("clm_gsi_setup_hint", "1");
+                } catch {
+                  /* ignore */
+                }
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          <p className="mt-2 text-[12px] leading-relaxed text-[#5f6368]">
+            Chrome account popup ke liye Google Cloud pe{" "}
+            <strong>OAuth Web Client ID</strong> banao, Authorized origins mein{" "}
+            <code className="rounded bg-[#f1f3f4] px-1">http://localhost:3000</code>{" "}
+            aur{" "}
+            <code className="rounded bg-[#f1f3f4] px-1">
+              https://www.creativelogomakers.com
+            </code>{" "}
+            add karo, phir{" "}
+            <code className="rounded bg-[#f1f3f4] px-1">.env.local</code> mein:
+          </p>
+          <pre className="mt-2 overflow-x-auto rounded-lg bg-[#f8f9fa] p-2 text-[11px] text-[#202124]">
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+          </pre>
+          <p className="mt-2 text-[11px] text-[#5f6368]">
+            Save → restart. Site khulte hi “Continue as …” aayega ({brand.name}).
+          </p>
+          <div className="mt-3 flex gap-2">
+            <a
+              href="/contact"
+              className="rounded-full bg-[#1a73e8] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1557b0]"
+            >
+              Contact support
+            </a>
+            <Link
+              href="/login"
+              className="rounded-full border border-[#dadce0] px-3 py-1.5 text-[12px] font-medium text-[#3c4043]"
+            >
+              Email login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <>
-      {CLIENT_ID ? (
-        <Script
-          src="https://accounts.google.com/gsi/client"
-          strategy="afterInteractive"
-          onLoad={() => setGisReady(true)}
-        />
-      ) : null}
-
-      {/* Hidden hook for Google — keeps GIS warm */}
-      {CLIENT_ID ? (
-        <div
-          id="g_id_onload"
-          data-client_id={CLIENT_ID}
-          data-auto_select="true"
-          data-itp_support="true"
-          data-use_fedcm_for_prompt="true"
-          data-context="signin"
-          className="hidden"
-          aria-hidden
-        />
-      ) : null}
-
-      {!CLIENT_ID && setupHint ? (
-        <div
-          className="fixed right-3 top-[5.25rem] z-[100] w-[min(100vw-1.5rem,360px)] md:right-6 md:top-24"
-          style={{
-            animation: "googlePromptIn 0.38s cubic-bezier(0.2,0.8,0.2,1) both",
-          }}
-          role="status"
-        >
-          <div className="overflow-hidden rounded-2xl border border-[#dadce0] bg-white p-4 shadow-[0_12px_40px_rgba(60,64,67,0.28)]">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-[13px] font-semibold text-[#202124]">
-                Google One Tap setup
-              </p>
-              <button
-                type="button"
-                className="text-[#5f6368] hover:text-[#202124]"
-                aria-label="Close"
-                onClick={() => {
-                  setSetupHint(false);
-                  try {
-                    sessionStorage.setItem("clm_gsi_setup_hint", "1");
-                  } catch {
-                    /* ignore */
-                  }
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <p className="mt-2 text-[12px] leading-relaxed text-[#5f6368]">
-              Chrome account popup ke liye Google Cloud pe{" "}
-              <strong>OAuth Web Client ID</strong> banao, Authorized origins mein{" "}
-              <code className="rounded bg-[#f1f3f4] px-1">
-                http://localhost:3000
-              </code>{" "}
-              aur{" "}
-              <code className="rounded bg-[#f1f3f4] px-1">
-                https://creativelogomakers.com
-              </code>{" "}
-              add karo, phir{" "}
-              <code className="rounded bg-[#f1f3f4] px-1">.env.local</code> mein:
-            </p>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-[#f8f9fa] p-2 text-[11px] text-[#202124]">
-              NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
-            </pre>
-            <p className="mt-2 text-[11px] text-[#5f6368]">
-              Save → <code className="rounded bg-[#f1f3f4] px-1">npm run dev</code>{" "}
-              restart. Site khulte hi “Continue as …” aayega ({brand.name}).
-            </p>
-            <div className="mt-3 flex gap-2">
-              <a
-                href="/contact"
-                className="rounded-full bg-[#1a73e8] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1557b0]"
-              >
-                Contact support
-              </a>
-              <Link
-                href="/login"
-                className="rounded-full border border-[#dadce0] px-3 py-1.5 text-[12px] font-medium text-[#3c4043]"
-              >
-                Email login
-              </Link>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
+    <Script
+      src="https://accounts.google.com/gsi/client"
+      strategy="lazyOnload"
+      onLoad={() => setGisReady(true)}
+    />
   );
 }

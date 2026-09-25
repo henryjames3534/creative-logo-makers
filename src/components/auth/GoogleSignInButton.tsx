@@ -67,12 +67,14 @@ export function GoogleSignInButton() {
     const slot = document.getElementById("google-login-btn");
     const gsi = window.google?.accounts.id;
     if (!slot || !gsi) return;
+    // Button only — never call prompt(); FedCM One Tap is handled elsewhere
     gsi.initialize({
       client_id: CLIENT_ID,
       callback: onCredential,
       context: "signin",
       itp_support: true,
-      use_fedcm_for_prompt: true,
+      use_fedcm_for_prompt: false,
+      auto_select: false,
     });
     slot.innerHTML = "";
     gsi.renderButton?.(slot, {
