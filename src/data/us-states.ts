@@ -108,6 +108,26 @@ export function allStateServiceParams(): { state: string; service: string }[] {
   return out;
 }
 
+/** Hot services only at build — remaining state×service pages use on-demand ISR. */
+export const BUILD_TIME_STATE_SERVICES = [
+  "logo-design",
+  "web-design",
+  "mobile-app-design",
+] as const;
+
+export function priorityStateServiceParams(): {
+  state: string;
+  service: string;
+}[] {
+  const out: { state: string; service: string }[] = [];
+  for (const state of US_STATES) {
+    for (const service of BUILD_TIME_STATE_SERVICES) {
+      out.push({ state: state.slug, service });
+    }
+  }
+  return out;
+}
+
 export function stateKeywords(state: UsState, serviceLabel: string): string[] {
   const s = serviceLabel.toLowerCase();
   const n = state.name;

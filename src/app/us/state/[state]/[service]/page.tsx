@@ -13,9 +13,9 @@ import { categoryLaunchHref } from "@/data/serviceRoutes";
 import { US_CITIES, locationPath } from "@/data/us-locations";
 import {
   US_STATES,
-  allStateServiceParams,
   getStateBySlug,
   isStateService,
+  priorityStateServiceParams,
   statePath,
   stateServicePath,
 } from "@/data/us-states";
@@ -24,8 +24,12 @@ import { pageMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ state: string; service: string }> };
 
+export const revalidate = 86400;
+export const dynamicParams = true;
+
+/** Hot services × all states at build; remaining combos on-demand ISR */
 export function generateStaticParams() {
-  return allStateServiceParams();
+  return priorityStateServiceParams();
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

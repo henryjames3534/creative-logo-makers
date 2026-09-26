@@ -7,18 +7,23 @@ import {
   ServiceJsonLd,
 } from "@/components/seo/JsonLd";
 import {
-  allLocationParams,
   getCityBySlug,
   isLocationService,
   locationPath,
+  priorityLocationParams,
 } from "@/data/us-locations";
 import { buildLocationSeo } from "@/lib/location-seo";
 import { pageMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ city: string; service: string }> };
 
+/** Cache on-demand pages for 24h after first generate */
+export const revalidate = 86400;
+export const dynamicParams = true;
+
+/** Only top city × hot services at build; sitemap still has all URLs */
 export function generateStaticParams() {
-  return allLocationParams();
+  return priorityLocationParams();
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
