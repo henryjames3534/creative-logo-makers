@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { categories } from "@/data/categories";
 import { designers } from "@/data/designers";
 import { studioServices } from "@/data/studio";
-import { ALL_USA_KEYWORD_PAGES, intentPath } from "@/data/usa-intents";
+import { ALL_USA_KEYWORD_PAGES, USA_INTENTS, intentPath } from "@/data/usa-intents";
 import {
   LOCATION_SEO_SERVICES,
   US_CITIES,
@@ -117,10 +117,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   );
 
+  const featuredSlugs = new Set(USA_INTENTS.map((i) => i.slug));
+
   const intentPages = ALL_USA_KEYWORD_PAGES.map((i) =>
     entry(intentPath(i.slug), {
-      priority: i.source === "gsc" ? 0.9 : 0.72,
+      priority: featuredSlugs.has(i.slug)
+        ? 0.92
+        : i.source === "gsc"
+          ? 0.88
+          : 0.7,
       changeFrequency: "weekly",
+      lastModified: now,
     }),
   );
 
