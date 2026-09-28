@@ -1,7 +1,9 @@
 /**
- * High-intent USA commercial keyword pages.
- * Each intent maps to a ranking URL under /usa/[slug].
+ * High-intent USA commercial keyword pages under /usa/[slug].
+ * Hand-crafted intents win over generated catalog rows when slugs overlap.
  */
+
+import catalog from "@/data/usa-keyword-catalog.json";
 
 export type UsaIntent = {
   slug: string;
@@ -14,6 +16,8 @@ export type UsaIntent = {
   title: string;
   description: string;
   h1: string;
+  /** From planner catalog (optional) */
+  source?: string;
 };
 
 export const USA_INTENTS: UsaIntent[] = [
@@ -118,21 +122,21 @@ export const USA_INTENTS: UsaIntent[] = [
     title: "Logo Design Company USA — Creative Logo Makers Contests",
     description:
       "Looking for a logo design company in the USA? Get agency-quality marks via Creative Logo Makers contests and Studio branding.",
-    h1: "A logo design company built for US growth",
+    h1: "A logo design company built for online briefs",
   },
   {
     slug: "website-design-near-me",
     keyword: "website design near me",
     related: [
-      "web designer near me",
+      "web design near me",
       "website designer near me",
       "local web design company",
     ],
     serviceSlug: "web-design",
-    title: "Website Design Near Me — US Web Design Contests & Hire",
+    title: "Website Design Near Me — US Web Design Contests",
     description:
-      "Website design near me, delivered remotely across the USA. Launch a contest or hire a web designer for custom layouts.",
-    h1: "Website design near me — nationwide US talent",
+      "Website design near me without locking into a local retainer. US businesses launch contests for custom page design nationwide.",
+    h1: "Website design near me — nationwide designers, USD pricing",
   },
   {
     slug: "hire-web-designer",
@@ -143,10 +147,10 @@ export const USA_INTENTS: UsaIntent[] = [
       "freelance web designer for hire",
     ],
     serviceSlug: "web-design",
-    title: "Hire a Web Designer USA — Website Design Contests & Projects",
+    title: "Hire a Web Designer USA — Contests & 1-to-1",
     description:
-      "Hire a web designer for custom website design. Contests give multiple directions; 1-to-1 is ideal for private builds.",
-    h1: "Hire a web designer for your website",
+      "Hire a web designer in the USA through contest or private project. Clear packages and revision rounds.",
+    h1: "Hire a web designer who ships conversion-ready pages",
   },
   {
     slug: "affordable-website-design",
@@ -154,182 +158,181 @@ export const USA_INTENTS: UsaIntent[] = [
     related: [
       "cheap website design",
       "budget web design USA",
-      "low cost website design",
+      "affordable web designer",
     ],
     serviceSlug: "web-design",
-    title: "Affordable Website Design USA — Custom Sites from Contests",
+    title: "Affordable Website Design USA — Fixed Contest Packages",
     description:
-      "Affordable website design for US small businesses. Get custom concepts via contest without agency retainers.",
-    h1: "Affordable website design for growing brands",
+      "Affordable website design for US startups. Fixed contest packages beat open-ended agency quotes.",
+    h1: "Affordable website design with a clear budget",
   },
   {
     slug: "small-business-website-design",
-    keyword: "website design for small business",
+    keyword: "small business website design",
     related: [
-      "small business web design",
-      "SMB website design",
-      "local business website design",
+      "website for small business",
+      "SMB web design",
+      "small business web designer",
     ],
     serviceSlug: "web-design",
-    title: "Website Design for Small Business USA — Fast & Custom",
+    title: "Small Business Website Design USA",
     description:
-      "Website design for small business owners in the USA. Clear packages, custom concepts, and files ready for WordPress or Webflow.",
-    h1: "Website design for small businesses",
+      "Small business website design that looks credible and converts — contests sized for US SMB budgets.",
+    h1: "Small business website design that looks established",
   },
   {
     slug: "ecommerce-website-design",
     keyword: "ecommerce website design",
     related: [
       "online store design",
-      "shopify website design",
-      "ecommerce web design USA",
+      "shopify style web design",
+      "ecommerce page design",
     ],
     serviceSlug: "web-design",
-    title: "Ecommerce Website Design USA — Store & Product Page UI",
+    title: "Ecommerce Website Design USA — Storefront Pages",
     description:
-      "Ecommerce website design for US brands — product pages, storefront UI, and conversion-focused layouts via contest or hire.",
-    h1: "Ecommerce website design that sells",
+      "Ecommerce website design concepts for US brands — product pages, landing layouts, and shop visuals.",
+    h1: "Ecommerce website design built to sell",
   },
   {
     slug: "landing-page-design-services",
-    keyword: "landing page design services",
+    keyword: "landing page design",
     related: [
       "landing page designer",
+      "conversion landing page",
       "sales page design",
-      "high converting landing page",
     ],
     serviceSlug: "landing-page-design",
-    title: "Landing Page Design Services USA — High-Converting Pages",
+    title: "Landing Page Design Services USA",
     description:
-      "Landing page design services for US marketers. Multiple creative concepts, strong CTAs, production-ready files.",
-    h1: "Landing page design services for campaigns",
+      "Landing page design services for US marketers — focused layouts for ads, launches, and lead gen.",
+    h1: "Landing page design that respects your ad spend",
   },
   {
     slug: "mobile-app-design-services",
-    keyword: "mobile app design services",
+    keyword: "mobile app design",
     related: [
-      "app design services",
-      "mobile UI UX design",
-      "app designer USA",
+      "app ui design",
+      "mobile app designer USA",
+      "app interface design",
     ],
     serviceSlug: "mobile-app-design",
-    title: "Mobile App Design Services USA — UI/UX Contests",
+    title: "Mobile App Design Services USA",
     description:
-      "Mobile app design services for iOS and Android. Get UI/UX screens via contest or hire a dedicated app designer.",
-    h1: "Mobile app design services for US products",
+      "Mobile app design services with contest variety or 1-to-1 specialists for US product teams.",
+    h1: "Mobile app design for products that need clarity",
   },
   {
     slug: "hire-app-designer",
     keyword: "hire app designer",
     related: [
       "hire mobile app designer",
-      "hire UI UX designer",
       "app designer for hire",
+      "hire ui designer",
     ],
     serviceSlug: "mobile-app-design",
-    title: "Hire an App Designer USA — Mobile UI/UX Projects",
+    title: "Hire an App Designer USA",
     description:
-      "Hire an app designer for polished mobile UI. Contests and 1-to-1 projects with developer-ready design files.",
-    h1: "Hire an app designer for your product",
+      "Hire an app designer in the USA — compare concepts via contest or work privately 1-to-1.",
+    h1: "Hire an app designer without a six-month agency pitch",
   },
   {
     slug: "ui-ux-design-services",
-    keyword: "UI UX design services",
+    keyword: "ui ux design",
     related: [
-      "UI UX designer",
-      "user experience design",
-      "product UI design USA",
+      "ui ux designer",
+      "ux design services USA",
+      "product ui design",
     ],
     serviceSlug: "mobile-app-design",
-    title: "UI UX Design Services USA — Product & App Interfaces",
+    title: "UI UX Design Services USA",
     description:
-      "UI UX design services for US startups and product teams. Screen flows, visual systems, and handoff-ready files.",
-    h1: "UI UX design services for digital products",
+      "UI/UX design services for US startups — screens, flows, and polished interface concepts.",
+    h1: "UI UX design that product teams can ship from",
   },
   {
     slug: "packaging-design-services",
-    keyword: "packaging design services",
+    keyword: "packaging design",
     related: [
       "product packaging design",
-      "hire packaging designer",
-      "custom packaging design USA",
+      "packaging designer USA",
+      "retail packaging design",
     ],
     serviceSlug: "product-packaging-design",
-    title: "Packaging Design Services USA — Shelf-Ready Creative",
+    title: "Packaging Design Services USA",
     description:
-      "Packaging design services for US CPG and retail brands. Contests deliver multiple pack concepts and print-ready art.",
-    h1: "Packaging design services for US brands",
+      "Packaging design services for US CPG and DTC brands — shelf-ready concepts via contest.",
+    h1: "Packaging design that holds up on the shelf",
   },
   {
     slug: "branding-agency-usa",
-    keyword: "branding agency USA",
+    keyword: "branding agency",
     related: [
-      "branding company USA",
+      "branding agency USA",
       "brand identity agency",
-      "full service branding USA",
+      "branding company",
     ],
     serviceSlug: "full-service-branding",
-    title: "Branding Agency USA — Identity Systems & Brand Contests",
+    title: "Branding Agency USA — Contests & Studio",
     description:
-      "Branding agency results without the waitlist. Creative Logo Makers delivers identity systems via contests and Studio packs.",
-    h1: "Branding agency services for US companies",
+      "Branding agency alternative for US companies — contests for marks plus Studio for full systems.",
+    h1: "Branding agency outcomes without the agency waitlist",
   },
   {
     slug: "brand-identity-design",
     keyword: "brand identity design",
     related: [
-      "brand identity designer",
+      "brand identity package",
       "visual identity design",
       "brand system design",
     ],
     serviceSlug: "full-service-branding",
-    title: "Brand Identity Design USA — Logos, Systems & Guidelines",
+    title: "Brand Identity Design USA",
     description:
-      "Brand identity design for US launches — logo, palette, type, and usage systems through contests or Studio.",
-    h1: "Brand identity design that scales",
+      "Brand identity design for US businesses — logo systems, guides, and launch-ready assets.",
+    h1: "Brand identity design that stays consistent",
   },
   {
     slug: "graphic-design-services-usa",
     keyword: "graphic design services",
     related: [
+      "graphic designer USA",
       "graphic design company",
-      "graphic designer for hire",
-      "graphic design USA",
+      "hire graphic designer",
     ],
-    serviceSlug: "logo-design",
-    title: "Graphic Design Services USA — Logo, Web, Print & More",
+    serviceSlug: "flyer-design",
+    title: "Graphic Design Services USA",
     description:
-      "Graphic design services across logo, web, packaging, and social. Launch a contest or hire a designer 1-to-1.",
-    h1: "Graphic design services for every US channel",
+      "Graphic design services across logos, print, and digital — US pricing and English support.",
+    h1: "Graphic design services for everyday marketing needs",
   },
   {
     slug: "design-contest",
     keyword: "design contest",
     related: [
-      "logo contest",
-      "graphic design contest",
+      "logo design contest",
       "design competition",
+      "crowdsource logo design",
     ],
     serviceSlug: "logo-design",
-    title: "Design Contest USA — Logo, Web & Creative Competitions",
+    title: "Design Contest USA — Multiple Concepts, One Winner",
     description:
-      "Run a design contest and get dozens of custom concepts. Compare designers, pick a winner, and download final files.",
-    h1: "Design contests that deliver options fast",
+      "Run a design contest on Creative Logo Makers — multiple US designers compete on your brief.",
+    h1: "Design contests that put options in front of you fast",
   },
   {
     slug: "logo-maker-online",
     keyword: "logo maker",
     related: [
-      "free logo maker",
       "online logo maker",
-      "create a logo online",
-      "logo generator",
+      "logo creator",
+      "custom logo maker",
     ],
     serviceSlug: "logo-design",
-    title: "Logo Maker Online USA — Free Concepts + Pro Designer Upgrade",
+    title: "Logo Maker Online — Real Designers, Not Templates",
     description:
-      "Use our free logo maker for quick ideas, then upgrade to a real designer contest for a polished custom logo.",
-    h1: "Logo maker online — then go pro",
+      "Skip template logo makers. Creative Logo Makers pairs US businesses with real designers via contest.",
+    h1: "A logo maker path that ends with original work",
   },
   {
     slug: "best-logo-design-services",
@@ -337,216 +340,176 @@ export const USA_INTENTS: UsaIntent[] = [
     related: [
       "top logo design services",
       "best logo designer USA",
-      "best logo design company",
+      "premium logo design",
     ],
     serviceSlug: "logo-design",
-    title: "Best Logo Design Services USA — Contests from $249",
+    title: "Best Logo Design Services USA",
     description:
-      "See why US teams choose Creative Logo Makers for best logo design services — multiple concepts, revisions, ownership.",
-    h1: "Best logo design services for US brands",
+      "Compare best-in-class logo design services through contests — multiple concepts before you commit.",
+    h1: "Best logo design services ranked by options, not ads",
   },
   {
     slug: "ios-app-design-services",
-    keyword: "iOS app design",
-    related: [
-      "iphone app design",
-      "iOS UI design services",
-      "Apple app design",
-    ],
+    keyword: "ios app design",
+    related: ["iphone app design", "ios ui design", "apple app design"],
     serviceSlug: "ios-app-design",
-    title: "iOS App Design Services USA — iPhone & iPad UI",
+    title: "iOS App Design Services USA",
     description:
-      "iOS app design for US products. Contests and 1-to-1 projects for HIG-friendly iPhone and iPad interfaces.",
-    h1: "iOS app design services online",
+      "iOS app design services for US product teams — polished screens matched to Apple patterns.",
+    h1: "iOS app design that feels native",
   },
   {
     slug: "android-app-design-services",
-    keyword: "Android app design",
-    related: [
-      "Android UI design",
-      "Material Design app",
-      "Google Play app design",
-    ],
+    keyword: "android app design",
+    related: ["android ui design", "android app designer", "material design app"],
     serviceSlug: "android-app-design",
-    title: "Android App Design Services USA — Material UI Contests",
+    title: "Android App Design Services USA",
     description:
-      "Android app design services with Material-friendly UI concepts. Contest or hire for production-ready screens.",
-    h1: "Android app design for US apps",
+      "Android app design services with contest variety for US startups shipping on Google Play.",
+    h1: "Android app design ready for Play Store screenshots",
   },
   {
     slug: "social-media-design-services",
     keyword: "social media design",
     related: [
+      "social media graphics",
       "instagram design services",
-      "social media branding",
-      "facebook cover design",
+      "social page design",
     ],
     serviceSlug: "social-media-page-design",
-    title: "Social Media Design Services USA — Profiles & Creatives",
+    title: "Social Media Design Services USA",
     description:
-      "Social media design for US brands — page kits, covers, and on-brand graphics via contest or 1-to-1.",
-    h1: "Social media design that looks on-brand",
+      "Social media design services for US brands — profile kits, covers, and post templates.",
+    h1: "Social media design that matches the brand, not a template pack",
   },
   {
     slug: "flyer-design-services",
     keyword: "flyer design",
-    related: [
-      "flyer designer",
-      "event flyer design",
-      "print flyer design USA",
-    ],
+    related: ["flyer designer", "event flyer design", "promotional flyer"],
     serviceSlug: "flyer-design",
-    title: "Flyer Design Services USA — Print-Ready Event & Promo Flyers",
+    title: "Flyer Design Services USA",
     description:
-      "Flyer design services for US events and promotions. Multiple concepts and print-ready files.",
-    h1: "Flyer design services for campaigns",
+      "Flyer design services for US events and local businesses — print-ready files included.",
+    h1: "Flyer design that still works when printed",
   },
   {
     slug: "brochure-design-services",
     keyword: "brochure design",
-    related: [
-      "brochure designer",
-      "company brochure design",
-      "tri fold brochure design",
-    ],
+    related: ["brochure designer", "tri fold brochure", "company brochure design"],
     serviceSlug: "brochure-design",
-    title: "Brochure Design Services USA — Company & Product Brochures",
+    title: "Brochure Design Services USA",
     description:
-      "Brochure design for US businesses — polished layouts ready for print and PDF distribution.",
-    h1: "Brochure design that sells your story",
+      "Brochure design services for US companies — clear layouts for sales and leave-behinds.",
+    h1: "Brochure design for teams that still meet in person",
   },
   {
     slug: "business-card-design-services",
     keyword: "business card design",
     related: [
-      "custom business cards",
-      "professional business card design",
-      "visiting card design",
+      "business card designer",
+      "professional business cards",
+      "custom business card",
     ],
     serviceSlug: "business-card-design",
-    title: "Business Card Design Services USA — Print-Ready Cards",
+    title: "Business Card Design Services USA",
     description:
-      "Professional business card design with print-ready files. Contests and 1-to-1 for US professionals.",
-    h1: "Business card design that makes an intro",
+      "Business card design services with print-ready files for US professionals.",
+    h1: "Business card design that survives the networking pile",
   },
   {
     slug: "t-shirt-design-services",
     keyword: "t-shirt design",
-    related: [
-      "custom t-shirt design",
-      "merchandise design",
-      "apparel design USA",
-    ],
+    related: ["tshirt design", "merch design", "apparel design"],
     serviceSlug: "t-shirt-design",
-    title: "T-Shirt Design Services USA — Custom Merch Graphics",
+    title: "T-Shirt Design Services USA",
     description:
-      "Custom t-shirt design for US brands and merch drops. Print-ready graphics via contest or hire.",
-    h1: "T-shirt design for merch that sells",
+      "T-shirt design services for US merch drops, events, and brand apparel.",
+    h1: "T-shirt design built for print, not just pixels",
   },
   {
     slug: "book-cover-design-services",
     keyword: "book cover design",
-    related: [
-      "ebook cover design",
-      "hire book cover designer",
-      "author book cover",
-    ],
+    related: ["ebook cover design", "book cover designer", "novel cover design"],
     serviceSlug: "book-cover-design",
-    title: "Book Cover Design Services USA — Print & Ebook Covers",
+    title: "Book Cover Design Services USA",
     description:
-      "Book cover design for US authors and publishers. Multiple covers in a contest — pick a winner.",
-    h1: "Book cover design that gets clicked",
+      "Book cover design services for US authors — genre-aware covers that read at thumbnail size.",
+    h1: "Book cover design that sells the click",
   },
   {
     slug: "wordpress-website-design",
-    keyword: "WordPress website design",
+    keyword: "wordpress website design",
     related: [
-      "WordPress design services",
-      "WordPress theme design",
-      "hire WordPress designer",
+      "wordpress designer",
+      "wordpress theme design",
+      "wordpress web design",
     ],
     serviceSlug: "wordpress-theme-design",
-    title: "WordPress Website Design USA — Custom Themes & Layouts",
+    title: "WordPress Website Design USA",
     description:
-      "WordPress website design for US sites — custom theme concepts and layouts ready for development.",
-    h1: "WordPress website design services",
+      "WordPress website design concepts for US businesses that need flexible, editable sites.",
+    h1: "WordPress website design without the theme soup",
   },
   {
     slug: "app-icon-design-services",
     keyword: "app icon design",
-    related: [
-      "ios app icon design",
-      "android app icon",
-      "custom app icon",
-    ],
+    related: ["app icon designer", "ios app icon", "android app icon"],
     serviceSlug: "app-icon-design",
-    title: "App Icon Design Services USA — Store-Ready Icons",
+    title: "App Icon Design Services USA",
     description:
-      "App icon design for iOS and Android store listings. Multiple concepts via contest.",
-    h1: "App icon design that stands out",
+      "App icon design services for US apps — distinctive icons for App Store and Play.",
+    h1: "App icon design that stands out in a grid of sameness",
   },
   {
     slug: "illustration-services-usa",
     keyword: "illustration services",
     related: [
+      "hire illustrator",
       "custom illustration",
-      "hire illustrator USA",
-      "commercial illustration",
+      "business illustration",
     ],
     serviceSlug: "illustrations",
-    title: "Illustration Services USA — Custom Art for Brands",
+    title: "Illustration Services USA",
     description:
-      "Illustration services for US marketing, products, and apps. Contests deliver multiple art directions.",
-    h1: "Illustration services for modern brands",
+      "Illustration services for US brands — custom art for sites, products, and campaigns.",
+    h1: "Illustration services with commercial ownership included",
   },
   {
     slug: "brand-guidelines-design",
     keyword: "brand guidelines",
-    related: [
-      "brand style guide",
-      "brand book design",
-      "identity guidelines",
-    ],
-    serviceSlug: "brand-guide",
-    title: "Brand Guidelines Design USA — Style Guides & Systems",
+    related: ["brand guide design", "brand book", "style guide design"],
+    serviceSlug: "logo-brand-guide",
+    title: "Brand Guidelines Design USA",
     description:
-      "Brand guidelines design for US teams — colors, type, logo usage, and consistency rules.",
-    h1: "Brand guidelines that keep teams aligned",
+      "Brand guidelines design so US teams stay consistent across web, print, and social.",
+    h1: "Brand guidelines your contractors will actually follow",
   },
   {
     slug: "startup-logo-design",
     keyword: "startup logo design",
-    related: [
-      "logo for startups",
-      "tech startup logo",
-      "startup branding",
-    ],
+    related: ["startup branding", "startup logo", "tech startup logo"],
     serviceSlug: "logo-design",
-    title: "Startup Logo Design USA — Fast Contests for Founders",
+    title: "Startup Logo Design USA",
     description:
-      "Startup logo design built for speed. Launch a contest, compare concepts, and ship your brand mark.",
-    h1: "Startup logo design for founders",
+      "Startup logo design for US founders — fast contests, investor-ready marks.",
+    h1: "Startup logo design before the pitch deck goes out",
   },
   {
     slug: "restaurant-logo-design",
     keyword: "restaurant logo design",
-    related: [
-      "cafe logo design",
-      "food business logo",
-      "restaurant branding",
-    ],
+    related: ["cafe logo design", "food logo design", "restaurant branding"],
     serviceSlug: "logo-design",
-    title: "Restaurant Logo Design USA — Food & Hospitality Brands",
+    title: "Restaurant Logo Design USA",
     description:
-      "Restaurant logo design for US food brands — menus, storefronts, and delivery apps covered.",
-    h1: "Restaurant logo design that looks delicious",
+      "Restaurant logo design for US cafes and dining brands — menus, signage, and social ready.",
+    h1: "Restaurant logo design that works on a napkin and a neon sign",
   },
   {
     slug: "real-estate-logo-design",
     keyword: "real estate logo design",
     related: [
-      "realtor logo design",
-      "property logo design",
+      "realtor logo",
+      "brokerage logo design",
       "real estate branding",
     ],
     serviceSlug: "logo-design",
@@ -572,11 +535,7 @@ export const USA_INTENTS: UsaIntent[] = [
   {
     slug: "law-firm-logo-design",
     keyword: "law firm logo design",
-    related: [
-      "lawyer logo design",
-      "attorney logo",
-      "legal branding",
-    ],
+    related: ["lawyer logo design", "attorney logo", "legal branding"],
     serviceSlug: "logo-design",
     title: "Law Firm Logo Design USA — Professional Legal Brands",
     description:
@@ -585,10 +544,101 @@ export const USA_INTENTS: UsaIntent[] = [
   },
 ];
 
+type CatalogFile = {
+  count: number;
+  pages: Array<{
+    slug: string;
+    keyword: string;
+    related: string[];
+    serviceSlug: string;
+    title: string;
+    description: string;
+    h1: string;
+    source?: string;
+  }>;
+};
+
+const catalogFile = catalog as CatalogFile;
+const handCraftedBySlug = new Map(USA_INTENTS.map((i) => [i.slug, i]));
+const catalogBySlug = new Map(
+  catalogFile.pages.map((p) => [
+    p.slug,
+    {
+      slug: p.slug,
+      keyword: p.keyword,
+      related: p.related,
+      serviceSlug: p.serviceSlug,
+      title: p.title,
+      description: p.description,
+      h1: p.h1,
+      source: p.source,
+    } satisfies UsaIntent,
+  ]),
+);
+
+/** All USA keyword pages (hand-crafted first, then catalog fill). */
+export const ALL_USA_KEYWORD_PAGES: UsaIntent[] = (() => {
+  const seen = new Set<string>();
+  const out: UsaIntent[] = [];
+  for (const i of USA_INTENTS) {
+    seen.add(i.slug);
+    out.push(i);
+  }
+  for (const p of catalogFile.pages) {
+    if (seen.has(p.slug)) continue;
+    seen.add(p.slug);
+    out.push(catalogBySlug.get(p.slug)!);
+  }
+  return out;
+})();
+
 export function getIntentBySlug(slug: string): UsaIntent | undefined {
-  return USA_INTENTS.find((i) => i.slug === slug);
+  return handCraftedBySlug.get(slug) ?? catalogBySlug.get(slug);
 }
 
 export function intentPath(slug: string) {
   return `/usa/${slug}`;
+}
+
+/** Footer / hub samples — stable slice of commercial keywords */
+export function usaKeywordFooterLinks(limit = 16): { href: string; label: string }[] {
+  const preferred = [
+    "logo-design-near-me",
+    "hire-logo-designer",
+    "cheap-logo-design",
+    "custom-logo-design",
+    "website-design-near-me",
+    "hire-web-designer",
+    "branding-agency-usa",
+    "packaging-design-services",
+    "business-card-design-services",
+    "flyer-design-services",
+    "t-shirt-design-services",
+    "book-cover-design-services",
+    "mobile-app-design-services",
+    "startup-logo-design",
+    "restaurant-logo-design",
+    "law-firm-logo-design",
+  ];
+  const links: { href: string; label: string }[] = [];
+  for (const slug of preferred) {
+    const intent = getIntentBySlug(slug);
+    if (!intent) continue;
+    links.push({ href: intentPath(intent.slug), label: intent.keyword });
+    if (links.length >= limit) break;
+  }
+  return links;
+}
+
+export function relatedUsaKeywords(slug: string, limit = 10): UsaIntent[] {
+  const current = getIntentBySlug(slug);
+  if (!current) return ALL_USA_KEYWORD_PAGES.slice(0, limit);
+  const same = ALL_USA_KEYWORD_PAGES.filter(
+    (p) => p.slug !== slug && p.serviceSlug === current.serviceSlug,
+  );
+  if (same.length >= limit) return same.slice(0, limit);
+  const rest = ALL_USA_KEYWORD_PAGES.filter(
+    (p) => p.slug !== slug && p.serviceSlug !== current.serviceSlug,
+  );
+  return [...same, ...rest].slice(0, limit);
 }

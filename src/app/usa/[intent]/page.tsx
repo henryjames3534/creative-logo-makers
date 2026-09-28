@@ -7,23 +7,29 @@ import {
   FaqJsonLd,
   ServiceJsonLd,
 } from "@/components/seo/JsonLd";
+import { UsaBasicPackagesGrid } from "@/components/seo/UsaBasicPackagesGrid";
 import { Container } from "@/components/Section";
 import { getCategory } from "@/data/categories";
 import { categoryLaunchHref } from "@/data/serviceRoutes";
 import {
-  USA_INTENTS,
   getIntentBySlug,
   intentPath,
+  relatedUsaKeywords,
 } from "@/data/usa-intents";
 import { US_CITIES, locationPath } from "@/data/us-locations";
 import { US_STATES, stateServicePath } from "@/data/us-states";
 import { getUsaSeoForSlug } from "@/data/usa-seo-keywords";
 import { pageMetadata } from "@/lib/seo";
+import { buildUsaKeywordCopy } from "@/lib/usa-keyword-copy";
 
 type Props = { params: Promise<{ intent: string }> };
 
+/** Keyword pages generate on first request — keep build light. */
+export const dynamicParams = true;
+export const revalidate = 86400;
+
 export function generateStaticParams() {
-  return USA_INTENTS.map((i) => ({ intent: i.slug }));
+  return [] as { intent: string }[];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -42,35 +48,17 @@ export default async function UsaIntentPage({ params }: Props) {
   const { intent: slug } = await params;
   const intent = getIntentBySlug(slug);
   if (!intent) notFound();
+
   const cat = getCategory(intent.serviceSlug);
   const cluster = getUsaSeoForSlug(intent.serviceSlug);
-  const price = cat?.startingPrice || "$249";
+  const price = cat?.startingPrice || "$125";
+  const productName = cat?.productName || cluster.primary;
+  const copy = buildUsaKeywordCopy(intent, price, productName);
   const topCities = US_CITIES.slice(0, 18);
   const topStates = US_STATES.filter((s) =>
     ["CA", "TX", "NY", "FL", "IL", "PA", "OH", "GA", "NC", "MI"].includes(s.code),
   );
-  const relatedIntents = USA_INTENTS.filter(
-    (i) => i.slug !== intent.slug && i.serviceSlug === intent.serviceSlug,
-  ).slice(0, 8);
-
-  const faqs = [
-    {
-      question: `What is the best way to get ${intent.keyword} in the USA?`,
-      answer: `Launch a Creative Logo Makers contest for multiple custom concepts, or hire one designer 1-to-1. Both paths include revisions and commercial ownership of final files.`,
-    },
-    {
-      question: `How much does ${intent.keyword} cost?`,
-      answer: `${cat?.productName || cluster.primary} packages start from ${price}. Higher tiers add more concepts and revision rounds for US businesses.`,
-    },
-    {
-      question: `Do I need a local agency for ${intent.keyword}?`,
-      answer: `Not necessarily. Remote contests reach vetted designers across the USA while keeping USD pricing and English support — ideal when searching “${intent.keyword}” online.`,
-    },
-    {
-      question: `How fast can I start?`,
-      answer: `You can launch today. Most contests begin receiving concepts within a few days once your brief is live.`,
-    },
-  ];
+  const related = relatedUsaKeywords(intent.slug, 12);
 
   return (
     <>
@@ -80,7 +68,7 @@ export default async function UsaIntentPage({ params }: Props) {
         path={intentPath(intent.slug)}
         price={price}
       />
-      <FaqJsonLd faqs={faqs} />
+      <FaqJsonLd faqs={copy.faqs} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", path: "/" },
@@ -102,7 +90,7 @@ export default async function UsaIntentPage({ params }: Props) {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button
-              href={cat ? categoryLaunchHref(cat, "gold") : "/get-started"}
+              href={cat ? categoryLaunchHref(cat, "bronze") : "/get-started"}
               variant="primary"
             >
               Start a contest
@@ -117,11 +105,26 @@ export default async function UsaIntentPage({ params }: Props) {
         </Container>
       </section>
 
+      <UsaBasicPackagesGrid highlightSlug={intent.serviceSlug} limit={12} />
+
       <section className="py-14">
         <Container>
-          <h2 className="text-2xl font-medium text-ink">
-            Related searches
-          </h2>
+          <h2 className="text-2xl font-medium text-ink">Why this page exists</h2>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-ink/75">
+            {copy.intro}
+          </p>
+          <ul className="mt-6 max-w-2xl space-y-2 text-ink">
+            {copy.bullets.map((b) => (
+              <li key={b}>• {b}</li>
+            ))}
+          </ul>
+
+          <h2 className="mt-14 text-2xl font-medium text-ink">How it works</h2>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-ink/75">
+            {copy.howItWorks}
+          </p>
+
+          <h2 className="mt-14 text-2xl font-medium text-ink">Related searches</h2>
           <div className="mt-6 flex flex-wrap gap-2">
             {[intent.keyword, ...intent.related].map((k) => (
               <span
@@ -134,7 +137,7 @@ export default async function UsaIntentPage({ params }: Props) {
           </div>
 
           <h2 className="mt-14 text-2xl font-medium text-ink">
-            {cat?.productName || cluster.primary} by US city
+            {productName} by US city
           </h2>
           <div className="mt-6 flex flex-wrap gap-2">
             {topCities.map((c) => (
@@ -147,9 +150,14 @@ export default async function UsaIntentPage({ params }: Props) {
               </Link>
             ))}
           </div>
+          <div className="mt-4">
+            <Link href="/us" className="text-sm font-semibold text-ink underline">
+              Browse more cities →
+            </Link>
+          </div>
 
           <h2 className="mt-14 text-2xl font-medium text-ink">
-            {cat?.productName || cluster.primary} by state
+            {productName} by state
           </h2>
           <div className="mt-6 flex flex-wrap gap-2">
             {topStates.map((s) => (
@@ -163,28 +171,29 @@ export default async function UsaIntentPage({ params }: Props) {
             ))}
           </div>
 
-          {relatedIntents.length > 0 && (
-            <>
-              <h2 className="mt-14 text-2xl font-medium text-ink">
-                Related USA keywords
-              </h2>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {relatedIntents.map((i) => (
-                  <Link
-                    key={i.slug}
-                    href={intentPath(i.slug)}
-                    className="rounded-full border border-line px-4 py-2 text-sm font-medium text-ink hover:border-ink"
-                  >
-                    {i.keyword}
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
+          <h2 className="mt-14 text-2xl font-medium text-ink">
+            Related USA keywords
+          </h2>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {related.map((i) => (
+              <Link
+                key={i.slug}
+                href={intentPath(i.slug)}
+                className="rounded-full border border-line px-4 py-2 text-sm font-medium text-ink hover:border-ink"
+              >
+                {i.keyword}
+              </Link>
+            ))}
+          </div>
+          <div className="mt-4">
+            <Link href="/usa" className="text-sm font-semibold text-ink underline">
+              Browse more USA keywords →
+            </Link>
+          </div>
 
           <h2 className="mt-14 text-2xl font-medium text-ink">FAQs</h2>
           <div className="mx-auto mt-8 max-w-3xl space-y-3">
-            {faqs.map((faq) => (
+            {copy.faqs.map((faq) => (
               <details
                 key={faq.question}
                 className="rounded-2xl border border-line bg-white px-5 py-1 shadow-sm"

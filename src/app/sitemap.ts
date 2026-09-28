@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { categories } from "@/data/categories";
 import { designers } from "@/data/designers";
 import { studioServices } from "@/data/studio";
-import { USA_INTENTS, intentPath } from "@/data/usa-intents";
+import { ALL_USA_KEYWORD_PAGES, intentPath } from "@/data/usa-intents";
 import {
   LOCATION_SEO_SERVICES,
   US_CITIES,
@@ -117,8 +117,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   );
 
-  const intentPages = USA_INTENTS.map((i) =>
-    entry(intentPath(i.slug), { priority: 0.92, changeFrequency: "weekly" }),
+  const intentPages = ALL_USA_KEYWORD_PAGES.map((i) =>
+    entry(intentPath(i.slug), {
+      priority: i.source === "gsc" ? 0.9 : 0.72,
+      changeFrequency: "weekly",
+    }),
   );
 
   const designerPages = [...designers]
