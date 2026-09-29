@@ -30,50 +30,58 @@ export function ContactPageClient() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
-    if (!check.ok) {
-      setError(check.error);
-      setLoading(false);
+    try {
+      const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
+      if (!check.ok) {
+        setError(check.error);
+        captchaRef.current?.reset();
+        return;
+      }
+
+      const fd = new FormData(e.currentTarget);
+      const name = String(fd.get("name") ?? "").trim();
+      const email = String(fd.get("email") ?? "").trim();
+      const topic = String(fd.get("topic") ?? "").trim();
+      const message = String(fd.get("message") ?? "").trim();
+
+      const result = await submitLeadForm(
+        {
+          form: "contact",
+          name,
+          email,
+          topic,
+          message,
+          page: "/contact",
+        },
+        { nextPath: "/contact?sent=1" },
+      );
+
+      if (!result.ok) {
+        setError(result.error);
+        captchaRef.current?.reset();
+        return;
+      }
+
+      try {
+        captureFormLead({
+          form: "contact",
+          name,
+          email,
+          topic,
+          message,
+          page: "/contact",
+        });
+      } catch {
+        /* server already saved */
+      }
+
+      setSent(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
       captchaRef.current?.reset();
-      return;
-    }
-
-    const fd = new FormData(e.currentTarget);
-    const name = String(fd.get("name") ?? "").trim();
-    const email = String(fd.get("email") ?? "").trim();
-    const topic = String(fd.get("topic") ?? "").trim();
-    const message = String(fd.get("message") ?? "").trim();
-
-    const result = await submitLeadForm(
-      {
-        form: "contact",
-        name,
-        email,
-        topic,
-        message,
-        page: "/contact",
-      },
-      { nextPath: "/contact?sent=1" },
-    );
-
-    if (!result.ok) {
-      setError(result.error);
+    } finally {
       setLoading(false);
-      captchaRef.current?.reset();
-      return;
     }
-
-    captureFormLead({
-      form: "contact",
-      name,
-      email,
-      topic,
-      message,
-      page: "/contact",
-    });
-
-    setLoading(false);
-    setSent(true);
   }
 
   return (

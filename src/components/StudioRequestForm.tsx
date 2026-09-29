@@ -26,66 +26,69 @@ export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
-    if (!check.ok) {
-      setError(check.error);
-      setLoading(false);
-      captchaRef.current?.reset();
-      return;
-    }
-    const fd = new FormData(e.currentTarget);
-    const name = String(fd.get("name") ?? "").trim();
-    const email = String(fd.get("email") ?? "").trim();
-    const topic = String(fd.get("topic") ?? defaultTopic).trim();
-    const message = String(fd.get("message") ?? "").trim();
-
-    const result = await submitLeadForm(
-      {
-        form: "studio",
-        name,
-        email,
-        topic,
-        message,
-        page: typeof window !== "undefined" ? window.location.pathname : "/studio",
-      },
-      {
-        nextPath: `${typeof window !== "undefined" ? window.location.pathname : "/studio"}?sent=1`,
-      },
-    );
-
-    if (!result.ok) {
-      setError(result.error);
-      setLoading(false);
-      captchaRef.current?.reset();
-      return;
-    }
-
-    captureFormLead({
-      form: "studio",
-      name,
-      email,
-      topic,
-      message,
-      page: typeof window !== "undefined" ? window.location.pathname : "/studio",
-    });
-
     try {
-      sessionStorage.setItem(
-        "clm_studio_request",
-        JSON.stringify({
+      const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
+      if (!check.ok) {
+        setError(check.error);
+        captchaRef.current?.reset();
+        return;
+      }
+      const fd = new FormData(e.currentTarget);
+      const name = String(fd.get("name") ?? "").trim();
+      const email = String(fd.get("email") ?? "").trim();
+      const topic = String(fd.get("topic") ?? defaultTopic).trim();
+      const message = String(fd.get("message") ?? "").trim();
+      const page =
+        typeof window !== "undefined" ? window.location.pathname : "/studio";
+
+      const result = await submitLeadForm(
+        {
+          form: "studio",
           name,
           email,
           topic,
           message,
-          at: new Date().toISOString(),
-        }),
+          page,
+        },
+        { nextPath: `${page}?sent=1` },
       );
-    } catch {
-      /* ignore */
-    }
 
-    setLoading(false);
-    setSent(true);
+      if (!result.ok) {
+        setError(result.error);
+        captchaRef.current?.reset();
+        return;
+      }
+
+      try {
+        captureFormLead({
+          form: "studio",
+          name,
+          email,
+          topic,
+          message,
+          page,
+        });
+        sessionStorage.setItem(
+          "clm_studio_request",
+          JSON.stringify({
+            name,
+            email,
+            topic,
+            message,
+            at: new Date().toISOString(),
+          }),
+        );
+      } catch {
+        /* server already saved */
+      }
+
+      setSent(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+      captchaRef.current?.reset();
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (sent) {
