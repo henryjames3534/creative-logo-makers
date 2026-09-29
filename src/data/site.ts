@@ -22,6 +22,11 @@ export const brand = {
   talkingDesign: "11,625",
 };
 
+/** Public social profiles (footer + Organization sameAs) */
+export const socialLinks = {
+  facebook: "https://www.facebook.com/creativelogomakersusa/",
+} as const;
+
 export const navLinks = [
   { href: "/categories", label: "Categories" },
   { href: "/how-it-works", label: "How it works" },

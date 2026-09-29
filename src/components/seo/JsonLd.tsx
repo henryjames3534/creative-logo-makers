@@ -1,4 +1,4 @@
-import { brand } from "@/data/site";
+import { brand, socialLinks } from "@/data/site";
 import {
   absoluteUrl,
   DEFAULT_DESCRIPTION,
@@ -7,7 +7,6 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo";
-
 type JsonLdValue = Record<string, unknown> | Record<string, unknown>[];
 
 export function JsonLd({ data }: { data: JsonLdValue }) {
@@ -35,7 +34,7 @@ export function SiteJsonLd() {
     logo: absoluteUrl("/brand/icon-512.png"),
     email: brand.email,
     telephone: brand.phoneTel,
-    sameAs: [] as string[],
+    sameAs: Object.values(socialLinks),
     address: {
       "@type": "PostalAddress",
       streetAddress: "16192 Coastal Highway",

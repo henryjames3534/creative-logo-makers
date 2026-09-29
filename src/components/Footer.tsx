@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LocaleSwitcher } from "@/components/locale/LocaleSwitcher";
-import { brand, footerColumns } from "@/data/site";
+import { brand, footerColumns, socialLinks } from "@/data/site";
 
 const pressOutlets = [
   { name: "The Wall Street Journal", src: "/press/wsj.svg", w: 140, h: 18 },
@@ -13,10 +13,15 @@ const pressOutlets = [
 ];
 
 const socials = [
-  { label: "X", href: "/contact", icon: "x" },
-  { label: "Instagram", href: "/contact", icon: "ig" },
-  { label: "Facebook", href: "/contact", icon: "fb" },
-  { label: "LinkedIn", href: "/contact", icon: "in" },
+  { label: "X", href: "/contact", icon: "x", external: false },
+  { label: "Instagram", href: "/contact", icon: "ig", external: false },
+  {
+    label: "Facebook",
+    href: socialLinks.facebook,
+    icon: "fb",
+    external: true,
+  },
+  { label: "LinkedIn", href: "/contact", icon: "in", external: false },
 ] as const;
 
 export function Footer() {
@@ -109,18 +114,38 @@ export function Footer() {
                 </p>
               </div>
               <div className="mt-6 flex items-center gap-2">
-                {socials.map((s) => (
-                  <Link
-                    key={s.label}
-                    href={s.href}
-                    aria-label={s.label}
-                    title={s.label}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-white/60 text-ink/70 shadow-sm backdrop-blur-sm transition-all hover:border-ink/25 hover:bg-white hover:text-ink"
-                  >
-                    <span className="sr-only">{s.label}</span>
-                    <SocialIcon name={s.icon} />
-                  </Link>
-                ))}
+                {socials.map((s) => {
+                  const className =
+                    "flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-white/60 text-ink/70 shadow-sm backdrop-blur-sm transition-all hover:border-ink/25 hover:bg-white hover:text-ink";
+                  if (s.external) {
+                    return (
+                      <a
+                        key={s.label}
+                        href={s.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={s.label}
+                        title={s.label}
+                        className={className}
+                      >
+                        <span className="sr-only">{s.label}</span>
+                        <SocialIcon name={s.icon} />
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={s.label}
+                      href={s.href}
+                      aria-label={s.label}
+                      title={s.label}
+                      className={className}
+                    >
+                      <span className="sr-only">{s.label}</span>
+                      <SocialIcon name={s.icon} />
+                    </Link>
+                  );
+                })}
               </div>
               <Link
                 href="/get-started"
