@@ -32,7 +32,7 @@ export function AdminDashboard() {
   );
 
   if (!state || !stats) {
-    return <p className="text-white/50">Loading dashboard…</p>;
+    return <p className="text-[color:var(--a-muted)]">Loading dashboard…</p>;
   }
 
   const upcoming = [...state.tasks]
@@ -48,10 +48,10 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-white md:text-3xl">
+        <h1 className="text-2xl font-semibold text-[var(--a-text)] md:text-3xl">
           CRM Dashboard
         </h1>
-        <p className="mt-1 text-sm text-white/50">
+        <p className="mt-1 text-sm text-[color:var(--a-muted)]">
           Pipeline, leads, orders, and team follow-ups in one place.
         </p>
       </div>
@@ -131,13 +131,13 @@ export function AdminDashboard() {
               .map((v) => (
                 <li
                   key={v.id}
-                  className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 py-2 last:border-0"
+                  className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--a-border)] py-2 last:border-0"
                 >
                   <div>
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-sm font-medium text-[var(--a-text)]">
                       {v.email}
                     </p>
-                    <p className="text-[11px] text-white/40">
+                    <p className="text-[11px] text-[color:var(--a-faint)]">
                       {v.name} · {v.source.replace(/_/g, " ")}
                     </p>
                   </div>
@@ -145,7 +145,7 @@ export function AdminDashboard() {
                     <Badge tone={v.signedIn ? "green" : "coral"}>
                       {v.signedIn ? "signed in" : "not signed in"}
                     </Badge>
-                    <span className="text-xs text-white/35">
+                    <span className="text-xs text-[color:var(--a-faint)]">
                       {relativeDay(v.lastSeenAt)}
                     </span>
                   </div>
@@ -176,12 +176,12 @@ export function AdminDashboard() {
               return (
                 <div key={stage.id}>
                   <div className="mb-1 flex justify-between text-xs">
-                    <span className="text-white/70">{stage.label}</span>
-                    <span className="text-white/45">
+                    <span className="text-[color:var(--a-muted)]">{stage.label}</span>
+                    <span className="text-[color:var(--a-faint)]">
                       {deals.length} · {money(value)}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                  <div className="h-2 overflow-hidden rounded-full bg-[var(--a-hover)]">
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -212,13 +212,13 @@ export function AdminDashboard() {
             {hotLeads.map((l) => (
               <li
                 key={l.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--a-border)] bg-white/[0.02] px-3 py-2.5"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">
+                  <p className="truncate text-sm font-medium text-[var(--a-text)]">
                     {l.name}
                   </p>
-                  <p className="truncate text-xs text-white/40">
+                  <p className="truncate text-xs text-[color:var(--a-faint)]">
                     {l.interest} · {l.source}
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export function AdminDashboard() {
                   <Badge tone={l.score >= 80 ? "green" : "blue"}>
                     {l.score}
                   </Badge>
-                  <p className="mt-1 text-xs text-white/50">
+                  <p className="mt-1 text-xs text-[color:var(--a-muted)]">
                     {money(l.valueEstimate)}
                   </p>
                 </div>
@@ -253,11 +253,11 @@ export function AdminDashboard() {
             {upcoming.map((t) => (
               <li
                 key={t.id}
-                className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-white/[0.03]"
+                className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-[var(--a-hover)]"
               >
                 <div>
-                  <p className="text-sm text-white">{t.title}</p>
-                  <p className="text-xs text-white/40">
+                  <p className="text-sm text-[var(--a-text)]">{t.title}</p>
+                  <p className="text-xs text-[color:var(--a-faint)]">
                     {relativeDay(t.dueAt)} · {t.priority}
                   </p>
                 </div>
@@ -291,12 +291,12 @@ export function AdminDashboard() {
           />
           <ul className="space-y-3">
             {recent.map((a) => (
-              <li key={a.id} className="border-b border-white/5 pb-3 last:border-0">
-                <p className="text-sm font-medium text-white">{a.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-xs text-white/45">
+              <li key={a.id} className="border-b border-[color:var(--a-border)] pb-3 last:border-0">
+                <p className="text-sm font-medium text-[var(--a-text)]">{a.title}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--a-faint)]">
                   {a.body}
                 </p>
-                <p className="mt-1 text-[11px] text-white/30">
+                <p className="mt-1 text-[11px] text-[color:var(--a-faint)]">
                   {a.type} · {relativeDay(a.createdAt)}
                 </p>
               </li>

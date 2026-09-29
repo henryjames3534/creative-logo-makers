@@ -174,16 +174,16 @@ export function AdminVisitors() {
     reload("Visitor deleted");
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Visitors</h1>
-          <p className="mt-1 text-sm text-white/50">
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Visitors</h1>
+          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Email tab aaegi jab visitor Google pe{" "}
-            <strong className="text-white/80">Continue as…</strong> dabaye —
+            <strong className="text-[color:var(--a-muted)]">Continue as…</strong> dabaye —
             ya neeche se remembered Google sync karo.
           </p>
         </div>
@@ -206,13 +206,13 @@ export function AdminVisitors() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search visitors…"
-        className="w-full rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581]"
+        className="w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.35fr_0.9fr]">
         <div className="space-y-3">
           {rows.length === 0 ? (
-            <AdminCard className="p-8 text-center text-sm text-white/40">
+            <AdminCard className="p-8 text-center text-sm text-[color:var(--a-faint)]">
               Koi visitor nahi. Pehle site kholo, phir Google Continue dabao.
             </AdminCard>
           ) : (
@@ -239,14 +239,14 @@ export function AdminVisitors() {
                         <Badge tone="blue">
                           {SOURCE_LABEL[v.source] || v.source}
                         </Badge>
-                        <span className="text-[11px] text-white/35">
+                        <span className="text-[11px] text-[color:var(--a-faint)]">
                           {relativeDay(v.lastSeenAt)}
                         </span>
                       </div>
-                      <p className="font-mono text-sm font-semibold text-white">
+                      <p className="font-mono text-sm font-semibold text-[var(--a-text)]">
                         {v.geo?.ip || "IP not captured"}
                       </p>
-                      <p className="text-[11px] text-white/50">
+                      <p className="text-[11px] text-[color:var(--a-muted)]">
                         {[v.geo?.city, v.geo?.country || v.geo?.countryCode]
                           .filter(Boolean)
                           .join(", ") || "Location unknown"}
@@ -261,7 +261,7 @@ export function AdminVisitors() {
                     onSubmit={(e) => saveVisitorEmail(v, e)}
                     className="flex flex-wrap items-end gap-2"
                   >
-                    <label className="min-w-0 flex-1 basis-full text-xs text-white/50 sm:min-w-[140px] sm:basis-auto">
+                    <label className="min-w-0 flex-1 basis-full text-xs text-[color:var(--a-muted)] sm:min-w-[140px] sm:basis-auto">
                       Name
                       <input
                         value={d.name}
@@ -270,10 +270,10 @@ export function AdminVisitors() {
                         }
                         onFocus={() => setSelectedId(v.id)}
                         placeholder="Henry James"
-                        className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581]"
+                        className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
                       />
                     </label>
-                    <label className="min-w-0 flex-[1.4] basis-full text-xs text-white/50 sm:min-w-[200px] sm:basis-auto">
+                    <label className="min-w-0 flex-[1.4] basis-full text-xs text-[color:var(--a-muted)] sm:min-w-[200px] sm:basis-auto">
                       Email
                       <input
                         type="email"
@@ -283,7 +283,7 @@ export function AdminVisitors() {
                         }
                         onFocus={() => setSelectedId(v.id)}
                         placeholder="Continue Google → auto fill"
-                        className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581]"
+                        className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
                       />
                     </label>
                     <button
@@ -305,10 +305,10 @@ export function AdminVisitors() {
                       Saved {d.email}
                     </p>
                   ) : !d.email ? (
-                    <p className="mt-2 text-[11px] text-white/35">
+                    <p className="mt-2 text-[11px] text-[color:var(--a-faint)]">
                       Email empty = Google Continue abhi nahi hua. Site pe
-                      popup → <span className="text-white/60">Continue as…</span>{" "}
-                      dabao, ya upar <span className="text-white/60">Fetch Google emails</span>.
+                      popup → <span className="text-[color:var(--a-muted)]">Continue as…</span>{" "}
+                      dabao, ya upar <span className="text-[color:var(--a-muted)]">Fetch Google emails</span>.
                     </p>
                   ) : null}
                 </AdminCard>
@@ -319,18 +319,18 @@ export function AdminVisitors() {
 
         <AdminCard className="h-fit p-5">
           {!selected ? (
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-[color:var(--a-faint)]">
               Detail ke liye left se visitor select karo.
             </p>
           ) : (
             <div className="space-y-4">
               <div>
-                <p className="text-lg font-semibold text-white break-all">
+                <p className="text-lg font-semibold text-[var(--a-text)] break-all">
                   {selected.email ||
                     drafts[selected.id]?.email ||
                     "Anonymous visitor"}
                 </p>
-                <p className="text-xs text-white/45">
+                <p className="text-xs text-[color:var(--a-faint)]">
                   {relativeDay(selected.lastSeenAt)}
                 </p>
               </div>
@@ -339,44 +339,44 @@ export function AdminVisitors() {
                 onClick={() => {
                   void hydrateCrmFromServer().then(() => reload("Synced from server"));
                 }}
-                className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/5"
+                className="rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs font-semibold text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
               >
                 Sync from server
               </button>
               {geoMsg ? (
-                <p className="text-[11px] text-white/45">{geoMsg}</p>
+                <p className="text-[11px] text-[color:var(--a-faint)]">{geoMsg}</p>
               ) : null}
-              <div className="space-y-1 rounded-xl border border-white/10 bg-[#0f1115] p-3 text-xs text-white/70">
+              <div className="space-y-1 rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] p-3 text-xs text-[color:var(--a-muted)]">
                 <p>
-                  <span className="text-white/40">IP</span>{" "}
-                  <span className="font-mono text-sm font-semibold text-white">
+                  <span className="text-[color:var(--a-faint)]">IP</span>{" "}
+                  <span className="font-mono text-sm font-semibold text-[var(--a-text)]">
                     {selected.geo?.ip || "Not captured"}
                   </span>
                 </p>
                 <p>
-                  <span className="text-white/40">Country</span>{" "}
+                  <span className="text-[color:var(--a-faint)]">Country</span>{" "}
                   {selected.geo?.country || selected.geo?.countryCode || "—"}
                 </p>
                 <p>
-                  <span className="text-white/40">City</span>{" "}
+                  <span className="text-[color:var(--a-faint)]">City</span>{" "}
                   {selected.geo?.city || "—"}
                 </p>
                 <p>
-                  <span className="text-white/40">Region</span>{" "}
+                  <span className="text-[color:var(--a-faint)]">Region</span>{" "}
                   {selected.geo?.region || "—"}
                 </p>
                 <p>
-                  <span className="text-white/40">ISP</span>{" "}
+                  <span className="text-[color:var(--a-faint)]">ISP</span>{" "}
                   {selected.geo?.isp || "—"}
                 </p>
                 <p>
-                  <span className="text-white/40">Visits</span>{" "}
+                  <span className="text-[color:var(--a-faint)]">Visits</span>{" "}
                   {selected.visitCount} ·{" "}
                   {formatDuration(selected.totalDurationMs)}
                 </p>
                 {selected.geoHistory && selected.geoHistory.length ? (
-                  <div className="mt-2 border-t border-white/10 pt-2">
-                    <p className="mb-1 text-white/40">Previous IPs</p>
+                  <div className="mt-2 border-t border-[color:var(--a-border)] pt-2">
+                    <p className="mb-1 text-[color:var(--a-faint)]">Previous IPs</p>
                     <ul className="space-y-1">
                       {selected.geoHistory.map((h) => (
                         <li key={`${h.ip}-${h.at}`} className="font-mono text-[11px]">
@@ -396,7 +396,7 @@ export function AdminVisitors() {
                   </p>
                 ) : null}
               </div>
-              <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-white/55">
+              <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-[color:var(--a-muted)]">
                 {(selected.pageViews || []).slice(0, 15).map((p) => (
                   <li key={p.id}>
                     {p.path} · {formatDuration(p.durationMs)}

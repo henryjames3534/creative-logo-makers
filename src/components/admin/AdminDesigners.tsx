@@ -164,13 +164,13 @@ export function AdminDesigners() {
     setAssignFor(null);
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Designers</h1>
-        <p className="mt-1 text-sm text-white/50">
+        <h1 className="text-2xl font-semibold text-[var(--a-text)]">Designers</h1>
+        <p className="mt-1 text-sm text-[color:var(--a-muted)]">
           Site pe listed saare {designers.length} designers — kisi ko bhi
           project / task assign karo.
         </p>
@@ -190,7 +190,7 @@ export function AdminDesigners() {
             setPage(0);
           }}
           placeholder="Search name, handle, skill, location…"
-          className="min-w-0 flex-1 basis-full rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581] sm:min-w-[200px] sm:basis-auto"
+          className="min-w-0 flex-1 basis-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581] sm:min-w-[200px] sm:basis-auto"
         />
         <select
           value={level}
@@ -198,7 +198,7 @@ export function AdminDesigners() {
             setLevel(e.target.value as DesignerLevel | "all");
             setPage(0);
           }}
-          className="rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white"
+          className="rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)]"
         >
           <option value="all">All levels</option>
           <option value="top">Top</option>
@@ -207,7 +207,7 @@ export function AdminDesigners() {
         </select>
       </div>
 
-      <p className="text-xs text-white/40">
+      <p className="text-xs text-[color:var(--a-faint)]">
         Showing {rows.length} of {filtered.length} designers
         {filtered.length !== designers.length
           ? ` (filtered from ${designers.length})`
@@ -221,7 +221,7 @@ export function AdminDesigners() {
           return (
             <AdminCard key={d.id} className="overflow-hidden p-0">
               <div className="flex gap-3 p-4">
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-white/5">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[var(--a-hover)]">
                   <Image
                     src={safeDesignerImage(d.avatar || d.image)}
                     alt={d.name}
@@ -233,10 +233,10 @@ export function AdminDesigners() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-white">
+                      <p className="truncate font-semibold text-[var(--a-text)]">
                         {d.name}
                       </p>
-                      <p className="text-xs text-white/45">@{d.handle}</p>
+                      <p className="text-xs text-[color:var(--a-faint)]">@{d.handle}</p>
                     </div>
                     {note ? (
                       <Badge
@@ -254,10 +254,10 @@ export function AdminDesigners() {
                       <Badge tone="neutral">{levelLabel(d.level)}</Badge>
                     )}
                   </div>
-                  <p className="mt-1 truncate text-xs text-white/55">
+                  <p className="mt-1 truncate text-xs text-[color:var(--a-muted)]">
                     {d.specialty} · {d.location}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-white/35">
+                  <p className="mt-0.5 text-[11px] text-[color:var(--a-faint)]">
                     ★ {d.rating} · {d.projects} projects
                     {assigned ? ` · ${assigned} CRM assigns` : ""}
                   </p>
@@ -272,14 +272,14 @@ export function AdminDesigners() {
                     <button
                       type="button"
                       onClick={() => openAssign(d, "task")}
-                      className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/75 hover:bg-white/5"
+                      className="rounded-full border border-[color:var(--a-border)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
                     >
                       Assign task
                     </button>
                     <button
                       type="button"
                       onClick={() => openNote(d.id)}
-                      className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/75 hover:bg-white/5"
+                      className="rounded-full border border-[color:var(--a-border)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
                     >
                       CRM note
                     </button>
@@ -291,13 +291,13 @@ export function AdminDesigners() {
                     </Link>
                     <Link
                       href={`/designers/${d.id}`}
-                      className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/75 hover:bg-white/5"
+                      className="rounded-full border border-[color:var(--a-border)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
                     >
                       Profile
                     </Link>
                   </div>
                   {note?.updatedAt ? (
-                    <p className="mt-2 text-[10px] text-white/30">
+                    <p className="mt-2 text-[10px] text-[color:var(--a-faint)]">
                       Note {relativeDay(note.updatedAt)}
                     </p>
                   ) : null}
@@ -313,18 +313,18 @@ export function AdminDesigners() {
           type="button"
           disabled={pageSafe <= 0}
           onClick={() => setPage((p) => Math.max(0, p - 1))}
-          className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/70 disabled:opacity-35"
+          className="rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] disabled:opacity-35"
         >
           Prev
         </button>
-        <span className="text-xs text-white/45">
+        <span className="text-xs text-[color:var(--a-faint)]">
           Page {pageSafe + 1} / {totalPages}
         </span>
         <button
           type="button"
           disabled={pageSafe >= totalPages - 1}
           onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-          className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/70 disabled:opacity-35"
+          className="rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] disabled:opacity-35"
         >
           Next
         </button>
@@ -334,10 +334,10 @@ export function AdminDesigners() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={saveNote}
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle title="Designer CRM note" />
-            <label className="block text-xs text-white/50">
+            <label className="block text-xs text-[color:var(--a-muted)]">
               Status
               <select
                 value={noteDraft.status}
@@ -347,7 +347,7 @@ export function AdminDesigners() {
                     status: e.target.value as CrmDesignerNote["status"],
                   }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               >
                 {NOTE_STATUSES.map((s) => (
                   <option key={s} value={s}>
@@ -356,17 +356,17 @@ export function AdminDesigners() {
                 ))}
               </select>
             </label>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Tags
               <input
                 value={noteDraft.tags}
                 onChange={(e) =>
                   setNoteDraft((d) => ({ ...d, tags: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Notes
               <textarea
                 value={noteDraft.notes}
@@ -374,14 +374,14 @@ export function AdminDesigners() {
                   setNoteDraft((d) => ({ ...d, notes: e.target.value }))
                 }
                 rows={4}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setNoteEdit(null)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>
@@ -400,7 +400,7 @@ export function AdminDesigners() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onAssign}
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle
               title={
@@ -416,7 +416,7 @@ export function AdminDesigners() {
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
                   assignMode === "project"
                     ? "bg-[#00a581] text-white"
-                    : "border border-white/10 text-white/60"
+                    : "border border-[color:var(--a-border)] text-[color:var(--a-muted)]"
                 }`}
               >
                 Project
@@ -427,20 +427,20 @@ export function AdminDesigners() {
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
                   assignMode === "task"
                     ? "bg-[#00a581] text-white"
-                    : "border border-white/10 text-white/60"
+                    : "border border-[color:var(--a-border)] text-[color:var(--a-muted)]"
                 }`}
               >
                 Task
               </button>
             </div>
 
-            <label className="block text-xs text-white/50">
+            <label className="block text-xs text-[color:var(--a-muted)]">
               Project
               <select
                 required={assignMode === "project"}
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               >
                 <option value="">
                   {assignMode === "task" ? "No project (optional)" : "Select…"}
@@ -455,52 +455,52 @@ export function AdminDesigners() {
 
             {assignMode === "task" ? (
               <>
-                <label className="mt-3 block text-xs text-white/50">
+                <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
                   Task title
                   <input
                     required
                     value={taskTitle}
                     onChange={(e) => setTaskTitle(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                   />
                 </label>
                 <div className="mt-3 grid grid-cols-2 gap-3">
-                  <label className="block text-xs text-white/50">
+                  <label className="block text-xs text-[color:var(--a-muted)]">
                     Priority
                     <select
                       value={taskPriority}
                       onChange={(e) =>
                         setTaskPriority(e.target.value as TaskPriority)
                       }
-                      className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                      className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                     >
                       <option value="low">low</option>
                       <option value="medium">medium</option>
                       <option value="high">high</option>
                     </select>
                   </label>
-                  <label className="block text-xs text-white/50">
+                  <label className="block text-xs text-[color:var(--a-muted)]">
                     Due
                     <input
                       type="date"
                       value={taskDue}
                       onChange={(e) => setTaskDue(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                      className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                     />
                   </label>
                 </div>
-                <label className="mt-3 block text-xs text-white/50">
+                <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
                   Notes
                   <textarea
                     value={taskNotes}
                     onChange={(e) => setTaskNotes(e.target.value)}
                     rows={2}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                   />
                 </label>
               </>
             ) : (
-              <p className="mt-3 text-xs text-white/45">
+              <p className="mt-3 text-xs text-[color:var(--a-faint)]">
                 Designer project pe assign hoga + automatic kickoff task ban
                 jayega.
               </p>
@@ -510,7 +510,7 @@ export function AdminDesigners() {
               <button
                 type="button"
                 onClick={() => setAssignFor(null)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>

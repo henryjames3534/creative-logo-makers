@@ -55,8 +55,8 @@ export function AdminLiveChat() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Live chat</h1>
-        <p className="mt-1 text-sm text-white/50">
+        <h1 className="text-2xl font-semibold text-[var(--a-text)]">Live chat</h1>
+        <p className="mt-1 text-sm text-[color:var(--a-muted)]">
           Visitor chats open automatically on the site. Reply here in real time.
         </p>
       </div>
@@ -65,7 +65,7 @@ export function AdminLiveChat() {
         <AdminCard className="max-h-[70vh] overflow-y-auto p-3">
           <SectionTitle title="Sessions" />
           {sessions.length === 0 ? (
-            <p className="py-8 text-center text-sm text-white/40">
+            <p className="py-8 text-center text-sm text-[color:var(--a-faint)]">
               No chats yet. When a visitor lands, chat opens and alerts you.
             </p>
           ) : (
@@ -81,11 +81,11 @@ export function AdminLiveChat() {
                       className={`w-full rounded-xl px-3 py-2.5 text-left transition ${
                         selected
                           ? "bg-[#5b8def]/20 ring-1 ring-[#5b8def]/40"
-                          : "hover:bg-white/5"
+                          : "hover:bg-[var(--a-hover)]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-medium text-white">
+                        <p className="truncate text-sm font-medium text-[var(--a-text)]">
                           {s.visitorKey.slice(0, 14)}…
                         </p>
                         {!s.seenByAdmin && s.status === "open" ? (
@@ -94,7 +94,7 @@ export function AdminLiveChat() {
                           <Badge tone="neutral">{s.status}</Badge>
                         )}
                       </div>
-                      <p className="mt-0.5 truncate text-[11px] text-white/40">
+                      <p className="mt-0.5 truncate text-[11px] text-[color:var(--a-faint)]">
                         {s.path || "/"} · {last?.body.slice(0, 48)}
                       </p>
                     </button>
@@ -107,17 +107,17 @@ export function AdminLiveChat() {
 
         <AdminCard className="flex max-h-[70vh] flex-col p-0">
           {!active ? (
-            <p className="p-8 text-center text-sm text-white/40">
+            <p className="p-8 text-center text-sm text-[color:var(--a-faint)]">
               Select a chat session.
             </p>
           ) : (
             <>
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+              <div className="flex items-center justify-between border-b border-[color:var(--a-border)] px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-[var(--a-text)]">
                     {active.visitorKey}
                   </p>
-                  <p className="text-[11px] text-white/40">
+                  <p className="text-[11px] text-[color:var(--a-faint)]">
                     {active.path || "/"} · opened{" "}
                     {new Date(active.createdAt).toLocaleString()}
                   </p>
@@ -129,7 +129,7 @@ export function AdminLiveChat() {
                       closeChatSession(active.id);
                       refresh();
                     }}
-                    className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5"
+                    className="rounded-full border border-[color:var(--a-border-strong)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
                   >
                     Close chat
                   </button>
@@ -141,13 +141,13 @@ export function AdminLiveChat() {
                     key={m.id}
                     className={`rounded-xl px-3 py-2 text-sm ${
                       m.role === "visitor"
-                        ? "ml-8 bg-[#5b8def]/15 text-white"
+                        ? "ml-8 bg-[#5b8def]/15 text-[var(--a-text)]"
                         : m.role === "admin"
                           ? "mr-8 bg-[#00a581]/20 text-white"
-                          : "mr-8 bg-white/5 text-white/80"
+                          : "mr-8 bg-[var(--a-hover)] text-[color:var(--a-muted)]"
                     }`}
                   >
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-white/45">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--a-faint)]">
                       {m.role}
                     </p>
                     <p className="mt-0.5 whitespace-pre-wrap">{m.body}</p>
@@ -156,17 +156,17 @@ export function AdminLiveChat() {
               </div>
               <form
                 onSubmit={onReply}
-                className="flex gap-2 border-t border-white/10 p-3"
+                className="flex gap-2 border-t border-[color:var(--a-border)] p-3"
               >
                 <input
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
                   placeholder="Reply to visitor…"
-                  className="flex-1 rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white outline-none focus:border-[#5b8def]"
+                  className="flex-1 rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#5b8def]"
                 />
                 <button
                   type="submit"
-                  className="rounded-full bg-[#5b8def] px-4 py-2 text-sm font-semibold text-white"
+                  className="rounded-full bg-[#5b8def] px-4 py-2 text-sm font-semibold text-[var(--a-text)]"
                 >
                   Send
                 </button>

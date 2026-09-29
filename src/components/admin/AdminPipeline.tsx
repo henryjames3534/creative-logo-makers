@@ -72,14 +72,14 @@ export function AdminPipeline() {
     });
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Sales pipeline</h1>
-          <p className="mt-1 text-sm text-white/50">
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Sales pipeline</h1>
+          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Drag deals across stages — CRM updates probability and activity log.
           </p>
         </div>
@@ -109,15 +109,15 @@ export function AdminPipeline() {
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ background: stage.color }}
                   />
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-[var(--a-text)]">
                     {stage.label}
                   </p>
                 </div>
-                <p className="text-xs text-white/40">
+                <p className="text-xs text-[color:var(--a-faint)]">
                   {deals.length} · {money(total)}
                 </p>
               </div>
-              <div className="min-h-[420px] space-y-2 rounded-2xl border border-dashed border-white/10 bg-[#14171e] p-2">
+              <div className="min-h-[420px] space-y-2 rounded-2xl border border-dashed border-[color:var(--a-border)] bg-[var(--a-panel)] p-2">
                 {deals.map((d) => (
                   <AdminCard
                     key={d.id}
@@ -128,7 +128,7 @@ export function AdminPipeline() {
                       onDragStart={() => setDragging(d.id)}
                       onDragEnd={() => setDragging(null)}
                     >
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-[var(--a-text)]">
                         {d.title}
                       </p>
                       <p className="mt-1 text-lg font-bold text-[#5ee0bf]">
@@ -140,7 +140,7 @@ export function AdminPipeline() {
                           <Badge tone="gold">{d.packageName}</Badge>
                         ) : null}
                       </div>
-                      <p className="mt-2 text-[11px] text-white/35">
+                      <p className="mt-2 text-[11px] text-[color:var(--a-faint)]">
                         Close {relativeDay(d.closeDate)}
                       </p>
                     </div>
@@ -156,10 +156,10 @@ export function AdminPipeline() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onSave}
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle title="New deal" />
-            <label className="block text-xs text-white/50">
+            <label className="block text-xs text-[color:var(--a-muted)]">
               Title
               <input
                 required
@@ -167,11 +167,11 @@ export function AdminPipeline() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, title: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Value
                 <input
                   required
@@ -179,21 +179,21 @@ export function AdminPipeline() {
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, value: e.target.value }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 />
               </label>
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Probability %
                 <input
                   value={draft.probability}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, probability: e.target.value }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 />
               </label>
             </div>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Stage
               <select
                 value={draft.stage}
@@ -203,7 +203,7 @@ export function AdminPipeline() {
                     stage: e.target.value as DealStage,
                   }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               >
                 {DEAL_STAGES.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -212,21 +212,21 @@ export function AdminPipeline() {
                 ))}
               </select>
             </label>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Package
               <input
                 value={draft.packageName}
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, packageName: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>

@@ -53,15 +53,15 @@ export function AdminSupport() {
     setReply("");
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-white">
+        <h1 className="text-2xl font-semibold text-[var(--a-text)]">
           Support inbox
         </h1>
-        <p className="mt-1 text-sm text-white/50">
+        <p className="mt-1 text-sm text-[color:var(--a-muted)]">
           Customer portal revisions, messages, likes, and winner picks — manage
           replies here.
         </p>
@@ -83,7 +83,7 @@ export function AdminSupport() {
             className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
               filter === id
                 ? "bg-[#00a581] text-white"
-                : "border border-white/10 text-white/60"
+                : "border border-[color:var(--a-border)] text-[color:var(--a-muted)]"
             }`}
           >
             {label}
@@ -95,7 +95,7 @@ export function AdminSupport() {
         <AdminCard className="overflow-hidden">
           <ul className="divide-y divide-white/5">
             {rows.length === 0 ? (
-              <li className="px-4 py-10 text-center text-sm text-white/40">
+              <li className="px-4 py-10 text-center text-sm text-[color:var(--a-faint)]">
                 No items. When a customer sends a revision or message from
                 /account, it lands here.
               </li>
@@ -114,7 +114,7 @@ export function AdminSupport() {
                         setActive({ ...item, status: "in_progress" });
                       }
                     }}
-                    className={`w-full px-4 py-3 text-left hover:bg-white/[0.03] ${
+                    className={`w-full px-4 py-3 text-left hover:bg-[var(--a-hover)] ${
                       active?.id === item.id ? "bg-white/[0.05]" : ""
                     }`}
                   >
@@ -139,17 +139,17 @@ export function AdminSupport() {
                       >
                         {item.status}
                       </Badge>
-                      <span className="text-[11px] text-white/35">
+                      <span className="text-[11px] text-[color:var(--a-faint)]">
                         {relativeDay(item.createdAt)}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm font-medium text-white">
+                    <p className="mt-1 text-sm font-medium text-[var(--a-text)]">
                       {item.customerName}{" "}
-                      <span className="font-normal text-white/45">
+                      <span className="font-normal text-[color:var(--a-faint)]">
                         · {item.customerEmail}
                       </span>
                     </p>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-white/50">
+                    <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--a-muted)]">
                       {item.body}
                     </p>
                   </button>
@@ -161,16 +161,16 @@ export function AdminSupport() {
 
         <AdminCard className="p-5">
           {!active ? (
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-[color:var(--a-faint)]">
               Select a revision or message to reply.
             </p>
           ) : (
             <div>
               <SectionTitle title={active.serviceTitle} />
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-[color:var(--a-muted)]">
                 {active.customerName} · {active.customerEmail}
               </p>
-              <p className="mt-4 rounded-xl border border-white/10 bg-[#0f1115] p-4 text-sm text-white/80 whitespace-pre-wrap">
+              <p className="mt-4 rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] p-4 text-sm text-[color:var(--a-muted)] whitespace-pre-wrap">
                 {active.body}
               </p>
               {active.adminReply ? (
@@ -187,7 +187,7 @@ export function AdminSupport() {
                   onChange={(e) => setReply(e.target.value)}
                   rows={4}
                   placeholder="Reply to customer portal…"
-                  className="w-full rounded-xl border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581]"
+                  className="w-full rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
                 />
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -205,13 +205,13 @@ export function AdminSupport() {
                       setState({ ...next });
                       setActive({ ...active, status: "resolved" });
                     }}
-                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                    className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
                   >
                     Mark resolved
                   </button>
                 </div>
               </form>
-              <p className="mt-3 text-[11px] text-white/35">
+              <p className="mt-3 text-[11px] text-[color:var(--a-faint)]">
                 Reply also appears in the customer&apos;s /account messages
                 thread.
               </p>
@@ -220,7 +220,7 @@ export function AdminSupport() {
         </AdminCard>
       </div>
 
-      <p className="text-xs text-white/30">
+      <p className="text-xs text-[color:var(--a-faint)]">
         Open tasks auto-created for new inbox items ·{" "}
         {state.tasks.filter((t) => t.status !== "done").length} open tasks ·
         avg visitor session{" "}

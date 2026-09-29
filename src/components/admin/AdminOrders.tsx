@@ -128,14 +128,14 @@ export function AdminOrders() {
     if (editing?.id === id) setFormOpen(false);
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Orders</h1>
-          <p className="mt-1 text-sm text-white/50">
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Orders</h1>
+          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Contests &amp; projects from the marketplace.
           </p>
         </div>
@@ -153,12 +153,12 @@ export function AdminOrders() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search orders…"
-          className="min-w-0 flex-1 basis-full rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581] sm:min-w-[200px] sm:basis-auto"
+          className="min-w-0 flex-1 basis-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581] sm:min-w-[200px] sm:basis-auto"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white"
+          className="rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)]"
         >
           <option value="all">All statuses</option>
           {STATUSES.map((s) => (
@@ -172,7 +172,7 @@ export function AdminOrders() {
       <AdminCard className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-white/10 text-[11px] uppercase tracking-wide text-white/40">
+            <thead className="border-b border-[color:var(--a-border)] text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
               <tr>
                 <th className="px-4 py-3 font-medium">Order</th>
                 <th className="px-4 py-3 font-medium">Customer</th>
@@ -188,25 +188,25 @@ export function AdminOrders() {
               {rows.map((o) => (
                 <tr
                   key={o.id}
-                  className="cursor-pointer border-b border-white/5 hover:bg-white/[0.03]"
+                  className="cursor-pointer border-b border-[color:var(--a-border)] hover:bg-[var(--a-hover)]"
                   onClick={() => openEdit(o)}
                 >
                   <td className="px-4 py-3">
-                    <p className="font-medium text-white">{o.orderId}</p>
-                    <p className="text-xs text-white/40">{o.categoryName}</p>
+                    <p className="font-medium text-[var(--a-text)]">{o.orderId}</p>
+                    <p className="text-xs text-[color:var(--a-faint)]">{o.categoryName}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-white/80">{o.customerName}</p>
-                    <p className="text-xs text-white/40">{o.customerEmail}</p>
+                    <p className="text-[color:var(--a-muted)]">{o.customerName}</p>
+                    <p className="text-xs text-[color:var(--a-faint)]">{o.customerEmail}</p>
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone="gold">{o.packageName}</Badge>
-                    <p className="mt-1 text-[11px] text-white/35">
+                    <p className="mt-1 text-[11px] text-[color:var(--a-faint)]">
                       {o.designerCount} designers
                     </p>
                   </td>
-                  <td className="px-4 py-3 text-white/80">{money(o.amount)}</td>
-                  <td className="px-4 py-3 capitalize text-white/70">
+                  <td className="px-4 py-3 text-[color:var(--a-muted)]">{money(o.amount)}</td>
+                  <td className="px-4 py-3 capitalize text-[color:var(--a-muted)]">
                     {o.status.replace(/_/g, " ")}
                   </td>
                   <td className="px-4 py-3">
@@ -222,7 +222,7 @@ export function AdminOrders() {
                       {o.paymentStatus}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-white/40">
+                  <td className="px-4 py-3 text-[color:var(--a-faint)]">
                     {relativeDay(o.updatedAt)}
                   </td>
                   <td className="px-4 py-3">
@@ -245,7 +245,7 @@ export function AdminOrders() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onSave}
-            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle title={editing ? "Edit order" : "New order"} />
             <div className="grid gap-3 sm:grid-cols-2">
@@ -259,7 +259,7 @@ export function AdminOrders() {
                   ["designerCount", "Designers"],
                 ] as const
               ).map(([key, label]) => (
-                <label key={key} className="block text-xs text-white/50">
+                <label key={key} className="block text-xs text-[color:var(--a-muted)]">
                   {label}
                   <input
                     required={
@@ -269,18 +269,18 @@ export function AdminOrders() {
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, [key]: e.target.value }))
                     }
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                   />
                 </label>
               ))}
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Status
                 <select
                   value={draft.status}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, status: e.target.value }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
@@ -289,7 +289,7 @@ export function AdminOrders() {
                   ))}
                 </select>
               </label>
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Payment
                 <select
                   value={draft.paymentStatus}
@@ -299,7 +299,7 @@ export function AdminOrders() {
                       paymentStatus: e.target.value,
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 >
                   {PAYMENTS.map((s) => (
                     <option key={s} value={s}>
@@ -313,7 +313,7 @@ export function AdminOrders() {
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>

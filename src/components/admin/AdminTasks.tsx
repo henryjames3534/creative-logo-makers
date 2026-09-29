@@ -83,7 +83,7 @@ export function AdminTasks() {
     setFormOpen(false);
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   const ownerMap = new Map(state.owners.map((o) => [o.id, o.name]));
 
@@ -91,8 +91,8 @@ export function AdminTasks() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Tasks</h1>
-          <p className="mt-1 text-sm text-white/50">
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Tasks</h1>
+          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Follow-ups, calls, and ops checklists.
           </p>
         </div>
@@ -114,7 +114,7 @@ export function AdminTasks() {
             className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
               status === s
                 ? "bg-[#00a581] text-white"
-                : "border border-white/10 text-white/60 hover:bg-white/5"
+                : "border border-[color:var(--a-border)] text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
             }`}
           >
             {s}
@@ -149,8 +149,8 @@ export function AdminTasks() {
                   <p
                     className={`font-medium ${
                       t.status === "done"
-                        ? "text-white/40 line-through"
-                        : "text-white"
+                        ? "text-[color:var(--a-faint)] line-through"
+                        : "text-[var(--a-text)]"
                     }`}
                   >
                     {t.title}
@@ -180,12 +180,12 @@ export function AdminTasks() {
                     </Badge>
                     <span
                       className={`text-xs ${
-                        overdue ? "text-[#ff9a90]" : "text-white/40"
+                        overdue ? "text-[#ff9a90]" : "text-[color:var(--a-faint)]"
                       }`}
                     >
                       Due {relativeDay(t.dueAt)}
                     </span>
-                    <span className="text-xs text-white/30">
+                    <span className="text-xs text-[color:var(--a-faint)]">
                       ·{" "}
                       {t.designerName
                         ? `Designer: ${t.designerName}`
@@ -203,10 +203,10 @@ export function AdminTasks() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onSave}
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle title={editing ? "Edit task" : "New task"} />
-            <label className="block text-xs text-white/50">
+            <label className="block text-xs text-[color:var(--a-muted)]">
               Title
               <input
                 required
@@ -214,11 +214,11 @@ export function AdminTasks() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, title: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Status
                 <select
                   value={draft.status}
@@ -228,14 +228,14 @@ export function AdminTasks() {
                       status: e.target.value as TaskStatus,
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 >
                   <option value="todo">Todo</option>
                   <option value="doing">Doing</option>
                   <option value="done">Done</option>
                 </select>
               </label>
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Priority
                 <select
                   value={draft.priority}
@@ -245,7 +245,7 @@ export function AdminTasks() {
                       priority: e.target.value as TaskPriority,
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -253,7 +253,7 @@ export function AdminTasks() {
                 </select>
               </label>
             </div>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Due date
               <input
                 type="date"
@@ -262,14 +262,14 @@ export function AdminTasks() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, dueAt: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>

@@ -133,13 +133,13 @@ export function AdminProjects() {
     refresh();
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Projects</h1>
-        <p className="mt-1 text-sm text-white/50">
+        <h1 className="text-2xl font-semibold text-[var(--a-text)]">Projects</h1>
+        <p className="mt-1 text-sm text-[color:var(--a-muted)]">
           Har project ke apne tasks aur multiple revision rounds — yahan manage
           hote hain.
         </p>
@@ -149,7 +149,7 @@ export function AdminProjects() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search projects…"
-        className="w-full rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581]"
+        className="w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
       />
 
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.3fr]">
@@ -169,14 +169,14 @@ export function AdminProjects() {
                       setSelectedId(o.id);
                       setTab("revisions");
                     }}
-                    className={`w-full px-4 py-3 text-left hover:bg-white/[0.03] ${
+                    className={`w-full px-4 py-3 text-left hover:bg-[var(--a-hover)] ${
                       selectedId === o.id ? "bg-white/[0.05]" : ""
                     }`}
                   >
-                    <p className="text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-[var(--a-text)]">
                       {o.title || o.categoryName}
                     </p>
-                    <p className="text-[11px] text-white/45">
+                    <p className="text-[11px] text-[color:var(--a-faint)]">
                       {o.orderId} · {o.customerName}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -197,7 +197,7 @@ export function AdminProjects() {
         </AdminCard>
 
         {!project ? (
-          <AdminCard className="p-6 text-sm text-white/40">
+          <AdminCard className="p-6 text-sm text-[color:var(--a-faint)]">
             Select a project.
           </AdminCard>
         ) : (
@@ -208,10 +208,10 @@ export function AdminProjects() {
                   <p className="text-[11px] font-bold uppercase tracking-wide text-[#00a581]">
                     {project.orderId}
                   </p>
-                  <h2 className="text-xl font-semibold text-white">
+                  <h2 className="text-xl font-semibold text-[var(--a-text)]">
                     {project.title || project.categoryName}
                   </h2>
-                  <p className="mt-1 text-sm text-white/55">
+                  <p className="mt-1 text-sm text-[color:var(--a-muted)]">
                     {project.customerName} · {project.customerEmail}
                   </p>
                 </div>
@@ -219,7 +219,7 @@ export function AdminProjects() {
                   <p className="text-lg font-bold text-[#5ee0bf]">
                     {money(project.amount)}
                   </p>
-                  <p className="text-xs capitalize text-white/40">
+                  <p className="text-xs capitalize text-[color:var(--a-faint)]">
                     {project.status.replace(/_/g, " ")}
                   </p>
                   <button
@@ -231,7 +231,7 @@ export function AdminProjects() {
                   </button>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/50">
+              <div className="mt-4 flex flex-wrap gap-2 text-xs text-[color:var(--a-muted)]">
                 <span>
                   Revisions {project.revisionsUsed}/{project.revisionLimit}
                 </span>
@@ -249,13 +249,13 @@ export function AdminProjects() {
                   {" · "}
                   <Link
                     href="/admin/designers"
-                    className="underline hover:text-white"
+                    className="underline hover:text-[var(--a-text)]"
                   >
                     Manage in Designers
                   </Link>
                 </p>
               ) : (
-                <p className="mt-2 text-[11px] text-white/35">
+                <p className="mt-2 text-[11px] text-[color:var(--a-faint)]">
                   No designer assigned yet —{" "}
                   <Link
                     href="/admin/designers"
@@ -281,7 +281,7 @@ export function AdminProjects() {
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                     tab === id
                       ? "bg-[#00a581] text-white"
-                      : "border border-white/10 text-white/60"
+                      : "border border-[color:var(--a-border)] text-[color:var(--a-muted)]"
                   }`}
                 >
                   {label}
@@ -320,7 +320,7 @@ export function AdminProjects() {
             {tab === "revisions" ? (
               <div className="space-y-2">
                 {(project.revisions || []).length === 0 ? (
-                  <AdminCard className="p-6 text-center text-sm text-white/40">
+                  <AdminCard className="p-6 text-center text-sm text-[color:var(--a-faint)]">
                     No revision rounds yet. Customer portal requests or admin
                     can add rounds (max {project.revisionLimit}).
                   </AdminCard>
@@ -347,10 +347,10 @@ export function AdminProjects() {
                               </Badge>
                               <Badge tone="neutral">{r.requestedBy}</Badge>
                             </div>
-                            <p className="mt-2 font-medium text-white">
+                            <p className="mt-2 font-medium text-[var(--a-text)]">
                               {r.title}
                             </p>
-                            <p className="mt-1 text-sm text-white/60 whitespace-pre-wrap">
+                            <p className="mt-1 text-sm text-[color:var(--a-muted)] whitespace-pre-wrap">
                               {r.note}
                             </p>
                             {r.adminReply ? (
@@ -359,7 +359,7 @@ export function AdminProjects() {
                               </p>
                             ) : null}
                           </div>
-                          <p className="text-[11px] text-white/35">
+                          <p className="text-[11px] text-[color:var(--a-faint)]">
                             {relativeDay(r.createdAt)}
                           </p>
                         </div>
@@ -373,7 +373,7 @@ export function AdminProjects() {
                               });
                               refresh();
                             }}
-                            className="rounded-lg border border-white/10 bg-[#0f1115] px-2 py-1.5 text-xs text-white"
+                            className="rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-2 py-1.5 text-xs text-[var(--a-text)]"
                           >
                             {REV_STATUSES.map((s) => (
                               <option key={s} value={s}>
@@ -395,7 +395,7 @@ export function AdminProjects() {
                               });
                               refresh();
                             }}
-                            className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5"
+                            className="rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
                           >
                             Reply &amp; deliver
                           </button>
@@ -407,7 +407,7 @@ export function AdminProjects() {
             ) : (
               <div className="space-y-2">
                 {projectTasks.length === 0 ? (
-                  <AdminCard className="p-6 text-center text-sm text-white/40">
+                  <AdminCard className="p-6 text-center text-sm text-[color:var(--a-faint)]">
                     No tasks on this project yet.
                   </AdminCard>
                 ) : (
@@ -435,14 +435,14 @@ export function AdminProjects() {
                           <p
                             className={`font-medium ${
                               t.status === "done"
-                                ? "text-white/40 line-through"
-                                : "text-white"
+                                ? "text-[color:var(--a-faint)] line-through"
+                                : "text-[var(--a-text)]"
                             }`}
                           >
                             {t.title}
                           </p>
                           {t.notes ? (
-                            <p className="mt-1 text-xs text-white/45">
+                            <p className="mt-1 text-xs text-[color:var(--a-faint)]">
                               {t.notes}
                             </p>
                           ) : null}
@@ -455,7 +455,7 @@ export function AdminProjects() {
                               {t.priority}
                             </Badge>
                             <Badge tone="neutral">{t.status}</Badge>
-                            <span className="text-xs text-white/40">
+                            <span className="text-xs text-[color:var(--a-faint)]">
                               Due {relativeDay(t.dueAt)}
                             </span>
                           </div>
@@ -469,7 +469,7 @@ export function AdminProjects() {
                             });
                             refresh();
                           }}
-                          className="rounded-lg border border-white/10 bg-[#0f1115] px-2 py-1 text-xs text-white"
+                          className="rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-2 py-1 text-xs text-[var(--a-text)]"
                         >
                           <option value="todo">todo</option>
                           <option value="doing">doing</option>
@@ -489,10 +489,10 @@ export function AdminProjects() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onAddTask}
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle title={`Task · ${project.orderId}`} />
-            <label className="block text-xs text-white/50">
+            <label className="block text-xs text-[color:var(--a-muted)]">
               Title
               <input
                 required
@@ -500,11 +500,11 @@ export function AdminProjects() {
                 onChange={(e) =>
                   setTaskDraft((d) => ({ ...d, title: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Priority
                 <select
                   value={taskDraft.priority}
@@ -514,14 +514,14 @@ export function AdminProjects() {
                       priority: e.target.value as TaskPriority,
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 >
                   <option value="low">low</option>
                   <option value="medium">medium</option>
                   <option value="high">high</option>
                 </select>
               </label>
-              <label className="block text-xs text-white/50">
+              <label className="block text-xs text-[color:var(--a-muted)]">
                 Due
                 <input
                   type="date"
@@ -530,11 +530,11 @@ export function AdminProjects() {
                   onChange={(e) =>
                     setTaskDraft((d) => ({ ...d, dueAt: e.target.value }))
                   }
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 />
               </label>
             </div>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Notes
               <textarea
                 value={taskDraft.notes}
@@ -542,14 +542,14 @@ export function AdminProjects() {
                   setTaskDraft((d) => ({ ...d, notes: e.target.value }))
                 }
                 rows={2}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setTaskOpen(false)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>
@@ -568,16 +568,16 @@ export function AdminProjects() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onAddRevision}
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle
               title={`Revision R${(project.revisions?.length || 0) + 1}`}
             />
-            <p className="mb-3 text-xs text-white/40">
+            <p className="mb-3 text-xs text-[color:var(--a-faint)]">
               Limit {project.revisionLimit} rounds · used{" "}
               {project.revisionsUsed}
             </p>
-            <label className="block text-xs text-white/50">
+            <label className="block text-xs text-[color:var(--a-muted)]">
               Title
               <input
                 value={revDraft.title}
@@ -585,10 +585,10 @@ export function AdminProjects() {
                   setRevDraft((d) => ({ ...d, title: e.target.value }))
                 }
                 placeholder="e.g. Logo spacing"
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Notes / brief
               <textarea
                 required
@@ -597,14 +597,14 @@ export function AdminProjects() {
                   setRevDraft((d) => ({ ...d, note: e.target.value }))
                 }
                 rows={4}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setRevOpen(false)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>

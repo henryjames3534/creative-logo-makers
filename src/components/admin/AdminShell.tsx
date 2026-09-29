@@ -18,6 +18,9 @@ import {
   type LiveChatSession,
 } from "@/lib/live-chat";
 
+const THEME_KEY = "clm_admin_theme";
+type AdminTheme = "dark" | "light";
+
 const nav = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/live-chat", label: "Live chat" },
@@ -36,6 +39,16 @@ const nav = [
   { href: "/admin/settings", label: "Settings" },
 ];
 
+function readTheme(): AdminTheme {
+  try {
+    const v = localStorage.getItem(THEME_KEY);
+    if (v === "light" || v === "dark") return v;
+  } catch {
+    /* ignore */
+  }
+  return "dark";
+}
+
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -48,7 +61,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [mobileNav, setMobileNav] = useState(false);
   const [chatUnread, setChatUnread] = useState(0);
+  const [theme, setTheme] = useState<AdminTheme>("dark");
   const [chatToast, setChatToast] = useState<LiveChatSession | null>(null);
+
+  useEffect(() => {
+    setTheme(readTheme());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,9 +140,24 @@ export function AdminShell({ children }: { children: ReactNode }) {
     router.replace("/admin");
   }
 
+  function toggleTheme() {
+    setTheme((prev) => {
+      const next: AdminTheme = prev === "dark" ? "light" : "dark";
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
   if (!ready) {
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0f1115] text-white">
+      <div
+        className="admin-root fixed inset-0 z-[200] flex items-center justify-center bg-[var(--a-bg)] text-[var(--a-text)]"
+        data-admin-theme={theme}
+      >
         Loading admin…
       </div>
     );
@@ -132,22 +165,33 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
   if (!session) {
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0f1115] px-4">
+      <div
+        className="admin-root fixed inset-0 z-[200] flex items-center justify-center bg-[var(--a-bg)] px-4"
+        data-admin-theme={theme}
+      >
         <form
           onSubmit={onLogin}
-          className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-8 shadow-2xl"
+          className="relative w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-8 shadow-2xl"
         >
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="absolute right-4 top-4 rounded-full border border-[color:var(--a-border)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
+            aria-label="Toggle light/dark mode"
+          >
+            {theme === "dark" ? "Light" : "Dark"}
+          </button>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#00a581]">
             Creative Logo Makers Admin
           </p>
-          <h1 className="mt-2 text-2xl font-semibold text-white">
+          <h1 className="mt-2 text-2xl font-semibold text-[var(--a-text)]">
             CRM sign in
           </h1>
-          <p className="mt-2 text-sm text-white/55">
+          <p className="mt-2 text-sm text-[color:var(--a-muted)]">
             Advanced CRM for leads, pipeline, orders, and designers.
           </p>
           <label className="mt-6 block">
-            <span className="text-xs font-medium text-white/50">Username</span>
+            <span className="text-xs font-medium text-[color:var(--a-muted)]">Username</span>
             <input
               type="text"
               name="username"
@@ -155,11 +199,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00a581]"
+              className="mt-1.5 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2.5 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
             />
           </label>
           <label className="mt-4 block">
-            <span className="text-xs font-medium text-white/50">Password</span>
+            <span className="text-xs font-medium text-[color:var(--a-muted)]">Password</span>
             <input
               type="password"
               name="password"
@@ -167,7 +211,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2.5 text-sm text-white outline-none focus:border-[#00a581]"
+              className="mt-1.5 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2.5 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
             />
           </label>
           {error ? (
@@ -181,7 +225,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </button>
           <Link
             href="/"
-            className="mt-4 block text-center text-sm text-white/50 hover:text-white"
+            className="mt-4 block text-center text-sm text-[color:var(--a-muted)] hover:text-[var(--a-text)]"
           >
             ← Back to site
           </Link>
@@ -191,7 +235,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex bg-[#0f1115] text-[#e8e7e4]">
+    <div
+      className="admin-root fixed inset-0 z-[200] flex bg-[var(--a-bg)] text-[var(--a-text)]"
+      data-admin-theme={theme}
+    >
       {/* Mobile dim backdrop */}
       {mobileNav ? (
         <button
@@ -203,22 +250,22 @@ export function AdminShell({ children }: { children: ReactNode }) {
       ) : null}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-20 flex w-[min(18rem,88vw)] flex-col border-r border-white/10 bg-[#14171e] transition md:static md:w-64 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-20 flex w-[min(18rem,88vw)] flex-col border-r border-[color:var(--a-border)] bg-[var(--a-panel)] transition md:static md:w-64 md:translate-x-0 ${
           mobileNav ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[color:var(--a-border)] px-4 py-4">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#00a581]">
               Admin CRM
             </p>
-            <p className="truncate text-sm font-semibold text-white">
+            <p className="truncate text-sm font-semibold text-[var(--a-text)]">
               Creative Logo Makers Ops
             </p>
           </div>
           <button
             type="button"
-            className="shrink-0 rounded-lg border border-white/10 px-2 py-1 text-xs md:hidden"
+            className="shrink-0 rounded-lg border border-[color:var(--a-border)] px-2 py-1 text-xs md:hidden"
             onClick={() => setMobileNav(false)}
           >
             Close
@@ -239,7 +286,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   active
                     ? "bg-[#00a581] text-white"
-                    : "text-white/65 hover:bg-white/5 hover:text-white"
+                    : "text-[color:var(--a-muted)] hover:bg-[var(--a-hover)] hover:text-[var(--a-text)]"
                 }`}
               >
                 <span className="truncate">{item.label}</span>
@@ -253,14 +300,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="shrink-0 space-y-2 border-t border-white/10 bg-[#14171e] p-4">
-          <p className="truncate px-1 text-xs text-white/40" title={session.email}>
+        <div className="shrink-0 space-y-2 border-t border-[color:var(--a-border)] bg-[var(--a-panel)] p-4">
+          <p className="truncate px-1 text-xs text-[color:var(--a-faint)]" title={session.email}>
             {session.email}
           </p>
           <button
             type="button"
             onClick={onLogout}
-            className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm text-white/70 hover:bg-white/5"
+            className="w-full rounded-lg border border-[color:var(--a-border)] px-3 py-2 text-sm text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
           >
             Sign out
           </button>
@@ -268,29 +315,38 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="relative z-[60] flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[#14171e] px-4 py-3 md:px-6">
+        <header className="relative z-[60] flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--a-border)] bg-[var(--a-panel)] px-4 py-3 md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs md:hidden"
+              className="shrink-0 rounded-lg border border-[color:var(--a-border)] px-2.5 py-1.5 text-xs md:hidden"
               onClick={() => setMobileNav(true)}
             >
               Menu
             </button>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
+              <p className="truncate text-sm font-semibold text-[var(--a-text)]">
                 {session.name}
               </p>
-              <p className="hidden text-[11px] text-white/45 sm:block">
+              <p className="hidden text-[11px] text-[color:var(--a-faint)] sm:block">
                 Live CRM · synced
               </p>
             </div>
           </div>
           <div className="flex max-w-full min-w-0 flex-1 items-center justify-end gap-2 overflow-visible pb-0.5 sm:flex-none">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="shrink-0 rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)] hover:text-[var(--a-text)]"
+              aria-label="Toggle light/dark mode"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? "Light" : "Dark"}
+            </button>
             <AdminNotificationBar />
             <Link
               href="/admin/live-chat"
-              className="relative shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/70 hover:bg-white/5"
+              className="relative shrink-0 rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
             >
               Live chat
               {chatUnread > 0 ? (
@@ -301,13 +357,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </Link>
             <Link
               href="/designer"
-              className="hidden shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/70 hover:bg-white/5 sm:inline-flex"
+              className="hidden shrink-0 rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)] sm:inline-flex"
             >
               Designer portal
             </Link>
             <Link
               href="/"
-              className="hidden shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/70 hover:bg-white/5 md:inline-flex"
+              className="hidden shrink-0 rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)] md:inline-flex"
             >
               View site
             </Link>
@@ -319,7 +375,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </header>
-        <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0f1115] p-4 md:p-6">
+        <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--a-bg)] p-4 md:p-6">
           {children}
         </main>
       </div>
@@ -329,10 +385,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#fe5f50]">
             New live chat
           </p>
-          <p className="mt-1 text-sm font-semibold text-white">
+          <p className="mt-1 text-sm font-semibold text-[var(--a-text)]">
             Visitor opened chat
           </p>
-          <p className="mt-1 text-xs text-white/55">
+          <p className="mt-1 text-xs text-[color:var(--a-muted)]">
             Page: {chatToast.path || "/"} · bot started asking questions
           </p>
           <div className="mt-3 flex gap-2">
@@ -346,7 +402,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setChatToast(null)}
-              className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70"
+              className="rounded-full border border-[color:var(--a-border-strong)] px-3 py-1.5 text-xs text-[color:var(--a-muted)]"
             >
               Dismiss
             </button>

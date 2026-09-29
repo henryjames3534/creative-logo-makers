@@ -96,14 +96,14 @@ export function AdminCompanies() {
     setFormOpen(false);
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Companies</h1>
-          <p className="mt-1 text-sm text-white/50">
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Companies</h1>
+          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Accounts with contacts, deals, and notes.
           </p>
         </div>
@@ -120,7 +120,7 @@ export function AdminCompanies() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search companies…"
-        className="w-full rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581]"
+        className="w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
       />
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -136,14 +136,14 @@ export function AdminCompanies() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-white">{c.name}</p>
-                  <p className="mt-0.5 text-xs text-white/45">
+                  <p className="font-semibold text-[var(--a-text)]">{c.name}</p>
+                  <p className="mt-0.5 text-xs text-[color:var(--a-faint)]">
                     {c.industry} · {c.country}
                   </p>
                 </div>
                 <Badge tone="neutral">{c.size}</Badge>
               </div>
-              <div className="mt-3 flex gap-2 text-xs text-white/50">
+              <div className="mt-3 flex gap-2 text-xs text-[color:var(--a-muted)]">
                 <span>{contactCounts.get(c.id) || 0} contacts</span>
                 <span>·</span>
                 <span>{dealCounts.get(c.id) || 0} deals</span>
@@ -164,7 +164,7 @@ export function AdminCompanies() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onSave}
-            className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-lg rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle
               title={editing ? "Edit company" : "New company"}
@@ -179,7 +179,7 @@ export function AdminCompanies() {
                   ["country", "Country"],
                 ] as const
               ).map(([key, label]) => (
-                <label key={key} className="block text-xs text-white/50">
+                <label key={key} className="block text-xs text-[color:var(--a-muted)]">
                   {label}
                   <input
                     required={key === "name"}
@@ -187,11 +187,11 @@ export function AdminCompanies() {
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, [key]: e.target.value }))
                     }
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                   />
                 </label>
               ))}
-              <label className="block text-xs text-white/50 sm:col-span-2">
+              <label className="block text-xs text-[color:var(--a-muted)] sm:col-span-2">
                 Notes
                 <textarea
                   value={draft.notes}
@@ -199,7 +199,7 @@ export function AdminCompanies() {
                     setDraft((d) => ({ ...d, notes: e.target.value }))
                   }
                   rows={3}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
                 />
               </label>
             </div>
@@ -207,7 +207,7 @@ export function AdminCompanies() {
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>

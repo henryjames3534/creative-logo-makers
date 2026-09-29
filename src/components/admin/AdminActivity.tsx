@@ -61,14 +61,14 @@ export function AdminActivity() {
     setDraft({ type: "note", title: "", body: "" });
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Activity feed</h1>
-          <p className="mt-1 text-sm text-white/50">
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Activity feed</h1>
+          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Calls, emails, notes, and pipeline events.
           </p>
         </div>
@@ -88,7 +88,7 @@ export function AdminActivity() {
           className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
             type === "all"
               ? "bg-[#00a581] text-white"
-              : "border border-white/10 text-white/60"
+              : "border border-[color:var(--a-border)] text-[color:var(--a-muted)]"
           }`}
         >
           All
@@ -101,7 +101,7 @@ export function AdminActivity() {
             className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
               type === t
                 ? "bg-[#00a581] text-white"
-                : "border border-white/10 text-white/60"
+                : "border border-[color:var(--a-border)] text-[color:var(--a-muted)]"
             }`}
           >
             {t}
@@ -130,11 +130,11 @@ export function AdminActivity() {
                   >
                     {a.type}
                   </Badge>
-                  <p className="font-medium text-white">{a.title}</p>
+                  <p className="font-medium text-[var(--a-text)]">{a.title}</p>
                 </div>
-                <p className="mt-1.5 text-sm text-white/55">{a.body}</p>
+                <p className="mt-1.5 text-sm text-[color:var(--a-muted)]">{a.body}</p>
               </div>
-              <div className="text-right text-xs text-white/35">
+              <div className="text-right text-xs text-[color:var(--a-faint)]">
                 <p>{relativeDay(a.createdAt)}</p>
                 <p className="mt-0.5">{ownerMap.get(a.ownerId)}</p>
               </div>
@@ -147,10 +147,10 @@ export function AdminActivity() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
           <form
             onSubmit={onSave}
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171a21] p-6"
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
           >
             <SectionTitle title="Log activity" />
-            <label className="block text-xs text-white/50">
+            <label className="block text-xs text-[color:var(--a-muted)]">
               Type
               <select
                 value={draft.type}
@@ -160,7 +160,7 @@ export function AdminActivity() {
                     type: e.target.value as ActivityType,
                   }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               >
                 {TYPES.map((t) => (
                   <option key={t} value={t}>
@@ -169,7 +169,7 @@ export function AdminActivity() {
                 ))}
               </select>
             </label>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Title
               <input
                 required
@@ -177,10 +177,10 @@ export function AdminActivity() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, title: e.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
-            <label className="mt-3 block text-xs text-white/50">
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
               Details
               <textarea
                 required
@@ -189,14 +189,14 @@ export function AdminActivity() {
                   setDraft((d) => ({ ...d, body: e.target.value }))
                 }
                 rows={4}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0f1115] px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70"
+                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>

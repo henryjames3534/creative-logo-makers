@@ -24,7 +24,7 @@ function Stars({ n }: { n: number }) {
   return (
     <span className="tracking-widest text-[#fe5f50]" aria-label={`${n} of 5`}>
       {"★".repeat(n)}
-      <span className="text-white/25">{"★".repeat(Math.max(0, 5 - n))}</span>
+      <span className="text-[color:var(--a-faint)]">{"★".repeat(Math.max(0, 5 - n))}</span>
     </span>
   );
 }
@@ -62,7 +62,7 @@ export function AdminReviews() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <SectionTitle title="Customer reviews" />
-          <p className="mt-1 text-sm text-white/50">
+          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Projects complete hone ke baad customers rating + review dete hain.
             Approve ke baad woh designer profile pe live ho jati hain.
           </p>
@@ -81,7 +81,7 @@ export function AdminReviews() {
             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
               filter === f.id
                 ? "bg-white text-[#0f1115]"
-                : "border border-white/10 text-white/70 hover:bg-white/5"
+                : "border border-[color:var(--a-border)] text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
             }`}
           >
             {f.label}
@@ -91,7 +91,7 @@ export function AdminReviews() {
 
       {reviews.length === 0 ? (
         <AdminCard>
-          <p className="text-sm text-white/50">
+          <p className="text-sm text-[color:var(--a-muted)]">
             No reviews in this filter. Complete a customer project with a rating
             from My account to see pending items here.
           </p>
@@ -150,13 +150,13 @@ function ReviewRow({
               {r.status}
             </Badge>
           </div>
-          <p className="mt-2 text-sm font-semibold text-white">
+          <p className="mt-2 text-sm font-semibold text-[var(--a-text)]">
             {r.customerName}{" "}
-            <span className="font-normal text-white/45">
+            <span className="font-normal text-[color:var(--a-faint)]">
               → {r.designerName}
             </span>
           </p>
-          <p className="mt-0.5 text-xs text-white/40">
+          <p className="mt-0.5 text-xs text-[color:var(--a-faint)]">
             {r.customerEmail}
             {r.categoryName ? ` · ${r.categoryName}` : ""}
             {r.orderId ? ` · ${r.orderId}` : ""} · {relativeDay(r.createdAt)}
@@ -171,21 +171,21 @@ function ReviewRow({
         </Link>
       </div>
 
-      <p className="mt-3 text-sm leading-relaxed text-white/80">{r.body}</p>
+      <p className="mt-3 text-sm leading-relaxed text-[color:var(--a-muted)]">{r.body}</p>
 
       {project ? (
-        <p className="mt-2 text-xs text-white/40">
+        <p className="mt-2 text-xs text-[color:var(--a-faint)]">
           Project: {project.title || project.orderId} · {project.status}
         </p>
       ) : null}
 
       {r.status === "pending" ? (
-        <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
+        <div className="mt-4 space-y-2 border-t border-[color:var(--a-border)] pt-4">
           <input
             value={note}
             onChange={(e) => onNote(e.target.value)}
             placeholder="Optional admin note"
-            className="w-full rounded-lg border border-white/10 bg-[#171a21] px-3 py-2 text-sm text-white outline-none focus:border-[#00a581]"
+            className="w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
           />
           <div className="flex flex-wrap gap-2">
             <button
@@ -198,14 +198,14 @@ function ReviewRow({
             <button
               type="button"
               onClick={onReject}
-              className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 hover:bg-white/5"
+              className="rounded-full border border-[color:var(--a-border-strong)] px-4 py-2 text-xs font-semibold text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
             >
               Reject
             </button>
           </div>
         </div>
       ) : r.adminNote ? (
-        <p className="mt-3 text-xs text-white/45">Admin note: {r.adminNote}</p>
+        <p className="mt-3 text-xs text-[color:var(--a-faint)]">Admin note: {r.adminNote}</p>
       ) : null}
     </AdminCard>
   );

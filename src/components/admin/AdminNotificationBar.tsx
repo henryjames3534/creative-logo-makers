@@ -118,11 +118,11 @@ function buildFeed(state: CrmState): NotifItem[] {
 }
 
 const TONE: Record<NotifItem["tone"], string> = {
-  green: "bg-[#00a581]/20 text-[#5ee0bf]",
-  blue: "bg-[#2486cb]/20 text-[#7cc4f0]",
-  coral: "bg-[#fe5f50]/20 text-[#ff9b90]",
-  violet: "bg-[#834692]/25 text-[#d2a6e0]",
-  amber: "bg-[#a5823d]/25 text-[#e6c27a]",
+  green: "bg-[#00a581]/20 text-[color:var(--a-badge-green-fg)]",
+  blue: "bg-[#2486cb]/20 text-[color:var(--a-badge-blue-fg)]",
+  coral: "bg-[#fe5f50]/20 text-[color:var(--a-badge-coral-fg)]",
+  violet: "bg-[#834692]/25 text-[color:var(--a-badge-violet-fg)]",
+  amber: "bg-[#a5823d]/25 text-[color:var(--a-badge-amber-fg)]",
 };
 
 export function AdminNotificationBar() {
@@ -249,7 +249,7 @@ export function AdminNotificationBar() {
         className={`relative flex h-9 w-9 items-center justify-center rounded-full border transition ${
           unread > 0
             ? "border-[#fe5f50]/35 bg-[#fe5f50]/10 text-white"
-            : "border-white/10 text-white/70 hover:bg-white/5 hover:text-white"
+            : "border-[color:var(--a-border)] text-[color:var(--a-muted)] hover:bg-[var(--a-hover)] hover:text-[var(--a-text)]"
         }`}
         aria-label={
           unread > 0
@@ -272,7 +272,7 @@ export function AdminNotificationBar() {
           <path d="M9.5 17a2.5 2.5 0 0 0 5 0" />
         </svg>
         {unread > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#fe5f50] px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[#14171e]">
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#fe5f50] px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[var(--a-panel)]">
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
@@ -287,15 +287,15 @@ export function AdminNotificationBar() {
             onClick={closePanel}
           />
           <div
-            className="fixed z-[9999] w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-white/15 bg-[#171a21] shadow-[0_20px_60px_rgba(0,0,0,0.65)]"
+            className="fixed z-[9999] w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-[color:var(--a-border-strong)] bg-[var(--a-surface)] shadow-[0_20px_60px_rgba(0,0,0,0.65)]"
             style={{ top: panelPos.top, right: panelPos.right }}
             role="dialog"
             aria-label="Notifications"
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <div className="flex items-center justify-between border-b border-[color:var(--a-border)] px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-white">Notifications</p>
-                <p className="text-[11px] text-white/40">
+                <p className="text-sm font-semibold text-[var(--a-text)]">Notifications</p>
+                <p className="text-[11px] text-[color:var(--a-faint)]">
                   {unread > 0
                     ? `${unread} unread`
                     : items.length
@@ -313,19 +313,19 @@ export function AdminNotificationBar() {
             </div>
             <ul className="max-h-[min(28rem,70vh)] overflow-y-auto">
               {items.length === 0 ? (
-                <li className="px-4 py-8 text-center text-sm text-white/40">
+                <li className="px-4 py-8 text-center text-sm text-[color:var(--a-faint)]">
                   No notifications yet
                 </li>
               ) : (
                 items.map((n) => {
                   const isUnread = !seenAt || +new Date(n.createdAt) > seenAt;
                   return (
-                    <li key={n.id} className="border-b border-white/5">
+                    <li key={n.id} className="border-b border-[color:var(--a-border)]">
                       <Link
                         href={n.href}
                         onClick={closePanel}
-                        className={`block px-4 py-3 hover:bg-white/[0.04] ${
-                          isUnread ? "bg-white/[0.03]" : ""
+                        className={`block px-4 py-3 hover:bg-[var(--a-hover)] ${
+                          isUnread ? "bg-[var(--a-hover)]" : ""
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -339,15 +339,15 @@ export function AdminNotificationBar() {
                               {n.title}
                             </span>
                           </div>
-                          <span className="shrink-0 text-[10px] text-white/35">
+                          <span className="shrink-0 text-[10px] text-[color:var(--a-faint)]">
                             {relativeDay(n.createdAt)}
                           </span>
                         </div>
                         <p
                           className={`mt-1 line-clamp-2 text-xs ${
                             isUnread
-                              ? "font-medium text-white/85"
-                              : "text-white/55"
+                              ? "font-medium text-[color:var(--a-muted)]"
+                              : "text-[color:var(--a-muted)]"
                           }`}
                         >
                           {n.body}
@@ -363,11 +363,11 @@ export function AdminNotificationBar() {
       ) : null}
 
       {toast && !open ? (
-        <div className="fixed bottom-6 right-6 z-[9999] w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-[#1a1d24] p-4 shadow-2xl">
+        <div className="fixed bottom-6 right-6 z-[9999] w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-[color:var(--a-border-strong)] bg-[var(--a-elevated)] p-4 shadow-2xl">
           <p className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${TONE[toast.tone]}`}>
             {toast.title}
           </p>
-          <p className="mt-2 text-sm text-white/80">{toast.body}</p>
+          <p className="mt-2 text-sm text-[color:var(--a-muted)]">{toast.body}</p>
           <div className="mt-3 flex gap-2">
             <Link
               href={toast.href}
@@ -379,7 +379,7 @@ export function AdminNotificationBar() {
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70"
+              className="rounded-full border border-[color:var(--a-border-strong)] px-3 py-1.5 text-xs text-[color:var(--a-muted)]"
             >
               Dismiss
             </button>

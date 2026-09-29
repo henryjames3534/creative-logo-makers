@@ -20,6 +20,52 @@
   --promo: #00a581;
   --background: var(--paper);
   --foreground: var(--ink);
+
+  /* Admin CRM theme (default dark) */
+  --a-bg: #0f1115;
+  --a-surface: #171a21;
+  --a-panel: #14171e;
+  --a-elevated: #1a1d24;
+  --a-text: #e8e7e4;
+  --a-muted: rgba(232, 231, 228, 0.62);
+  --a-faint: rgba(232, 231, 228, 0.42);
+  --a-border: rgba(255, 255, 255, 0.1);
+  --a-border-strong: rgba(255, 255, 255, 0.16);
+  --a-hover: rgba(255, 255, 255, 0.05);
+  --a-badge-neutral-bg: rgba(255, 255, 255, 0.1);
+  --a-badge-neutral-fg: rgba(232, 231, 228, 0.8);
+  --a-badge-green-fg: #5ee0bf;
+  --a-badge-blue-fg: #7ec4f0;
+  --a-badge-coral-fg: #ff9a90;
+  --a-badge-gold-fg: #e2c589;
+  --a-badge-violet-fg: #d2a6e0;
+  --a-badge-amber-fg: #e6c27a;
+}
+
+.admin-root[data-admin-theme="light"] {
+  --a-bg: #eef0f4;
+  --a-surface: #ffffff;
+  --a-panel: #ffffff;
+  --a-elevated: #f7f8fa;
+  --a-text: #16181d;
+  --a-muted: rgba(22, 24, 29, 0.62);
+  --a-faint: rgba(22, 24, 29, 0.45);
+  --a-border: rgba(22, 24, 29, 0.1);
+  --a-border-strong: rgba(22, 24, 29, 0.16);
+  --a-hover: rgba(22, 24, 29, 0.05);
+  --a-badge-neutral-bg: rgba(22, 24, 29, 0.06);
+  --a-badge-neutral-fg: rgba(22, 24, 29, 0.72);
+  --a-badge-green-fg: #0a7a62;
+  --a-badge-blue-fg: #1769a8;
+  --a-badge-coral-fg: #c93a30;
+  --a-badge-gold-fg: #8a6a28;
+  --a-badge-violet-fg: #6b3a7a;
+  --a-badge-amber-fg: #8a6a28;
+  color-scheme: light;
+}
+
+.admin-root[data-admin-theme="dark"] {
+  color-scheme: dark;
 }
 
 @theme inline {

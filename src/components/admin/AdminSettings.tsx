@@ -86,7 +86,7 @@ export function AdminSettings() {
     e.preventDefault();
   }
 
-  if (!state) return <p className="text-white/50">Loading…</p>;
+  if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   const stats = crmStats(state);
   const previewSrc = logo?.src || DEFAULT_SITE_LOGO;
@@ -95,15 +95,15 @@ export function AdminSettings() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Settings</h1>
-        <p className="mt-1 text-sm text-white/50">
+        <h1 className="text-2xl font-semibold text-[var(--a-text)]">Settings</h1>
+        <p className="mt-1 text-sm text-[color:var(--a-muted)]">
           Brand logo, team, storage, and demo controls.
         </p>
       </div>
 
       <AdminCard className="p-5">
         <SectionTitle title="Site logo" />
-        <p className="mb-4 text-sm text-white/50">
+        <p className="mb-4 text-sm text-[color:var(--a-muted)]">
           Upload a logo — it saves to the database and shows on every device /
           browser (header and footer).
         </p>
@@ -111,7 +111,7 @@ export function AdminSettings() {
           onSubmit={onLogoSubmit}
           className="flex flex-col gap-5 md:flex-row md:items-start"
         >
-          <div className="flex h-28 w-full max-w-xs items-center justify-center rounded-xl border border-dashed border-white/15 bg-white px-4">
+          <div className="flex h-28 w-full max-w-xs items-center justify-center rounded-xl border border-dashed border-[color:var(--a-border-strong)] bg-white px-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewSrc}
@@ -124,11 +124,11 @@ export function AdminSettings() {
               ref={fileRef}
               type="file"
               accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
-              className="block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-[#5b8def] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#4a7de0]"
+              className="block w-full text-sm text-[color:var(--a-muted)] file:mr-3 file:rounded-full file:border-0 file:bg-[#5b8def] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--a-text)] hover:file:bg-[#4a7de0]"
               disabled={uploading}
               onChange={(e) => onLogoPick(e.target.files?.[0] || null)}
             />
-            <p className="text-xs text-white/40">
+            <p className="text-xs text-[color:var(--a-faint)]">
               PNG / JPG / WebP / SVG · max 1.5 MB
               {logo?.fileName ? ` · Current: ${logo.fileName}` : ""}
               {logo?.updatedAt
@@ -143,7 +143,7 @@ export function AdminSettings() {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="rounded-full bg-[#5b8def] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4a7de0] disabled:opacity-50"
+                className="rounded-full bg-[#5b8def] px-4 py-2 text-sm font-semibold text-[var(--a-text)] hover:bg-[#4a7de0] disabled:opacity-50"
               >
                 {uploading ? "Uploading…" : "Choose logo"}
               </button>
@@ -151,7 +151,7 @@ export function AdminSettings() {
                 <button
                   type="button"
                   onClick={onLogoReset}
-                  className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/70 hover:bg-white/5"
+                  className="rounded-full border border-[color:var(--a-border-strong)] px-4 py-2 text-sm text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
                 >
                   Reset to default
                 </button>
@@ -167,13 +167,13 @@ export function AdminSettings() {
           {state.owners.map((o) => (
             <div
               key={o.id}
-              className="rounded-xl border border-white/10 bg-[#0f1115] p-4"
+              className="rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] p-4"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="font-medium text-white">{o.name}</p>
+                <p className="font-medium text-[var(--a-text)]">{o.name}</p>
                 <Badge tone="green">{o.role}</Badge>
               </div>
-              <p className="mt-1 text-xs text-white/45">{o.email}</p>
+              <p className="mt-1 text-xs text-[color:var(--a-faint)]">{o.email}</p>
             </div>
           ))}
         </div>
@@ -182,33 +182,33 @@ export function AdminSettings() {
       <AdminCard className="p-5">
         <SectionTitle title="Data snapshot" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-          <p className="text-white/60">
+          <p className="text-[color:var(--a-muted)]">
             Leads{" "}
-            <span className="font-semibold text-white">{stats.totalLeads}</span>
+            <span className="font-semibold text-[var(--a-text)]">{stats.totalLeads}</span>
           </p>
-          <p className="text-white/60">
+          <p className="text-[color:var(--a-muted)]">
             Contacts{" "}
-            <span className="font-semibold text-white">{stats.contacts}</span>
+            <span className="font-semibold text-[var(--a-text)]">{stats.contacts}</span>
           </p>
-          <p className="text-white/60">
+          <p className="text-[color:var(--a-muted)]">
             Companies{" "}
-            <span className="font-semibold text-white">{stats.companies}</span>
+            <span className="font-semibold text-[var(--a-text)]">{stats.companies}</span>
           </p>
-          <p className="text-white/60">
+          <p className="text-[color:var(--a-muted)]">
             Orders{" "}
-            <span className="font-semibold text-white">{stats.ordersCount}</span>
+            <span className="font-semibold text-[var(--a-text)]">{stats.ordersCount}</span>
           </p>
         </div>
-        <p className="mt-4 text-xs text-white/40">
+        <p className="mt-4 text-xs text-[color:var(--a-faint)]">
           CRM syncs to Postgres. Logo is stored in the{" "}
-          <code className="text-white/60">brand</code> document so every
+          <code className="text-[color:var(--a-muted)]">brand</code> document so every
           visitor sees the same header/footer logo.
         </p>
       </AdminCard>
 
       <AdminCard className="p-5">
         <SectionTitle title="Data controls" />
-        <p className="text-sm text-white/60">
+        <p className="text-sm text-[color:var(--a-muted)]">
           Reset local CRM seed data (leads, deals, sample records). Live chat
           and visitor captures are not wiped by this action.
         </p>
