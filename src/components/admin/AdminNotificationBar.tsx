@@ -363,7 +363,7 @@ export function AdminNotificationBar() {
       ) : null}
 
       {toast && !open ? (
-        <div className="fixed bottom-6 right-6 z-[220] w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-[#1a1d24] p-4 shadow-2xl">
+        <div className="fixed bottom-6 right-6 z-[9999] w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-[#1a1d24] p-4 shadow-2xl">
           <p className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${TONE[toast.tone]}`}>
             {toast.title}
           </p>
