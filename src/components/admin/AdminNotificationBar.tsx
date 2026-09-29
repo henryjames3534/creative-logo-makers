@@ -130,8 +130,20 @@ export function AdminNotificationBar() {
   const [items, setItems] = useState<NotifItem[]>([]);
   const [seenAt, setSeenAt] = useState(0);
   const [toast, setToast] = useState<NotifItem | null>(null);
+  const [panelPos, setPanelPos] = useState({ top: 56, right: 16 });
   const known = useRef<Set<string>>(new Set());
   const bootstrapped = useRef(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+
+  function placePanel() {
+    const el = btnRef.current;
+    if (!el || typeof window === "undefined") return;
+    const r = el.getBoundingClientRect();
+    const width = Math.min(384, window.innerWidth - 16);
+    const right = Math.max(8, window.innerWidth - r.right);
+    const top = Math.min(r.bottom + 8, window.innerHeight - 120);
+    setPanelPos({ top, right: Math.min(right, window.innerWidth - width - 8) });
+  }
 
   function refresh() {
     const feed = buildFeed(loadCrm());
@@ -191,14 +203,14 @@ export function AdminNotificationBar() {
 
   function openPanel() {
     setOpen((v) => {
-      const next = !v;
       if (v) {
-        // Closing: mark everything seen
         const now = Date.now();
         markRead(now);
         setSeenAt(now);
+        return false;
       }
-      return next;
+      placePanel();
+      return true;
     });
     setToast(null);
     if (
@@ -216,9 +228,22 @@ export function AdminNotificationBar() {
     setOpen(false);
   }
 
+  useEffect(() => {
+    if (!open) return;
+    placePanel();
+    const onWin = () => placePanel();
+    window.addEventListener("resize", onWin);
+    window.addEventListener("scroll", onWin, true);
+    return () => {
+      window.removeEventListener("resize", onWin);
+      window.removeEventListener("scroll", onWin, true);
+    };
+  }, [open]);
+
   return (
-    <div className="relative shrink-0">
+    <div className="relative z-[50] shrink-0">
       <button
+        ref={btnRef}
         type="button"
         onClick={openPanel}
         className={`relative flex h-9 w-9 items-center justify-center rounded-full border transition ${
@@ -231,6 +256,7 @@ export function AdminNotificationBar() {
             ? `${unread} unread notifications`
             : "Notifications"
         }
+        aria-expanded={open}
       >
         <svg
           viewBox="0 0 24 24"
@@ -256,11 +282,16 @@ export function AdminNotificationBar() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[230]"
+            className="fixed inset-0 z-[9998] cursor-default bg-black/20"
             aria-label="Close notifications"
             onClick={closePanel}
           />
-          <div className="absolute right-0 z-[240] mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#171a21] shadow-2xl">
+          <div
+            className="fixed z-[9999] w-[min(24rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-white/15 bg-[#171a21] shadow-[0_20px_60px_rgba(0,0,0,0.65)]"
+            style={{ top: panelPos.top, right: panelPos.right }}
+            role="dialog"
+            aria-label="Notifications"
+          >
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-white">Notifications</p>
@@ -280,7 +311,7 @@ export function AdminNotificationBar() {
                 View all
               </Link>
             </div>
-            <ul className="max-h-[min(28rem,60vh)] overflow-y-auto">
+            <ul className="max-h-[min(28rem,70vh)] overflow-y-auto">
               {items.length === 0 ? (
                 <li className="px-4 py-8 text-center text-sm text-white/40">
                   No notifications yet
@@ -314,7 +345,9 @@ export function AdminNotificationBar() {
                         </div>
                         <p
                           className={`mt-1 line-clamp-2 text-xs ${
-                            isUnread ? "font-medium text-white/85" : "text-white/55"
+                            isUnread
+                              ? "font-medium text-white/85"
+                              : "text-white/55"
                           }`}
                         >
                           {n.body}

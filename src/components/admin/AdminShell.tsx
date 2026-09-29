@@ -268,7 +268,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[#14171e]/80 px-4 py-3 backdrop-blur md:px-6">
+        <header className="relative z-[60] flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[#14171e] px-4 py-3 md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -286,7 +286,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </p>
             </div>
           </div>
-          <div className="flex max-w-full min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto pb-0.5 sm:flex-none sm:overflow-visible">
+          <div className="flex max-w-full min-w-0 flex-1 items-center justify-end gap-2 overflow-visible pb-0.5 sm:flex-none">
             <AdminNotificationBar />
             <Link
               href="/admin/live-chat"
