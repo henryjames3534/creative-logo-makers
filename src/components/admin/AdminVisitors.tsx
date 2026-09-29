@@ -6,8 +6,10 @@ import { listRememberedGoogleAccounts } from "@/lib/auth-storage";
 import {
   attachVisitorEmail,
   deleteVisitor,
+  deleteVisitors,
   formatDuration,
   hydrateCrmFromServer,
+  isWebsiteVisitor,
   loadCrm,
   onCrmHydrated,
   onVisitorTracked,
@@ -50,6 +52,7 @@ export function AdminVisitors() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
 
   function reload(msg?: string) {
     const next = loadCrm();
@@ -118,14 +121,18 @@ export function AdminVisitors() {
   const rows = useMemo(() => {
     if (!state?.visitors) return [];
     return [...state.visitors]
+      .filter((v) => isWebsiteVisitor(v))
       .filter((v) => {
         const d = drafts[v.id];
         const hay =
-          `${v.email ?? ""} ${d?.email ?? ""} ${v.name ?? ""} ${d?.name ?? ""} ${v.geo?.city ?? ""} ${v.geo?.ip ?? ""}`.toLowerCase();
+          `${v.email ?? ""} ${d?.email ?? ""} ${v.name ?? ""} ${d?.name ?? ""} ${v.geo?.city ?? ""} ${v.geo?.ip ?? ""} ${v.path ?? ""}`.toLowerCase();
         return !q.trim() || hay.includes(q.trim().toLowerCase());
       })
       .sort((a, b) => +new Date(b.lastSeenAt) - +new Date(a.lastSeenAt));
   }, [state, q, drafts]);
+
+  const allChecked = rows.length > 0 && rows.every((v) => checked.has(v.id));
+  const checkedCount = rows.filter((v) => checked.has(v.id)).length;
 
   const selected: CrmVisitor | null = useMemo(() => {
     if (!state || !selectedId) return null;
@@ -170,8 +177,46 @@ export function AdminVisitors() {
       return;
     }
     deleteVisitor(v.id);
+    setChecked((prev) => {
+      const next = new Set(prev);
+      next.delete(v.id);
+      return next;
+    });
     if (selectedId === v.id) setSelectedId(null);
     reload("Visitor deleted");
+  }
+
+  function toggleCheck(id: string) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleCheckAll() {
+    if (allChecked) {
+      setChecked(new Set());
+      return;
+    }
+    setChecked(new Set(rows.map((v) => v.id)));
+  }
+
+  function onBulkDelete() {
+    const ids = rows.filter((v) => checked.has(v.id)).map((v) => v.id);
+    if (!ids.length) return;
+    if (
+      !window.confirm(
+        `Delete ${ids.length} selected website visitor${ids.length > 1 ? "s" : ""}?`,
+      )
+    ) {
+      return;
+    }
+    deleteVisitors(ids);
+    setChecked(new Set());
+    if (selectedId && ids.includes(selectedId)) setSelectedId(null);
+    reload(`${ids.length} visitors deleted`);
   }
 
   if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
@@ -182,9 +227,8 @@ export function AdminVisitors() {
         <div>
           <h1 className="text-2xl font-semibold text-[var(--a-text)]">Visitors</h1>
           <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-            Email tab aaegi jab visitor Google pe{" "}
-            <strong className="text-[color:var(--a-muted)]">Continue as…</strong> dabaye —
-            ya neeche se remembered Google sync karo.
+            Sirf website visitors — admin/designer dashboard traffic yahan nahi
+            aati. Multi-select se bulk delete bhi kar sakte ho.
           </p>
         </div>
         <button
@@ -205,57 +249,93 @@ export function AdminVisitors() {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search visitors…"
+        placeholder="Search website visitors…"
         className="w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
       />
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2.5">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-[color:var(--a-muted)]">
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={toggleCheckAll}
+            className="h-4 w-4 rounded border-[color:var(--a-border)] accent-[#00a581]"
+          />
+          Select all ({rows.length})
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[color:var(--a-faint)]">
+            {checkedCount} selected
+          </span>
+          <DeleteBtn
+            label={checkedCount ? `Delete selected (${checkedCount})` : "Delete selected"}
+            className={checkedCount ? "" : "pointer-events-none opacity-40"}
+            onClick={() => {
+              if (!checkedCount) return;
+              onBulkDelete();
+            }}
+          />
+        </div>
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.35fr_0.9fr]">
         <div className="space-y-3">
           {rows.length === 0 ? (
             <AdminCard className="p-8 text-center text-sm text-[color:var(--a-faint)]">
-              Koi visitor nahi. Pehle site kholo, phir Google Continue dabao.
+              Koi website visitor nahi. Pehle public site kholo (admin nahi).
             </AdminCard>
           ) : (
             rows.map((v) => {
               const d = drafts[v.id] || { name: "", email: "" };
               const active = selectedId === v.id;
+              const isChecked = checked.has(v.id);
               return (
                 <AdminCard
                   key={v.id}
                   className={`p-4 transition ${
                     active ? "border-[#00a581]/50" : ""
-                  }`}
+                  } ${isChecked ? "ring-1 ring-[#fe5f50]/40" : ""}`}
                 >
-                  <button
-                    type="button"
-                    className="mb-3 flex w-full flex-wrap items-center justify-between gap-2 text-left"
-                    onClick={() => setSelectedId(v.id)}
-                  >
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap gap-1.5">
-                        <Badge tone={d.email || v.email ? "green" : "coral"}>
-                          {d.email || v.email ? "email ready" : "email missing"}
-                        </Badge>
-                        <Badge tone="blue">
-                          {SOURCE_LABEL[v.source] || v.source}
-                        </Badge>
-                        <span className="text-[11px] text-[color:var(--a-faint)]">
-                          {relativeDay(v.lastSeenAt)}
-                        </span>
+                  <div className="mb-3 flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleCheck(v.id)}
+                      className="mt-1 h-4 w-4 shrink-0 rounded border-[color:var(--a-border)] accent-[#00a581]"
+                      aria-label={`Select visitor ${v.geo?.ip || v.id}`}
+                    />
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => setSelectedId(v.id)}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          <Badge tone={d.email || v.email ? "green" : "coral"}>
+                            {d.email || v.email ? "email ready" : "email missing"}
+                          </Badge>
+                          <Badge tone="blue">
+                            {SOURCE_LABEL[v.source] || v.source}
+                          </Badge>
+                          <span className="text-[11px] text-[color:var(--a-faint)]">
+                            {relativeDay(v.lastSeenAt)}
+                          </span>
+                        </div>
+                        <p className="font-mono text-sm font-semibold text-[var(--a-text)]">
+                          {v.geo?.ip || "IP not captured"}
+                        </p>
+                        <p className="text-[11px] text-[color:var(--a-muted)]">
+                          {[v.geo?.city, v.geo?.country || v.geo?.countryCode]
+                            .filter(Boolean)
+                            .join(", ") || "Location unknown"}
+                          {v.path ? ` · ${v.path}` : ""}
+                          {v.geoHistory && v.geoHistory.length
+                            ? ` · +${v.geoHistory.length} older IP`
+                            : ""}
+                        </p>
                       </div>
-                      <p className="font-mono text-sm font-semibold text-[var(--a-text)]">
-                        {v.geo?.ip || "IP not captured"}
-                      </p>
-                      <p className="text-[11px] text-[color:var(--a-muted)]">
-                        {[v.geo?.city, v.geo?.country || v.geo?.countryCode]
-                          .filter(Boolean)
-                          .join(", ") || "Location unknown"}
-                        {v.geoHistory && v.geoHistory.length
-                          ? ` · +${v.geoHistory.length} older IP`
-                          : ""}
-                      </p>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
 
                   <form
                     onSubmit={(e) => saveVisitorEmail(v, e)}

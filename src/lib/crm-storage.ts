@@ -1235,6 +1235,7 @@ export function trackVisitor(input: {
   userAgent?: string;
   language?: string;
 }) {
+  if (isInternalSitePath(input.path)) return loadCrm();
   const email = input.email?.trim().toLowerCase();
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return loadCrm();
   if (!email && !input.visitorKey) return loadCrm();
@@ -1549,6 +1550,7 @@ export function startVisitorSession(input: {
   userAgent?: string;
   language?: string;
 }) {
+  if (isInternalSitePath(input.path)) return loadCrm();
   const state = loadCrm();
   let v = findVisitor(state, {
     visitorKey: input.visitorKey,
@@ -1923,29 +1925,78 @@ export function deleteLead(id: string) {
 }
 
 export function deleteVisitor(id: string) {
+  return deleteVisitors([id]);
+}
+
+export function deleteVisitors(ids: string[]) {
   const state = loadCrm();
-  const v = state.visitors.find((x) => x.id === id);
-  state.visitors = state.visitors.filter((x) => x.id !== id);
+  const idSet = new Set(ids.filter(Boolean));
+  if (!idSet.size) return state;
+  const removed = state.visitors.filter((x) => idSet.has(x.id));
+  state.visitors = state.visitors.filter((x) => !idSet.has(x.id));
   state.deleted = state.deleted || {};
-  const keys = [id];
-  if (v?.visitorKey) keys.push(`vk:${v.visitorKey}`);
-  if (v?.email) keys.push(`e:${v.email.toLowerCase()}`);
+  const keys: string[] = [];
+  for (const v of removed) {
+    keys.push(v.id);
+    if (v.visitorKey) keys.push(`vk:${v.visitorKey}`);
+    if (v.email) keys.push(`e:${v.email.toLowerCase()}`);
+  }
   state.deleted.visitors = Array.from(
     new Set([...(state.deleted.visitors || []), ...keys]),
   ).slice(-500);
   state.activities.unshift({
     id: uid("ac"),
     type: "note",
-    title: "Visitor deleted",
-    body: v
-      ? `${v.email || v.name || "Anonymous"} · ${v.geo?.ip || "no IP"}`
-      : id,
+    title: removed.length > 1 ? "Visitors deleted" : "Visitor deleted",
+    body:
+      removed.length > 1
+        ? `${removed.length} website visitors removed`
+        : removed[0]
+          ? `${removed[0].email || removed[0].name || "Anonymous"} · ${removed[0].geo?.ip || "no IP"}`
+          : [...idSet][0],
     createdAt: new Date().toISOString(),
     ownerId: "own_admin",
   });
   saveCrm(state);
   emitCrm(VISITOR_EVENT);
   return state;
+}
+
+/** True for public-site traffic only (exclude admin / designer portal). */
+export function isWebsiteVisitor(v: CrmVisitor): boolean {
+  const staffEmails = new Set(stateOwnerEmails());
+  const email = (v.email || "").toLowerCase().trim();
+  if (email && staffEmails.has(email)) return false;
+  if (email === "admin@creativelogomakers.com") return false;
+
+  const paths = [
+    v.path || "",
+    ...(v.pageViews || []).map((p) => p.path || ""),
+  ].map((p) => p.toLowerCase());
+
+  const isInternal = (p: string) =>
+    p.startsWith("/admin") || p.startsWith("/designer");
+
+  const meaningful = paths.filter(Boolean);
+  if (meaningful.length === 0) return true; // anonymous ping without path yet
+  if (meaningful.every(isInternal)) return false;
+  return meaningful.some((p) => !isInternal(p));
+}
+
+function stateOwnerEmails(): string[] {
+  try {
+    const state = loadCrm();
+    return (state.owners || [])
+      .map((o) => (o.email || "").toLowerCase().trim())
+      .filter(Boolean);
+  } catch {
+    return ["admin@creativelogomakers.com"];
+  }
+}
+
+function isInternalSitePath(path?: string) {
+  const p = (path || "").toLowerCase();
+  return p.startsWith("/admin") || p.startsWith("/designer");
 }
 
 export function deleteOrder(id: string) {

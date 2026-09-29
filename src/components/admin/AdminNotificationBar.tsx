@@ -10,6 +10,7 @@ import {
   relativeDay,
   type CrmActivity,
   type CrmState,
+  isWebsiteVisitor,
 } from "@/lib/crm-storage";
 
 const READ_KEY = "clm_admin_notif_read_at";
@@ -77,7 +78,7 @@ function buildFeed(state: CrmState): NotifItem[] {
 
   // Also surface very recent visitors / leads / paid orders if activity log lagged
   const extras: NotifItem[] = [];
-  for (const v of (state.visitors || []).slice(0, 8)) {
+  for (const v of (state.visitors || []).filter(isWebsiteVisitor).slice(0, 8)) {
     extras.push({
       id: `vis-${v.id}-${v.lastSeenAt}`,
       title: "Visitor activity",
