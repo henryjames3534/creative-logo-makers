@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { clmApiFetch, clmCreateLead } from "@/lib/clm-api";
-import { mergeCrmDocuments } from "@/lib/merge-store";
 import {
   FORM_FROM_EMAIL,
   FORM_NOTIFY_EMAIL,
@@ -14,6 +13,8 @@ import {
   type LeadFormPayload,
   type LeadFormType,
 } from "@/lib/form-mail";
+import { mergeCrmDocuments } from "@/lib/merge-store";
+import { isSmtpConfigured, sendSmtpMail } from "@/lib/smtp-mail";
 
 export const runtime = "nodejs";
 
@@ -152,7 +153,27 @@ async function persistLeadToCrm(payload: LeadFormPayload) {
   });
 }
 
-/** Notify reply@ via FormSubmit AJAX (no browser redirect). */
+async function notifyViaSmtp(payload: LeadFormPayload) {
+  await sendSmtpMail({
+    to: FORM_NOTIFY_EMAIL,
+    replyTo: payload.email,
+    subject: notifySubject(payload),
+    text: notifyText(payload),
+    html: notifyHtml(payload),
+  });
+
+  await sendSmtpMail({
+    to: payload.email,
+    replyTo: FORM_NOTIFY_EMAIL,
+    subject: thankYouSubject(payload.form),
+    text: thankYouText(payload),
+    html: thankYouHtml(payload),
+  });
+
+  return true;
+}
+
+/** Fallback if SMTP is down — FormSubmit AJAX (no browser redirect). */
 async function notifyViaFormSubmit(payload: LeadFormPayload) {
   const res = await fetch(
     `https://formsubmit.co/ajax/${encodeURIComponent(FORM_NOTIFY_EMAIL)}`,
@@ -197,7 +218,6 @@ async function notifyViaResend(payload: LeadFormPayload) {
   });
   if (notify.error) throw new Error(notify.error.message);
 
-  // Best-effort thank-you to submitter
   await resend.emails.send({
     from: FORM_FROM_EMAIL,
     to: [payload.email],
@@ -211,7 +231,7 @@ async function notifyViaResend(payload: LeadFormPayload) {
 
 /**
  * POST /api/forms/submit
- * Saves lead to CRM + emails reply@ — always finishes in-browser (no redirect).
+ * Saves lead to CRM + emails reply@ + thank-you to client.
  */
 export async function POST(req: Request) {
   let raw: unknown;
@@ -238,23 +258,51 @@ export async function POST(req: Request) {
   }
 
   let emailed = false;
+  let emailVia: "smtp" | "resend" | "formsubmit" | undefined;
   let emailWarning: string | undefined;
+
   try {
-    if (getResendKey()) {
+    if (isSmtpConfigured()) {
+      await notifyViaSmtp(payload);
+      emailed = true;
+      emailVia = "smtp";
+    } else if (getResendKey()) {
       emailed = await notifyViaResend(payload);
+      emailVia = emailed ? "resend" : undefined;
     } else {
       await notifyViaFormSubmit(payload);
       emailed = true;
+      emailVia = "formsubmit";
     }
   } catch (err) {
     emailWarning =
       err instanceof Error ? err.message : "Email notify failed.";
+    // Last-resort fallbacks so lead email still reaches inbox when possible
+    if (!emailed) {
+      try {
+        if (isSmtpConfigured() && emailVia !== "smtp") {
+          /* already failed smtp */
+        } else if (getResendKey()) {
+          emailed = await notifyViaResend(payload);
+          emailVia = emailed ? "resend" : emailVia;
+          emailWarning = undefined;
+        } else {
+          await notifyViaFormSubmit(payload);
+          emailed = true;
+          emailVia = "formsubmit";
+          emailWarning = undefined;
+        }
+      } catch (err2) {
+        emailWarning =
+          err2 instanceof Error ? err2.message : emailWarning;
+      }
+    }
   }
 
-  // Lead is saved even if email provider fails — form must not hang
   return NextResponse.json({
     ok: true,
     emailed,
+    via: emailVia,
     warning: emailWarning,
   });
 }
