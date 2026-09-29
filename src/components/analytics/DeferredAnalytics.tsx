@@ -34,17 +34,26 @@ function onIdle(cb: () => void, timeoutMs: number) {
   return () => globalThis.clearTimeout(t);
 }
 
-/** Analytics widgets load after first paint / idle so they don't compete with LCP. */
+/** Analytics widgets — start quickly so visitors/IP hit the server. */
 export function DeferredAnalytics() {
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (pathname.startsWith("/admin")) return;
-    return onIdle(() => setReady(true), 2500);
+    if (pathname.startsWith("/admin") || pathname.startsWith("/designer")) {
+      return;
+    }
+    // Fire sooner than before (was 2.5s idle) so bounce traffic still pings
+    return onIdle(() => setReady(true), 600);
   }, [pathname]);
 
-  if (!ready || pathname.startsWith("/admin")) return null;
+  if (
+    !ready ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/designer")
+  ) {
+    return null;
+  }
 
   return (
     <>

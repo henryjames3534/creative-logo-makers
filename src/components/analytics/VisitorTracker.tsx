@@ -31,7 +31,7 @@ function getVisitorKey() {
 
 function isUsefulGeo(geo: CrmGeo | null | undefined) {
   if (!geo) return false;
-  if (!geo.country && !geo.city) return false;
+  if (!geo.country && !geo.city && !geo.ip) return false;
   const ip = (geo.ip || "").toLowerCase();
   if (ip === "::1" || ip === "127.0.0.1") return false;
   return true;
@@ -47,9 +47,34 @@ async function fetchGeo(): Promise<CrmGeo | null> {
   }
 }
 
+/** Authoritative server write — IP comes from request headers. */
+async function pingServer(input: {
+  visitorKey: string;
+  path: string;
+  email?: string;
+  name?: string;
+}) {
+  try {
+    await fetch("/api/visitors/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        visitorKey: input.visitorKey,
+        path: input.path,
+        email: input.email,
+        name: input.name,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+        language: typeof navigator !== "undefined" ? navigator.language : undefined,
+      }),
+      keepalive: true,
+    });
+  } catch {
+    /* ignore — local CRM still updated */
+  }
+}
+
 /**
- * Site-wide analytics → CRM Visitors:
- * IP/geo, page path, time on page, visit count, email when known.
+ * Site-wide analytics → CRM Visitors (local + server IP ping).
  */
 export function VisitorTracker() {
   const pathname = usePathname();
@@ -57,8 +82,10 @@ export function VisitorTracker() {
   const lastPath = useRef<string | null>(null);
   const geoDone = useRef(false);
 
-  const skip = pathname.startsWith("/admin");
+  const skip =
+    pathname.startsWith("/admin") || pathname.startsWith("/designer");
 
+  // Local session + immediate server ping (with IP)
   useEffect(() => {
     if (!ready || skip) return;
     const visitorKey = getVisitorKey();
@@ -74,7 +101,6 @@ export function VisitorTracker() {
         silent: true,
       });
     } else {
-      // Pull any remembered Google emails into this visitor key / CRM
       try {
         for (const a of listRememberedGoogleAccounts()) {
           captureVisitorEmail({
@@ -104,12 +130,36 @@ export function VisitorTracker() {
     });
     lastPath.current = pathname;
 
+    // Server-side CRM write with real IP — don't wait for idle
+    void pingServer({
+      visitorKey,
+      path: pathname,
+      email,
+      name: user?.name,
+    });
+
     const beat = window.setInterval(() => {
       heartbeatVisitorPage({ visitorKey, email, path: pathname });
     }, 20000);
 
+    // Re-ping every 60s while tab is open so "live" visitors stay fresh
+    const livePing = window.setInterval(() => {
+      void pingServer({
+        visitorKey,
+        path: pathname,
+        email,
+        name: user?.name,
+      });
+    }, 60000);
+
     const onHide = () => {
       endVisitorPage({ visitorKey, email, path: pathname });
+      void pingServer({
+        visitorKey,
+        path: pathname,
+        email,
+        name: user?.name,
+      });
     };
     const onVis = () => {
       if (document.visibilityState === "hidden") onHide();
@@ -119,18 +169,17 @@ export function VisitorTracker() {
 
     return () => {
       window.clearInterval(beat);
+      window.clearInterval(livePing);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("pagehide", onHide);
     };
   }, [pathname, ready, skip, user?.email, user?.name, user?.picture]);
 
-  // Geo + public IP — deferred until idle so it doesn't compete with first paint
+  // Local geo cache (optional enrichment)
   useEffect(() => {
     if (!ready || skip || geoDone.current) return;
     const visitorKey = getVisitorKey();
     let cancelled = false;
-    let idleId: number | undefined;
-    let timeoutId: number | undefined;
 
     const runGeo = async () => {
       if (cancelled || geoDone.current) return;
@@ -141,13 +190,6 @@ export function VisitorTracker() {
           if (cached) {
             const parsed = JSON.parse(cached) as CrmGeo;
             if (isUsefulGeo(parsed)) geo = parsed;
-            else sessionStorage.removeItem(GEO_KEY);
-          }
-          sessionStorage.removeItem("clm_visitor_geo_v1");
-          try {
-            sessionStorage.removeItem(["99", "d_visitor_geo_v1"].join(""));
-          } catch {
-            /* ignore */
           }
         } catch {
           /* ignore */
@@ -155,44 +197,24 @@ export function VisitorTracker() {
 
         if (!isUsefulGeo(geo)) {
           geo = await fetchGeo();
-          if (!isUsefulGeo(geo)) {
-            await new Promise((r) => setTimeout(r, 800));
-            if (cancelled) return;
-            geo = await fetchGeo();
-          }
         }
 
-        if (cancelled) return;
+        if (cancelled || !geo) return;
 
-        if (isUsefulGeo(geo) && geo) {
+        if (isUsefulGeo(geo)) {
           sessionStorage.setItem(GEO_KEY, JSON.stringify(geo));
           updateVisitorGeo(visitorKey, geo, user?.email);
           geoDone.current = true;
-        } else if (geo) {
-          updateVisitorGeo(visitorKey, geo, user?.email);
         }
       } catch {
         /* ignore */
       }
     };
 
-    const schedule = () => {
-      const ric = window.requestIdleCallback;
-      if (typeof ric === "function") {
-        idleId = ric(() => void runGeo(), { timeout: 4000 });
-      } else {
-        timeoutId = window.setTimeout(() => void runGeo(), 3000);
-      }
-    };
-
-    timeoutId = window.setTimeout(schedule, 3000);
-
+    const t = window.setTimeout(() => void runGeo(), 1200);
     return () => {
       cancelled = true;
-      if (timeoutId) window.clearTimeout(timeoutId);
-      if (idleId !== undefined && typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idleId);
-      }
+      window.clearTimeout(t);
     };
   }, [ready, skip, user?.email, pathname]);
 
