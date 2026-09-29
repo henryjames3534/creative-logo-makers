@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
 import {
   addProjectRevision,
+  deleteOrder,
   loadCrm,
   money,
   onInboxUpdated,
@@ -77,6 +78,20 @@ export function AdminProjects() {
 
   function refresh() {
     setState(loadCrm());
+  }
+
+  function onDeleteProject() {
+    if (!project) return;
+    if (
+      !window.confirm(
+        `Delete project ${project.orderId} (${project.customerName})?`,
+      )
+    ) {
+      return;
+    }
+    const next = deleteOrder(project.id);
+    setState({ ...next });
+    setSelectedId(next.orders[0]?.id ?? null);
   }
 
   function onAddTask(e: FormEvent) {
@@ -207,6 +222,13 @@ export function AdminProjects() {
                   <p className="text-xs capitalize text-white/40">
                     {project.status.replace(/_/g, " ")}
                   </p>
+                  <button
+                    type="button"
+                    onClick={onDeleteProject}
+                    className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/20"
+                  >
+                    Delete project
+                  </button>
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/50">

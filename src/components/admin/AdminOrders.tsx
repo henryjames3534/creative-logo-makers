@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
 import {
+  deleteOrder,
   loadCrm,
   money,
   relativeDay,
@@ -120,6 +121,13 @@ export function AdminOrders() {
     setFormOpen(false);
   }
 
+  function onDelete(id: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (!window.confirm("Delete this order/project permanently?")) return;
+    setState({ ...deleteOrder(id) });
+    if (editing?.id === id) setFormOpen(false);
+  }
+
   if (!state) return <p className="text-white/50">Loading…</p>;
 
   return (
@@ -173,6 +181,7 @@ export function AdminOrders() {
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Payment</th>
                 <th className="px-4 py-3 font-medium">Updated</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -215,6 +224,15 @@ export function AdminOrders() {
                   </td>
                   <td className="px-4 py-3 text-white/40">
                     {relativeDay(o.updatedAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={(e) => onDelete(o.id, e)}
+                      className="rounded-full border border-[#fe5f50]/40 px-2.5 py-1 text-[11px] font-semibold text-[#ff9b90] hover:bg-[#fe5f50]/15"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

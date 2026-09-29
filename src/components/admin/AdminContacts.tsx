@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
 import {
+  deleteContact,
   loadCrm,
   relativeDay,
   upsertContact,
@@ -87,6 +88,21 @@ export function AdminContacts() {
     setFormOpen(false);
   }
 
+  function onDelete(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    const contact = state?.contacts.find((c) => c.id === id);
+    if (
+      !window.confirm(
+        `Delete contact ${contact?.name ?? id}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    const next = deleteContact(id);
+    setState({ ...next });
+    if (editing?.id === id) setFormOpen(false);
+  }
+
   if (!state) return <p className="text-white/50">Loading…</p>;
 
   return (
@@ -123,6 +139,7 @@ export function AdminContacts() {
                 <th className="px-4 py-3 font-medium">Company</th>
                 <th className="px-4 py-3 font-medium">Tags</th>
                 <th className="px-4 py-3 font-medium">Last touch</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -155,6 +172,15 @@ export function AdminContacts() {
                   </td>
                   <td className="px-4 py-3 text-white/40">
                     {relativeDay(c.lastTouchAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={(e) => onDelete(c.id, e)}
+                      className="rounded-full border border-[#fe5f50]/40 px-2.5 py-1 text-[11px] font-semibold text-[#ff9b90] hover:bg-[#fe5f50]/15"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

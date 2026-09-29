@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
+import { AdminNotificationBar } from "@/components/admin/AdminNotificationBar";
 import {
   adminLogin,
   adminLogout,
@@ -281,11 +282,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 {session.name}
               </p>
               <p className="hidden text-[11px] text-white/45 sm:block">
-                Live CRM · local demo data
+                Live CRM · synced
               </p>
             </div>
           </div>
           <div className="flex max-w-full min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto pb-0.5 sm:flex-none sm:overflow-visible">
+            <AdminNotificationBar />
             <Link
               href="/admin/live-chat"
               className="relative shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/70 hover:bg-white/5"

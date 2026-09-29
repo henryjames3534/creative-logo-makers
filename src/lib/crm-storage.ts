@@ -28,7 +28,10 @@ export type ActivityType =
   | "status"
   | "deal"
   | "task"
-  | "revision";
+  | "revision"
+  | "payment"
+  | "visitor"
+  | "lead";
 
 export type CrmOwner = {
   id: string;
@@ -320,6 +323,13 @@ export type CrmState = {
   visitors: CrmVisitor[];
   inbox: CrmInboxItem[];
   reviews: CrmReview[];
+  /** Soft-delete tombstones so merge doesn't resurrect removed rows */
+  deleted?: {
+    visitors?: string[];
+    leads?: string[];
+    orders?: string[];
+    contacts?: string[];
+  };
 };
 
 const CRM_KEY = "clm_crm_v1";
@@ -1185,10 +1195,14 @@ export function updateDealStage(dealId: string, stage: DealStage) {
 const VISITOR_EVENT = "clm_crm_visitor";
 const INBOX_EVENT = "clm_crm_inbox";
 const REVIEW_EVENT = "clm_crm_review";
+export const CRM_CHANGED_EVENT = "clm_crm_changed";
 
 function emitCrm(event: string, detail?: unknown) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(event, { detail }));
+  if (event !== CRM_CHANGED_EVENT) {
+    window.dispatchEvent(new CustomEvent(CRM_CHANGED_EVENT, { detail }));
+  }
 }
 
 function findVisitor(
@@ -1832,33 +1846,154 @@ export function formatDuration(ms: number) {
 
 export function upsertLead(input: Partial<CrmLead> & { name: string; email: string }) {
   const state = loadCrm();
+  const now = new Date().toISOString();
   if (input.id) {
     const i = state.leads.findIndex((l) => l.id === input.id);
     if (i >= 0) {
       state.leads[i] = {
         ...state.leads[i],
         ...input,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       };
     }
   } else {
-    state.leads.unshift({
+    const lead = {
       id: uid("ld"),
       name: input.name,
       email: input.email.toLowerCase(),
       phone: input.phone,
       company: input.company,
       source: input.source || "Manual",
-      status: input.status || "new",
+      status: input.status || ("new" as LeadStatus),
       score: input.score ?? 50,
       interest: input.interest || "Logo design",
       valueEstimate: input.valueEstimate ?? 499,
       ownerId: input.ownerId || "own_admin",
       notes: input.notes || "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    state.leads.unshift(lead);
+    // Clear tombstone if re-adding same email
+    if (state.deleted?.leads) {
+      state.deleted.leads = state.deleted.leads.filter(
+        (id) => id !== lead.id && id !== `e:${lead.email}`,
+      );
+    }
+    state.activities.unshift({
+      id: uid("ac"),
+      type: "note",
+      title: "New lead",
+      body: `${lead.name} <${lead.email}> · ${lead.source} · ${lead.interest}`,
+      createdAt: now,
+      ownerId: "own_admin",
+      relatedType: "lead",
+      relatedId: lead.id,
     });
   }
+  saveCrm(state);
+  return state;
+}
+
+export function deleteLead(id: string) {
+  const state = loadCrm();
+  const lead = state.leads.find((l) => l.id === id);
+  state.leads = state.leads.filter((l) => l.id !== id);
+  state.deleted = state.deleted || {};
+  state.deleted.leads = Array.from(
+    new Set([
+      ...(state.deleted.leads || []),
+      id,
+      ...(lead?.email ? [`e:${lead.email.toLowerCase()}`] : []),
+    ]),
+  ).slice(-500);
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "Lead deleted",
+    body: lead ? `${lead.name} <${lead.email}>` : id,
+    createdAt: new Date().toISOString(),
+    ownerId: "own_admin",
+    relatedType: "lead",
+    relatedId: id,
+  });
+  saveCrm(state);
+  return state;
+}
+
+export function deleteVisitor(id: string) {
+  const state = loadCrm();
+  const v = state.visitors.find((x) => x.id === id);
+  state.visitors = state.visitors.filter((x) => x.id !== id);
+  state.deleted = state.deleted || {};
+  const keys = [id];
+  if (v?.visitorKey) keys.push(`vk:${v.visitorKey}`);
+  if (v?.email) keys.push(`e:${v.email.toLowerCase()}`);
+  state.deleted.visitors = Array.from(
+    new Set([...(state.deleted.visitors || []), ...keys]),
+  ).slice(-500);
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "Visitor deleted",
+    body: v
+      ? `${v.email || v.name || "Anonymous"} · ${v.geo?.ip || "no IP"}`
+      : id,
+    createdAt: new Date().toISOString(),
+    ownerId: "own_admin",
+  });
+  saveCrm(state);
+  emitCrm(VISITOR_EVENT);
+  return state;
+}
+
+export function deleteOrder(id: string) {
+  const state = loadCrm();
+  const o = state.orders.find((x) => x.id === id);
+  state.orders = state.orders.filter((x) => x.id !== id);
+  state.tasks = state.tasks.filter((t) => t.projectId !== id);
+  state.deleted = state.deleted || {};
+  const keys = [id];
+  if (o?.orderId) keys.push(`ord:${o.orderId}`);
+  state.deleted.orders = Array.from(
+    new Set([...(state.deleted.orders || []), ...keys]),
+  ).slice(-500);
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "Project deleted",
+    body: o
+      ? `${o.orderId} · ${o.customerName} <${o.customerEmail}>`
+      : id,
+    createdAt: new Date().toISOString(),
+    ownerId: "own_admin",
+    relatedType: "order",
+    relatedId: id,
+  });
+  saveCrm(state);
+  return state;
+}
+
+export function deleteContact(id: string) {
+  const state = loadCrm();
+  const c = state.contacts.find((x) => x.id === id);
+  state.contacts = state.contacts.filter((x) => x.id !== id);
+  state.deleted = state.deleted || {};
+  const keys = [id];
+  if (c?.email) keys.push(`e:${c.email.toLowerCase()}`);
+  state.deleted.contacts = Array.from(
+    new Set([...(state.deleted.contacts || []), ...keys]),
+  ).slice(-500);
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "Contact deleted",
+    body: c ? `${c.name} <${c.email}>` : id,
+    createdAt: new Date().toISOString(),
+    ownerId: "own_admin",
+    relatedType: "contact",
+    relatedId: id,
+  });
   saveCrm(state);
   return state;
 }
@@ -2330,7 +2465,7 @@ export function upsertOrder(
     const orderId =
       input.orderId ||
       `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-    state.orders.unshift({
+    const order = {
       id: uid("or"),
       orderId,
       title: input.title || `${input.categoryName} — ${input.customerName}`,
@@ -2352,6 +2487,23 @@ export function upsertOrder(
       messages: input.messages ?? [],
       serviceId: input.serviceId,
       assignedDesignerIds: input.assignedDesignerIds ?? [],
+    };
+    state.orders.unshift(order);
+    if (state.deleted?.orders) {
+      state.deleted.orders = state.deleted.orders.filter(
+        (x) => x !== order.id && x !== `ord:${order.orderId}`,
+      );
+    }
+    const paid = order.paymentStatus === "paid";
+    state.activities.unshift({
+      id: uid("ac"),
+      type: paid ? "payment" : "note",
+      title: paid ? "New payment" : "New project",
+      body: `${order.orderId} · ${order.customerName} · ${order.packageName} · $${order.amount}${paid ? " paid" : ` (${order.paymentStatus})`}`,
+      createdAt: now,
+      ownerId: "own_admin",
+      relatedType: "order",
+      relatedId: order.id,
     });
   }
   saveCrm(state);

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
 import {
   LEAD_STATUSES,
+  deleteLead,
   loadCrm,
   money,
   relativeDay,
@@ -120,6 +121,13 @@ export function AdminLeads() {
     setFormOpen(false);
   }
 
+  function onDelete(id: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (!window.confirm("Delete this lead permanently?")) return;
+    setState({ ...deleteLead(id) });
+    if (editing?.id === id) setFormOpen(false);
+  }
+
   if (!state) return <p className="text-white/50">Loading…</p>;
 
   return (
@@ -172,6 +180,7 @@ export function AdminLeads() {
                 <th className="px-4 py-3 font-medium">Value</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Updated</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -197,11 +206,18 @@ export function AdminLeads() {
                   <td className="px-4 py-3 text-white/80">
                     {money(l.valueEstimate)}
                   </td>
-                  <td className="px-4 py-3 capitalize text-white/70">
-                    {l.status}
-                  </td>
-                  <td className="px-4 py-3 text-white/40">
+                  <td className="px-4 py-3 text-white/70">{l.status}</td>
+                  <td className="px-4 py-3 text-white/45">
                     {relativeDay(l.updatedAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={(e) => onDelete(l.id, e)}
+                      className="rounded-full border border-[#fe5f50]/40 px-2.5 py-1 text-[11px] font-semibold text-[#ff9b90] hover:bg-[#fe5f50]/15"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -264,14 +264,70 @@ export function mergeCrmDocuments(
     ["updatedAt", "createdAt"],
   );
 
+  const deleted = {
+    visitors: Array.from(
+      new Set([
+        ...asArray<string>((r.deleted as Dict | undefined)?.visitors),
+        ...asArray<string>((i.deleted as Dict | undefined)?.visitors),
+      ]),
+    ).slice(-500),
+    leads: Array.from(
+      new Set([
+        ...asArray<string>((r.deleted as Dict | undefined)?.leads),
+        ...asArray<string>((i.deleted as Dict | undefined)?.leads),
+      ]),
+    ).slice(-500),
+    orders: Array.from(
+      new Set([
+        ...asArray<string>((r.deleted as Dict | undefined)?.orders),
+        ...asArray<string>((i.deleted as Dict | undefined)?.orders),
+      ]),
+    ).slice(-500),
+    contacts: Array.from(
+      new Set([
+        ...asArray<string>((r.deleted as Dict | undefined)?.contacts),
+        ...asArray<string>((i.deleted as Dict | undefined)?.contacts),
+      ]),
+    ).slice(-500),
+  };
+
   return {
     ...r,
     ...i,
     version: 1,
-    visitors,
-    leads,
-    orders,
-    contacts,
+    visitors: applyDeleted(
+      visitors,
+      deleted.visitors,
+      (v) => [
+        String(v.id || ""),
+        v.email ? `e:${String(v.email).toLowerCase()}` : "",
+        v.visitorKey ? `vk:${String(v.visitorKey)}` : "",
+      ],
+    ),
+    leads: applyDeleted(
+      leads,
+      deleted.leads,
+      (l) => [
+        String(l.id || ""),
+        l.email ? `e:${String(l.email).toLowerCase()}` : "",
+      ],
+    ),
+    orders: applyDeleted(
+      orders,
+      deleted.orders,
+      (o) => [
+        String(o.id || ""),
+        o.orderId ? `ord:${String(o.orderId)}` : "",
+      ],
+    ),
+    contacts: applyDeleted(
+      contacts,
+      deleted.contacts,
+      (c) => [
+        String(c.id || ""),
+        c.email ? `e:${String(c.email).toLowerCase()}` : "",
+      ],
+    ),
     activities,
     deals,
     tasks,
@@ -279,7 +335,21 @@ export function mergeCrmDocuments(
     inbox,
     reviews,
     owners: asArray(i.owners).length ? i.owners : r.owners,
+    deleted,
   };
+}
+
+function applyDeleted(
+  rows: Dict[],
+  tombstones: string[] | undefined,
+  keysFn: (row: Dict) => string[],
+) {
+  if (!tombstones?.length) return rows;
+  const ban = new Set(tombstones.filter(Boolean));
+  return rows.filter((row) => {
+    const keys = keysFn(row).filter(Boolean);
+    return !keys.some((k) => ban.has(k));
+  });
 }
 
 export function mergeUsersDocuments(

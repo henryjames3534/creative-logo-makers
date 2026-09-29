@@ -5,6 +5,7 @@ import { AdminCard, Badge } from "@/components/admin/AdminUi";
 import { listRememberedGoogleAccounts } from "@/lib/auth-storage";
 import {
   attachVisitorEmail,
+  deleteVisitor,
   formatDuration,
   hydrateCrmFromServer,
   loadCrm,
@@ -160,6 +161,19 @@ export function AdminVisitors() {
     window.setTimeout(() => setSavedId((id) => (id === v.id ? null : id)), 2500);
   }
 
+  function onDeleteVisitor(v: CrmVisitor) {
+    if (
+      !window.confirm(
+        `Delete visitor ${v.email || v.name || v.geo?.ip || v.id}?`,
+      )
+    ) {
+      return;
+    }
+    deleteVisitor(v.id);
+    if (selectedId === v.id) setSelectedId(null);
+    reload("Visitor deleted");
+  }
+
   if (!state) return <p className="text-white/50">Loading…</p>;
 
   return (
@@ -277,6 +291,13 @@ export function AdminVisitors() {
                       className="rounded-full bg-[#00a581] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008f70]"
                     >
                       Save email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteVisitor(v)}
+                      className="rounded-full border border-[#fe5f50]/40 px-4 py-2.5 text-sm font-semibold text-[#ff9b90] hover:bg-[#fe5f50]/15"
+                    >
+                      Delete
                     </button>
                   </form>
                   {savedId === v.id ? (
