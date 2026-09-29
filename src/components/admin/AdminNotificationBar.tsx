@@ -190,10 +190,16 @@ export function AdminNotificationBar() {
   }, [items, seenAt]);
 
   function openPanel() {
-    setOpen((v) => !v);
-    const now = Date.now();
-    markRead(now);
-    setSeenAt(now);
+    setOpen((v) => {
+      const next = !v;
+      if (v) {
+        // Closing: mark everything seen
+        const now = Date.now();
+        markRead(now);
+        setSeenAt(now);
+      }
+      return next;
+    });
     setToast(null);
     if (
       typeof Notification !== "undefined" &&
@@ -203,18 +209,45 @@ export function AdminNotificationBar() {
     }
   }
 
+  function closePanel() {
+    const now = Date.now();
+    markRead(now);
+    setSeenAt(now);
+    setOpen(false);
+  }
+
   return (
     <div className="relative shrink-0">
       <button
         type="button"
         onClick={openPanel}
-        className="relative rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/70 hover:bg-white/5"
-        aria-label="Notifications"
+        className={`relative flex h-9 w-9 items-center justify-center rounded-full border transition ${
+          unread > 0
+            ? "border-[#fe5f50]/35 bg-[#fe5f50]/10 text-white"
+            : "border-white/10 text-white/70 hover:bg-white/5 hover:text-white"
+        }`}
+        aria-label={
+          unread > 0
+            ? `${unread} unread notifications`
+            : "Notifications"
+        }
       >
-        Alerts
+        <svg
+          viewBox="0 0 24 24"
+          className="h-[18px] w-[18px]"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+          <path d="M9.5 17a2.5 2.5 0 0 0 5 0" />
+        </svg>
         {unread > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#fe5f50] px-1 text-[10px] font-bold text-white">
-            {unread > 9 ? "9+" : unread}
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#fe5f50] px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[#14171e]">
+            {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
       </button>
@@ -225,14 +258,23 @@ export function AdminNotificationBar() {
             type="button"
             className="fixed inset-0 z-[230]"
             aria-label="Close notifications"
-            onClick={() => setOpen(false)}
+            onClick={closePanel}
           />
           <div className="absolute right-0 z-[240] mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#171a21] shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-              <p className="text-sm font-semibold text-white">Live activity</p>
+              <div>
+                <p className="text-sm font-semibold text-white">Notifications</p>
+                <p className="text-[11px] text-white/40">
+                  {unread > 0
+                    ? `${unread} unread`
+                    : items.length
+                      ? "All caught up"
+                      : "No activity yet"}
+                </p>
+              </div>
               <Link
                 href="/admin/activity"
-                onClick={() => setOpen(false)}
+                onClick={closePanel}
                 className="text-[11px] text-[#5ee0bf] hover:underline"
               >
                 View all
@@ -241,32 +283,46 @@ export function AdminNotificationBar() {
             <ul className="max-h-[min(28rem,60vh)] overflow-y-auto">
               {items.length === 0 ? (
                 <li className="px-4 py-8 text-center text-sm text-white/40">
-                  No activity yet
+                  No notifications yet
                 </li>
               ) : (
-                items.map((n) => (
-                  <li key={n.id} className="border-b border-white/5">
-                    <Link
-                      href={n.href}
-                      onClick={() => setOpen(false)}
-                      className="block px-4 py-3 hover:bg-white/[0.04]"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${TONE[n.tone]}`}
+                items.map((n) => {
+                  const isUnread = !seenAt || +new Date(n.createdAt) > seenAt;
+                  return (
+                    <li key={n.id} className="border-b border-white/5">
+                      <Link
+                        href={n.href}
+                        onClick={closePanel}
+                        className={`block px-4 py-3 hover:bg-white/[0.04] ${
+                          isUnread ? "bg-white/[0.03]" : ""
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            {isUnread ? (
+                              <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#fe5f50]" />
+                            ) : null}
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${TONE[n.tone]}`}
+                            >
+                              {n.title}
+                            </span>
+                          </div>
+                          <span className="shrink-0 text-[10px] text-white/35">
+                            {relativeDay(n.createdAt)}
+                          </span>
+                        </div>
+                        <p
+                          className={`mt-1 line-clamp-2 text-xs ${
+                            isUnread ? "font-medium text-white/85" : "text-white/55"
+                          }`}
                         >
-                          {n.title}
-                        </span>
-                        <span className="shrink-0 text-[10px] text-white/35">
-                          {relativeDay(n.createdAt)}
-                        </span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-white/65">
-                        {n.body}
-                      </p>
-                    </Link>
-                  </li>
-                ))
+                          {n.body}
+                        </p>
+                      </Link>
+                    </li>
+                  );
+                })
               )}
             </ul>
           </div>
