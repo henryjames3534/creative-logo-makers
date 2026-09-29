@@ -138,11 +138,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
+  const email = String(body.email ?? "").trim().toLowerCase();
+  if (email.endsWith("@creativelogomakers.com") || email === "admin@creativelogomakers.com") {
+    return NextResponse.json({ ok: true, skipped: true, reason: "staff" });
+  }
+
   const geo = await resolveGeo(req);
   const result = await upsertVisitorOnServer({
     visitorKey,
     path,
-    email: String(body.email ?? "").trim() || undefined,
+    email: email || undefined,
     name: String(body.name ?? "").trim() || undefined,
     userAgent: String(body.userAgent ?? "").trim().slice(0, 400) || undefined,
     language: String(body.language ?? "").trim().slice(0, 40) || undefined,

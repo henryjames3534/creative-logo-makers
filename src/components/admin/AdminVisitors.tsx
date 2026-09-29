@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminCard, Badge, DeleteBtn } from "@/components/admin/AdminUi";
-import { listRememberedGoogleAccounts } from "@/lib/auth-storage";
 import {
   attachVisitorEmail,
   deleteVisitor,
@@ -14,7 +13,7 @@ import {
   onCrmHydrated,
   onVisitorTracked,
   relativeDay,
-  syncRememberedGoogleIntoVisitors,
+  rememberStaffEmail,
   type CrmState,
   type CrmVisitor,
   type VisitorSource,
@@ -62,16 +61,8 @@ export function AdminVisitors() {
   }
 
   function pullGoogleEmails() {
-    const accounts = listRememberedGoogleAccounts();
-    if (!accounts.length) {
-      setHint(
-        "Abhi koi Google account remember nahi. Site pe One Tap → Continue as… dabao — email yahan auto aa jayegi.",
-      );
-      return;
-    }
-    syncRememberedGoogleIntoVisitors(accounts);
-    reload(
-      `Google se fill: ${accounts.map((a) => a.email).join(", ")}`,
+    setHint(
+      "Google emails ab site pe visitor jab Continue kare tabhi aati hain — admin browser ke Gmail visitors mein add nahi hote.",
     );
   }
 
@@ -84,15 +75,21 @@ export function AdminVisitors() {
         /* ignore */
       }
       if (cancelled) return;
+      // Mark this browser as staff so public pings stop counting it
+      rememberStaffEmail("admin@creativelogomakers.com");
       const next = loadCrm();
-      setState(next);
-      setDrafts(draftsFromState(next));
-      const accounts = listRememberedGoogleAccounts();
-      if (accounts.length) {
-        syncRememberedGoogleIntoVisitors(accounts);
-        const after = loadCrm();
-        setState(after);
-        setDrafts(draftsFromState(after));
+      // Purge fake "remembered" rows created from admin Google accounts
+      const junk = (next.visitors || []).filter((v) => !isWebsiteVisitor(v));
+      if (junk.length) {
+        deleteVisitors(junk.map((v) => v.id));
+      }
+      const cleaned = loadCrm();
+      setState(cleaned);
+      setDrafts(draftsFromState(cleaned));
+      if (junk.length) {
+        setHint(
+          `${junk.length} admin/staff fake visitor rows cleaned (Google remembered /admin).`,
+        );
       }
     })();
 
@@ -234,9 +231,9 @@ export function AdminVisitors() {
         <button
           type="button"
           onClick={pullGoogleEmails}
-          className="rounded-full bg-[#00a581] px-4 py-2 text-sm font-semibold text-white hover:bg-[#008f70]"
+          className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
         >
-          Fetch Google emails
+          How emails appear
         </button>
       </div>
 

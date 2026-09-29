@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { listRememberedGoogleAccounts } from "@/lib/auth-storage";
 import { captureVisitorEmail } from "@/lib/capture-visitor";
 import {
   endVisitorPage,
@@ -83,13 +82,28 @@ export function VisitorTracker() {
   const geoDone = useRef(false);
 
   const skip =
-    pathname.startsWith("/admin") || pathname.startsWith("/designer");
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/designer") ||
+    (typeof window !== "undefined" &&
+      (() => {
+        try {
+          return (
+            !!sessionStorage.getItem("clm_admin_session_v1") ||
+            localStorage.getItem("clm_staff_browser_v1") === "1"
+          );
+        } catch {
+          return false;
+        }
+      })());
 
   // Local session + immediate server ping (with IP)
   useEffect(() => {
     if (!ready || skip) return;
     const visitorKey = getVisitorKey();
     const email = user?.email;
+
+    // Never treat admin/staff Google as a website visitor
+    if (email?.toLowerCase().endsWith("@creativelogomakers.com")) return;
 
     if (email) {
       captureVisitorEmail({
@@ -100,22 +114,9 @@ export function VisitorTracker() {
         signedIn: true,
         silent: true,
       });
-    } else {
-      try {
-        for (const a of listRememberedGoogleAccounts()) {
-          captureVisitorEmail({
-            email: a.email,
-            name: a.name,
-            picture: a.picture,
-            source: "remembered",
-            signedIn: false,
-            silent: true,
-          });
-        }
-      } catch {
-        /* ignore */
-      }
     }
+    // Do NOT auto-import remembered Google accounts — that was injecting
+    // the admin's own Gmail into Visitors whenever CRM was opened.
 
     if (lastPath.current && lastPath.current !== pathname) {
       endVisitorPage({ visitorKey, email, path: lastPath.current });

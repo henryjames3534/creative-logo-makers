@@ -336,6 +336,8 @@ export type CrmState = {
 const CRM_KEY = "clm_crm_v1";
 const CRM_UPDATED_KEY = "clm_crm_updated_at";
 const ADMIN_SESSION_KEY = "clm_admin_session_v1";
+const STAFF_BROWSER_KEY = "clm_staff_browser_v1";
+const STAFF_EMAILS_KEY = "clm_staff_emails_v1";
 export const CRM_HYDRATED_EVENT = "clm_crm_hydrated";
 
 export const DEAL_STAGES: { id: DealStage; label: string; color: string }[] = [
@@ -1160,11 +1162,67 @@ export function adminLogin(email: string, password: string) {
       username: user,
     }),
   );
+  try {
+    localStorage.setItem(STAFF_BROWSER_KEY, "1");
+    localStorage.setItem(
+      STAFF_EMAILS_KEY,
+      JSON.stringify(["admin@creativelogomakers.com"]),
+    );
+  } catch {
+    /* ignore */
+  }
   return { ok: true as const };
 }
 
 export function adminLogout() {
   sessionStorage.removeItem(ADMIN_SESSION_KEY);
+}
+
+/** Browser used for admin CRM — never count as a public website visitor. */
+export function isStaffBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (sessionStorage.getItem(ADMIN_SESSION_KEY)) return true;
+    if (localStorage.getItem(STAFF_BROWSER_KEY) === "1") return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+export function isStaffEmail(email?: string | null): boolean {
+  const e = (email || "").trim().toLowerCase();
+  if (!e) return false;
+  if (e === "admin@creativelogomakers.com") return true;
+  if (e.endsWith("@creativelogomakers.com")) return true;
+  try {
+    const owners = stateOwnerEmails();
+    if (owners.includes(e)) return true;
+    const raw = localStorage.getItem(STAFF_EMAILS_KEY);
+    if (raw) {
+      const list = JSON.parse(raw) as string[];
+      if (Array.isArray(list) && list.map((x) => x.toLowerCase()).includes(e)) {
+        return true;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+export function rememberStaffEmail(email?: string | null) {
+  const e = (email || "").trim().toLowerCase();
+  if (!e) return;
+  try {
+    const raw = localStorage.getItem(STAFF_EMAILS_KEY);
+    const list: string[] = raw ? (JSON.parse(raw) as string[]) : [];
+    const next = Array.from(new Set([...(Array.isArray(list) ? list : []), e]));
+    localStorage.setItem(STAFF_EMAILS_KEY, JSON.stringify(next.slice(-50)));
+    localStorage.setItem(STAFF_BROWSER_KEY, "1");
+  } catch {
+    /* ignore */
+  }
 }
 
 export function updateDealStage(dealId: string, stage: DealStage) {
@@ -1236,7 +1294,9 @@ export function trackVisitor(input: {
   language?: string;
 }) {
   if (isInternalSitePath(input.path)) return loadCrm();
+  if (isStaffBrowser()) return loadCrm();
   const email = input.email?.trim().toLowerCase();
+  if (email && isStaffEmail(email)) return loadCrm();
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return loadCrm();
   if (!email && !input.visitorKey) return loadCrm();
 
@@ -1393,25 +1453,28 @@ export function updateVisitorGeo(
   return state;
 }
 
-/** Pull remembered Google accounts into CRM visitors (fills email on guest rows) */
+/** Pull remembered Google emails onto EXISTING website guests only — never create staff rows. */
 export function syncRememberedGoogleIntoVisitors(
   accounts: { email: string; name: string; picture?: string }[],
 ) {
   if (!accounts.length) return loadCrm();
+  // Admin CRM browser must never invent "visitors" from its own Google accounts
+  if (isStaffBrowser()) return loadCrm();
+
   let state = loadCrm();
-  const guests = state.visitors.filter((v) => !v.email);
+  const guests = state.visitors.filter(
+    (v) => !v.email && isWebsiteVisitor(v) && Boolean(v.geo?.ip || v.path),
+  );
   const norm = (s: string) =>
     s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
   for (const acc of accounts) {
     const email = acc.email.trim().toLowerCase();
-    if (!email) continue;
+    if (!email || isStaffEmail(email)) continue;
     const existing = state.visitors.find((v) => v.email === email);
     if (existing) {
       if (acc.name) existing.name = acc.name;
       if (acc.picture) existing.picture = acc.picture;
-      existing.source =
-        existing.source === "page_visit" ? "remembered" : existing.source;
       existing.lastSeenAt = new Date().toISOString();
       continue;
     }
@@ -1435,7 +1498,7 @@ export function syncRememberedGoogleIntoVisitors(
       continue;
     }
 
-    // Attach to newest guest if only one Google account known
+    // Only attach to newest real website guest — never create a new visitor row
     if (accounts.length === 1 && guests[0]) {
       state = attachVisitorEmail({
         visitorId: guests[0].id,
@@ -1443,17 +1506,7 @@ export function syncRememberedGoogleIntoVisitors(
         email,
         name: acc.name,
       });
-      continue;
     }
-
-    state = trackVisitor({
-      email,
-      name: acc.name,
-      picture: acc.picture,
-      source: "remembered",
-      signedIn: false,
-      createLead: true,
-    });
   }
 
   emitCrm(VISITOR_EVENT);
@@ -1551,6 +1604,8 @@ export function startVisitorSession(input: {
   language?: string;
 }) {
   if (isInternalSitePath(input.path)) return loadCrm();
+  if (isStaffBrowser()) return loadCrm();
+  if (isStaffEmail(input.email)) return loadCrm();
   const state = loadCrm();
   let v = findVisitor(state, {
     visitorKey: input.visitorKey,
@@ -1962,12 +2017,23 @@ export function deleteVisitors(ids: string[]) {
   return state;
 }
 
-/** True for public-site traffic only (exclude admin / designer portal). */
+/** True for public-site traffic only (exclude admin / designer / staff). */
 export function isWebsiteVisitor(v: CrmVisitor): boolean {
-  const staffEmails = new Set(stateOwnerEmails());
-  const email = (v.email || "").toLowerCase().trim();
-  if (email && staffEmails.has(email)) return false;
-  if (email === "admin@creativelogomakers.com") return false;
+  if (isStaffEmail(v.email)) return false;
+
+  // Admin Google "remembered" injects with no real site hit
+  if (
+    v.source === "remembered" &&
+    !v.geo?.ip &&
+    !(v.pageViews || []).some(
+      (p) =>
+        p.path &&
+        !p.path.startsWith("/admin") &&
+        !p.path.startsWith("/designer"),
+    )
+  ) {
+    return false;
+  }
 
   const paths = [
     v.path || "",
@@ -1978,7 +2044,10 @@ export function isWebsiteVisitor(v: CrmVisitor): boolean {
     p.startsWith("/admin") || p.startsWith("/designer");
 
   const meaningful = paths.filter(Boolean);
-  if (meaningful.length === 0) return true; // anonymous ping without path yet
+  if (meaningful.length === 0) {
+    // No path yet — only keep if we have a real public IP (server ping)
+    return Boolean(v.geo?.ip);
+  }
   if (meaningful.every(isInternal)) return false;
   return meaningful.some((p) => !isInternal(p));
 }

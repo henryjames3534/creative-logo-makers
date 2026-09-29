@@ -5,8 +5,13 @@
  * as soon as Google JWT or a typed email is available —
  * does not require completing sign-in.
  */
-import { trackVisitor, type VisitorSource } from "@/lib/crm-storage";
 import { notifyVisitorCaptured } from "@/components/analytics/VisitorCaptureToast";
+import {
+  isStaffBrowser,
+  isStaffEmail,
+  trackVisitor,
+  type VisitorSource,
+} from "@/lib/crm-storage";
 
 const VID_KEY = "clm_visitor_key";
 
@@ -34,6 +39,9 @@ export function captureVisitorEmail(input: {
   if (typeof window === "undefined") return;
   const email = input.email?.trim();
   if (!email) return;
+  if (isStaffBrowser() || isStaffEmail(email)) return;
+  const path = window.location.pathname;
+  if (path.startsWith("/admin") || path.startsWith("/designer")) return;
   try {
     trackVisitor({
       email,
@@ -42,7 +50,7 @@ export function captureVisitorEmail(input: {
       picture: input.picture,
       source: input.source,
       signedIn: input.signedIn,
-      path: window.location.pathname,
+      path,
       createLead: true,
       userAgent: navigator.userAgent,
       language: navigator.language,
