@@ -9,6 +9,7 @@ import {
   adminLogout,
   getAdminSession,
   hydrateCrmFromServer,
+  rememberStaffEmail,
 } from "@/lib/crm-storage";
 import {
   hydrateChatFromServer,
@@ -76,7 +77,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
         hydrateChatFromServer().catch(() => null),
       ]);
       if (cancelled) return;
-      setSession(getAdminSession());
+      const sess = getAdminSession();
+      if (sess?.email) rememberStaffEmail(sess.email);
+      setSession(sess);
       setReady(true);
     })();
     return () => {
