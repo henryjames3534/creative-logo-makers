@@ -17,8 +17,6 @@ import {
 } from "@/data/us-states";
 import { SITE_URL } from "@/lib/seo";
 
-const now = new Date();
-
 function entry(
   path: string,
   opts?: {
@@ -26,35 +24,38 @@ function entry(
     priority?: number;
     lastModified?: Date;
   },
+  generatedAt?: Date,
 ): MetadataRoute.Sitemap[number] {
   return {
     url: `${SITE_URL}${path}`,
-    lastModified: opts?.lastModified ?? now,
+    lastModified: opts?.lastModified ?? generatedAt ?? new Date(),
     changeFrequency: opts?.changeFrequency ?? "weekly",
     priority: opts?.priority ?? 0.7,
   };
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const now = new Date();
+
   const staticPages: MetadataRoute.Sitemap = [
-    entry("/", { changeFrequency: "daily", priority: 1 }),
-    entry("/us", { changeFrequency: "weekly", priority: 0.95 }),
-    entry("/usa", { changeFrequency: "weekly", priority: 0.95 }),
-    entry("/categories", { priority: 0.95 }),
-    entry("/how-it-works", { priority: 0.85 }),
-    entry("/pricing", { priority: 0.9 }),
-    entry("/contests", { priority: 0.9 }),
-    entry("/projects", { priority: 0.85 }),
-    entry("/get-started", { priority: 0.95 }),
-    entry("/logo-maker", { priority: 0.9 }),
-    entry("/inspiration", { priority: 0.8 }),
-    entry("/designers", { priority: 0.8 }),
-    entry("/designers/search", { priority: 0.85 }),
-    entry("/studio", { priority: 0.9 }),
-    entry("/about", { priority: 0.7 }),
-    entry("/contact", { priority: 0.75 }),
-    entry("/terms", { priority: 0.3, changeFrequency: "yearly" }),
-    entry("/privacy", { priority: 0.3, changeFrequency: "yearly" }),
+    entry("/", { changeFrequency: "daily", priority: 1 }, now),
+    entry("/us", { changeFrequency: "weekly", priority: 0.95 }, now),
+    entry("/usa", { changeFrequency: "weekly", priority: 0.95 }, now),
+    entry("/categories", { priority: 0.95 }, now),
+    entry("/how-it-works", { priority: 0.85 }, now),
+    entry("/pricing", { priority: 0.9 }, now),
+    entry("/contests", { priority: 0.9 }, now),
+    entry("/projects", { priority: 0.85 }, now),
+    entry("/get-started", { priority: 0.95 }, now),
+    entry("/logo-maker", { priority: 0.9 }, now),
+    entry("/inspiration", { priority: 0.8 }, now),
+    entry("/designers", { priority: 0.8 }, now),
+    entry("/designers/search", { priority: 0.85 }, now),
+    entry("/studio", { priority: 0.9 }, now),
+    entry("/about", { priority: 0.7 }, now),
+    entry("/contact", { priority: 0.75 }, now),
+    entry("/terms", { priority: 0.3, changeFrequency: "yearly" }, now),
+    entry("/privacy", { priority: 0.3, changeFrequency: "yearly" }, now),
   ];
 
   const servicePages = categories.map((c) => {
@@ -66,25 +67,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
         : c.popular
           ? 0.92
           : 0.75;
-    return entry(`/${c.slug}/details`, {
-      changeFrequency: "weekly",
-      priority: boost,
-    });
+    return entry(
+      `/${c.slug}/details`,
+      { changeFrequency: "weekly", priority: boost },
+      now,
+    );
   });
 
   const launchPages = categories.map((c) =>
-    entry(`/launch/${c.slug}`, {
-      changeFrequency: "weekly",
-      priority: 0.65,
-    }),
+    entry(
+      `/launch/${c.slug}`,
+      { changeFrequency: "weekly", priority: 0.65 },
+      now,
+    ),
   );
 
   const studioPages = studioServices.map((s) =>
-    entry(`/studio/${s.slug}`, { priority: 0.8 }),
+    entry(`/studio/${s.slug}`, { priority: 0.8 }, now),
   );
 
   const cityHubs = US_CITIES.map((c) =>
-    entry(cityPath(c.slug), { priority: 0.8, changeFrequency: "weekly" }),
+    entry(cityPath(c.slug), { priority: 0.8, changeFrequency: "weekly" }, now),
   );
 
   const locationPages = US_CITIES.flatMap((city) =>
@@ -93,15 +96,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
         service === "logo-design" ||
         service === "web-design" ||
         service === "mobile-app-design";
-      return entry(locationPath(city.slug, service), {
-        priority: hot ? 0.88 : 0.72,
-        changeFrequency: "weekly",
-      });
+      return entry(
+        locationPath(city.slug, service),
+        { priority: hot ? 0.88 : 0.72, changeFrequency: "weekly" },
+        now,
+      );
     }),
   );
 
   const stateHubs = US_STATES.map((s) =>
-    entry(statePath(s.slug), { priority: 0.85, changeFrequency: "weekly" }),
+    entry(statePath(s.slug), { priority: 0.85, changeFrequency: "weekly" }, now),
   );
 
   const stateServicePages = US_STATES.flatMap((state) =>
@@ -110,35 +114,40 @@ export default function sitemap(): MetadataRoute.Sitemap {
         service === "logo-design" ||
         service === "web-design" ||
         service === "mobile-app-design";
-      return entry(stateServicePath(state.slug, service), {
-        priority: hot ? 0.9 : 0.75,
-        changeFrequency: "weekly",
-      });
+      return entry(
+        stateServicePath(state.slug, service),
+        { priority: hot ? 0.9 : 0.75, changeFrequency: "weekly" },
+        now,
+      );
     }),
   );
 
   const featuredSlugs = new Set(USA_INTENTS.map((i) => i.slug));
 
   const intentPages = ALL_USA_KEYWORD_PAGES.map((i) =>
-    entry(intentPath(i.slug), {
-      priority: featuredSlugs.has(i.slug)
-        ? 0.92
-        : i.source === "gsc"
-          ? 0.88
-          : 0.7,
-      changeFrequency: "weekly",
-      lastModified: now,
-    }),
+    entry(
+      intentPath(i.slug),
+      {
+        priority: featuredSlugs.has(i.slug)
+          ? 0.92
+          : i.source === "gsc"
+            ? 0.88
+            : 0.7,
+        changeFrequency: "weekly",
+      },
+      now,
+    ),
   );
 
   const designerPages = [...designers]
     .sort((a, b) => b.rating - a.rating || b.reviews - a.reviews)
     .slice(0, 200)
     .map((d) =>
-      entry(`/designers/${d.id}`, {
-        changeFrequency: "weekly",
-        priority: 0.55,
-      }),
+      entry(
+        `/designers/${d.id}`,
+        { changeFrequency: "weekly", priority: 0.55 },
+        now,
+      ),
     );
 
   return [
