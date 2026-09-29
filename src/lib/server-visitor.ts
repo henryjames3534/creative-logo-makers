@@ -81,13 +81,32 @@ export async function upsertVisitorOnServer(input: VisitorPingInput) {
     if (input.userAgent) row.userAgent = input.userAgent;
     if (input.language) row.language = input.language;
     if (input.geo) {
+      const prevGeo = (row.geo && typeof row.geo === "object" ? row.geo : {}) as Dict;
+      const prevIp = String(prevGeo.ip || "").trim();
+      const nextIp = String(input.geo.ip || "").trim();
+      if (prevIp && nextIp && prevIp !== nextIp) {
+        const hist = Array.isArray(row.geoHistory)
+          ? [...(row.geoHistory as Dict[])]
+          : [];
+        if (!hist.some((h) => String(h.ip) === prevIp)) {
+          hist.unshift({
+            ip: prevIp,
+            country: prevGeo.country,
+            countryCode: prevGeo.countryCode,
+            city: prevGeo.city,
+            region: prevGeo.region,
+            at: prevGeo.fetchedAt || row.lastSeenAt,
+          });
+        }
+        row.geoHistory = hist.slice(0, 20);
+      }
       row.geo = {
-        ...((row.geo as Dict) || {}),
+        ...prevGeo,
         ...input.geo,
+        ip: nextIp || prevIp || undefined,
         fetchedAt: now,
       };
     }
-    // Prefer page_visit unless already a stronger source
     if (!row.source || row.source === "page_visit") {
       row.source = email ? "portal" : "page_visit";
     }

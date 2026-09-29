@@ -217,6 +217,15 @@ export type CrmGeo = {
   fetchedAt?: string;
 };
 
+export type CrmGeoHistory = {
+  ip: string;
+  country?: string;
+  countryCode?: string;
+  city?: string;
+  region?: string;
+  at?: string;
+};
+
 export type CrmPageView = {
   id: string;
   path: string;
@@ -250,6 +259,8 @@ export type CrmVisitor = {
   visitCount: number;
   totalDurationMs: number;
   geo?: CrmGeo;
+  /** Previous IPs so a new visit doesn't erase older locations */
+  geoHistory?: CrmGeoHistory[];
   pageViews: CrmPageView[];
   sessions: CrmVisitSession[];
   userAgent?: string;
@@ -1337,7 +1348,29 @@ export function updateVisitorGeo(
   const state = loadCrm();
   const v = findVisitor(state, { visitorKey, email });
   if (!v) return state;
-  v.geo = { ...v.geo, ...geo, fetchedAt: new Date().toISOString() };
+  const prevIp = v.geo?.ip?.trim();
+  const nextIp = geo.ip?.trim();
+  if (prevIp && nextIp && prevIp !== nextIp) {
+    const hist = Array.isArray(v.geoHistory) ? [...v.geoHistory] : [];
+    if (!hist.some((h) => h.ip === prevIp)) {
+      hist.unshift({
+        ip: prevIp,
+        country: v.geo?.country,
+        countryCode: v.geo?.countryCode,
+        city: v.geo?.city,
+        region: v.geo?.region,
+        at: v.geo?.fetchedAt || v.lastSeenAt,
+      });
+    }
+    v.geoHistory = hist.slice(0, 20);
+  }
+  // Don't wipe existing IP if new geo has none
+  v.geo = {
+    ...v.geo,
+    ...geo,
+    ip: nextIp || v.geo?.ip,
+    fetchedAt: new Date().toISOString(),
+  };
   v.lastSeenAt = new Date().toISOString();
   saveCrm(state);
   emitCrm(VISITOR_EVENT);

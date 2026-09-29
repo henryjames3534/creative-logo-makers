@@ -27,12 +27,90 @@ function pickNewer<T extends Dict>(a: T, b: T, fields: string[]): T {
   return { ...a, ...b };
 }
 
+/** Merge visitors without wiping IP/geo when one side is missing location. */
+function mergeVisitorRow(a: Dict, b: Dict): Dict {
+  const newer = pickNewer(a, b, ["lastSeenAt", "updatedAt", "firstSeenAt"]);
+  const older = newer === a || (newer.id === a.id && ts(a.lastSeenAt) >= ts(b.lastSeenAt))
+    ? b
+    : a;
+
+  const aGeo = (a.geo && typeof a.geo === "object" ? a.geo : null) as Dict | null;
+  const bGeo = (b.geo && typeof b.geo === "object" ? b.geo : null) as Dict | null;
+  const newerGeo = (newer.geo && typeof newer.geo === "object" ? newer.geo : null) as Dict | null;
+  const olderGeo = (older.geo && typeof older.geo === "object" ? older.geo : null) as Dict | null;
+
+  // Prefer geo that has an IP; then merge fields
+  const geoWithIp = [newerGeo, olderGeo, aGeo, bGeo].find(
+    (g) => g && String(g.ip || "").trim(),
+  );
+  const geoBase = newerGeo || olderGeo || aGeo || bGeo || null;
+  const geo = geoWithIp
+    ? { ...(geoBase || {}), ...geoWithIp }
+    : geoBase
+      ? { ...geoBase }
+      : undefined;
+
+  // Build IP history from both sides
+  const history: Dict[] = [];
+  const pushHist = (g: Dict | null | undefined) => {
+    if (!g) return;
+    const ip = String(g.ip || "").trim();
+    if (!ip) return;
+    if (history.some((h) => String(h.ip) === ip)) return;
+    history.push({
+      ip,
+      country: g.country,
+      countryCode: g.countryCode,
+      city: g.city,
+      region: g.region,
+      at: g.fetchedAt || newer.lastSeenAt || a.lastSeenAt || b.lastSeenAt,
+    });
+  };
+  for (const h of asArray<Dict>(a.geoHistory)) pushHist(h);
+  for (const h of asArray<Dict>(b.geoHistory)) pushHist(h);
+  pushHist(aGeo);
+  pushHist(bGeo);
+
+  const hits = Math.max(Number(a.hits || 0), Number(b.hits || 0));
+  const visitCount = Math.max(Number(a.visitCount || 0), Number(b.visitCount || 0));
+  const totalDurationMs = Math.max(
+    Number(a.totalDurationMs || 0),
+    Number(b.totalDurationMs || 0),
+  );
+
+  return {
+    ...newer,
+    geo,
+    geoHistory: history.slice(0, 20),
+    hits,
+    visitCount,
+    totalDurationMs,
+    email: newer.email || a.email || b.email,
+    name:
+      newer.name && newer.name !== "Anonymous"
+        ? newer.name
+        : a.name && a.name !== "Anonymous"
+          ? a.name
+          : b.name || newer.name,
+    pageViews: asArray(newer.pageViews).length
+      ? newer.pageViews
+      : a.pageViews || b.pageViews,
+    sessions: asArray(newer.sessions).length
+      ? newer.sessions
+      : a.sessions || b.sessions,
+  };
+}
+
 function mergeByKeys<T extends Dict>(
   remote: T[],
   incoming: T[],
   keyFn: (row: T) => string,
   timeFields: string[],
+  mergeRow?: (a: T, b: T) => T,
 ): T[] {
+  const combine =
+    mergeRow ||
+    ((a: T, b: T) => pickNewer(a, b, timeFields));
   const map = new Map<string, T>();
   for (const row of remote) {
     const k = keyFn(row);
@@ -43,7 +121,7 @@ function mergeByKeys<T extends Dict>(
     const k = keyFn(row);
     if (!k) continue;
     const prev = map.get(k);
-    map.set(k, prev ? pickNewer(prev, row, timeFields) : row);
+    map.set(k, prev ? combine(prev, row) : row);
   }
   return [...map.values()].sort(
     (a, b) =>
@@ -116,8 +194,8 @@ export function mergeCrmDocuments(
     asArray<Dict>(i.visitors),
     visitorKey,
     ["lastSeenAt", "updatedAt", "firstSeenAt"],
+    mergeVisitorRow,
   ).filter((v) => {
-    // Drop empty anonymous seed-like ghosts with no activity
     const email = String(v.email || "");
     if (looksLikeSeedEmail(email)) return false;
     return true;

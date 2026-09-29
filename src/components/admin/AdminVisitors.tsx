@@ -12,8 +12,6 @@ import {
   onVisitorTracked,
   relativeDay,
   syncRememberedGoogleIntoVisitors,
-  updateVisitorGeo,
-  type CrmGeo,
   type CrmState,
   type CrmVisitor,
   type VisitorSource,
@@ -50,7 +48,6 @@ export function AdminVisitors() {
   const [drafts, setDrafts] = useState<Drafts>({});
   const [savedId, setSavedId] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
-  const [geoLoading, setGeoLoading] = useState(false);
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
 
   function reload(msg?: string) {
@@ -163,28 +160,6 @@ export function AdminVisitors() {
     window.setTimeout(() => setSavedId((id) => (id === v.id ? null : id)), 2500);
   }
 
-  async function refreshGeo() {
-    if (!selected) return;
-    setGeoLoading(true);
-    setGeoMsg(null);
-    try {
-      const res = await fetch("/api/visitor-geo", { cache: "no-store" });
-      if (!res.ok) throw new Error("Geo lookup failed");
-      const geo = (await res.json()) as CrmGeo;
-      setGeoMsg(
-        geo.country || geo.city
-          ? "Location updated."
-          : "Public IP lookup empty — retry shortly.",
-      );
-      updateVisitorGeo(selected.visitorKey, geo, selected.email);
-      reload();
-    } catch {
-      setGeoMsg("Could not reach geo service.");
-    } finally {
-      setGeoLoading(false);
-    }
-  }
-
   if (!state) return <p className="text-white/50">Loading…</p>;
 
   return (
@@ -242,16 +217,29 @@ export function AdminVisitors() {
                     className="mb-3 flex w-full flex-wrap items-center justify-between gap-2 text-left"
                     onClick={() => setSelectedId(v.id)}
                   >
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge tone={d.email || v.email ? "green" : "coral"}>
-                        {d.email || v.email ? "email ready" : "email missing"}
-                      </Badge>
-                      <Badge tone="blue">
-                        {SOURCE_LABEL[v.source] || v.source}
-                      </Badge>
-                      <span className="text-[11px] text-white/35">
-                        {relativeDay(v.lastSeenAt)} · {v.geo?.ip || "IP…"}
-                      </span>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge tone={d.email || v.email ? "green" : "coral"}>
+                          {d.email || v.email ? "email ready" : "email missing"}
+                        </Badge>
+                        <Badge tone="blue">
+                          {SOURCE_LABEL[v.source] || v.source}
+                        </Badge>
+                        <span className="text-[11px] text-white/35">
+                          {relativeDay(v.lastSeenAt)}
+                        </span>
+                      </div>
+                      <p className="font-mono text-sm font-semibold text-white">
+                        {v.geo?.ip || "IP not captured"}
+                      </p>
+                      <p className="text-[11px] text-white/50">
+                        {[v.geo?.city, v.geo?.country || v.geo?.countryCode]
+                          .filter(Boolean)
+                          .join(", ") || "Location unknown"}
+                        {v.geoHistory && v.geoHistory.length
+                          ? ` · +${v.geoHistory.length} older IP`
+                          : ""}
+                      </p>
                     </div>
                   </button>
 
@@ -327,11 +315,12 @@ export function AdminVisitors() {
               </div>
               <button
                 type="button"
-                onClick={refreshGeo}
-                disabled={geoLoading}
-                className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/5 disabled:opacity-50"
+                onClick={() => {
+                  void hydrateCrmFromServer().then(() => reload("Synced from server"));
+                }}
+                className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/5"
               >
-                {geoLoading ? "Fetching…" : "Refresh IP / location"}
+                Sync from server
               </button>
               {geoMsg ? (
                 <p className="text-[11px] text-white/45">{geoMsg}</p>
@@ -339,21 +328,52 @@ export function AdminVisitors() {
               <div className="space-y-1 rounded-xl border border-white/10 bg-[#0f1115] p-3 text-xs text-white/70">
                 <p>
                   <span className="text-white/40">IP</span>{" "}
-                  {selected.geo?.ip || "—"}
+                  <span className="font-mono text-sm font-semibold text-white">
+                    {selected.geo?.ip || "Not captured"}
+                  </span>
                 </p>
                 <p>
                   <span className="text-white/40">Country</span>{" "}
-                  {selected.geo?.country || "—"}
+                  {selected.geo?.country || selected.geo?.countryCode || "—"}
                 </p>
                 <p>
                   <span className="text-white/40">City</span>{" "}
                   {selected.geo?.city || "—"}
                 </p>
                 <p>
+                  <span className="text-white/40">Region</span>{" "}
+                  {selected.geo?.region || "—"}
+                </p>
+                <p>
+                  <span className="text-white/40">ISP</span>{" "}
+                  {selected.geo?.isp || "—"}
+                </p>
+                <p>
                   <span className="text-white/40">Visits</span>{" "}
                   {selected.visitCount} ·{" "}
                   {formatDuration(selected.totalDurationMs)}
                 </p>
+                {selected.geoHistory && selected.geoHistory.length ? (
+                  <div className="mt-2 border-t border-white/10 pt-2">
+                    <p className="mb-1 text-white/40">Previous IPs</p>
+                    <ul className="space-y-1">
+                      {selected.geoHistory.map((h) => (
+                        <li key={`${h.ip}-${h.at}`} className="font-mono text-[11px]">
+                          {h.ip}
+                          {h.city || h.country
+                            ? ` · ${[h.city, h.country].filter(Boolean).join(", ")}`
+                            : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {!selected.geo?.ip ? (
+                  <p className="mt-2 text-[11px] text-amber-200/80">
+                    Ye visitor tracking se pehle aaya — us waqt IP save nahi hui.
+                    Dobara site visit pe IP capture ho jayegi.
+                  </p>
+                ) : null}
               </div>
               <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-white/55">
                 {(selected.pageViews || []).slice(0, 15).map((p) => (
