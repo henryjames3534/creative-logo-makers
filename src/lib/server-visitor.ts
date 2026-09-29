@@ -102,7 +102,11 @@ export async function upsertVisitorOnServer(input: VisitorPingInput) {
       }
       row.geo = {
         ...prevGeo,
-        ...input.geo,
+        ...Object.fromEntries(
+          Object.entries(input.geo as Record<string, unknown>).filter(
+            ([, v]) => v !== undefined && v !== null && v !== "",
+          ),
+        ),
         ip: nextIp || prevIp || undefined,
         fetchedAt: now,
       };

@@ -430,15 +430,36 @@ export function AdminVisitors() {
                 </p>
                 <p>
                   <span className="text-[color:var(--a-faint)]">Country</span>{" "}
-                  {selected.geo?.country || selected.geo?.countryCode || "—"}
+                  {selected.geo?.country
+                    ? selected.geo.countryCode &&
+                      selected.geo.country !== selected.geo.countryCode
+                      ? `${selected.geo.country} (${selected.geo.countryCode})`
+                      : selected.geo.country
+                    : selected.geo?.countryCode || "—"}
+                </p>
+                <p>
+                  <span className="text-[color:var(--a-faint)]">State / Region</span>{" "}
+                  {selected.geo?.region || "—"}
                 </p>
                 <p>
                   <span className="text-[color:var(--a-faint)]">City</span>{" "}
                   {selected.geo?.city || "—"}
                 </p>
                 <p>
-                  <span className="text-[color:var(--a-faint)]">Region</span>{" "}
-                  {selected.geo?.region || "—"}
+                  <span className="text-[color:var(--a-faint)]">Latitude</span>{" "}
+                  {typeof selected.geo?.latitude === "number"
+                    ? selected.geo.latitude.toFixed(5)
+                    : "—"}
+                </p>
+                <p>
+                  <span className="text-[color:var(--a-faint)]">Longitude</span>{" "}
+                  {typeof selected.geo?.longitude === "number"
+                    ? selected.geo.longitude.toFixed(5)
+                    : "—"}
+                </p>
+                <p>
+                  <span className="text-[color:var(--a-faint)]">Timezone</span>{" "}
+                  {selected.geo?.timezone || "—"}
                 </p>
                 <p>
                   <span className="text-[color:var(--a-faint)]">ISP</span>{" "}
@@ -449,6 +470,52 @@ export function AdminVisitors() {
                   {selected.visitCount} ·{" "}
                   {formatDuration(selected.totalDurationMs)}
                 </p>
+                {selected.geo?.ip ? (
+                  <button
+                    type="button"
+                    className="mt-2 rounded-full border border-[color:var(--a-border)] px-3 py-1 text-[11px] font-semibold text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          setGeoMsg("Enriching geo…");
+                          const res = await fetch(
+                            `/api/visitor-geo?ip=${encodeURIComponent(selected.geo!.ip!)}`,
+                            { cache: "no-store" },
+                          );
+                          if (!res.ok) throw new Error("Lookup failed");
+                          const geo = (await res.json()) as {
+                            ip?: string;
+                            country?: string;
+                            countryCode?: string;
+                            region?: string;
+                            city?: string;
+                            latitude?: number;
+                            longitude?: number;
+                            timezone?: string;
+                            isp?: string;
+                          };
+                          const { updateVisitorGeo } = await import(
+                            "@/lib/crm-storage"
+                          );
+                          updateVisitorGeo(
+                            selected.visitorKey,
+                            {
+                              ...geo,
+                              fetchedAt: new Date().toISOString(),
+                            },
+                            selected.email,
+                          );
+                          reload("Geo enriched");
+                          setGeoMsg("Geo updated from IP lookup");
+                        } catch {
+                          setGeoMsg("Could not enrich geo for this IP");
+                        }
+                      })();
+                    }}
+                  >
+                    Enrich geo (lat/long/ISP)
+                  </button>
+                ) : null}
                 {selected.geoHistory && selected.geoHistory.length ? (
                   <div className="mt-2 border-t border-[color:var(--a-border)] pt-2">
                     <p className="mb-1 text-[color:var(--a-faint)]">Previous IPs</p>
@@ -456,8 +523,8 @@ export function AdminVisitors() {
                       {selected.geoHistory.map((h) => (
                         <li key={`${h.ip}-${h.at}`} className="font-mono text-[11px]">
                           {h.ip}
-                          {h.city || h.country
-                            ? ` · ${[h.city, h.country].filter(Boolean).join(", ")}`
+                          {h.city || h.country || h.region
+                            ? ` · ${[h.city, h.region, h.country].filter(Boolean).join(", ")}`
                             : ""}
                         </li>
                       ))}

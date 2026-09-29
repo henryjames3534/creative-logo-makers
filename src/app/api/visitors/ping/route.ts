@@ -1,33 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enrichGeo, isPrivateIp } from "@/lib/ip-geo";
 import { upsertVisitorOnServer } from "@/lib/server-visitor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-type GeoPayload = {
-  ip?: string;
-  country?: string;
-  countryCode?: string;
-  region?: string;
-  city?: string;
-  latitude?: number;
-  longitude?: number;
-  timezone?: string;
-  isp?: string;
-};
-
-function isPrivateIp(ip: string) {
-  const v = ip.trim().toLowerCase();
-  if (!v) return true;
-  if (v === "::1" || v === "127.0.0.1" || v === "localhost") return true;
-  if (v.startsWith("10.")) return true;
-  if (v.startsWith("192.168.")) return true;
-  if (v.startsWith("172.")) {
-    const second = Number(v.split(".")[1]);
-    if (second >= 16 && second <= 31) return true;
-  }
-  return false;
-}
 
 function clientIp(req: NextRequest) {
   const candidates = [
@@ -42,7 +18,7 @@ function clientIp(req: NextRequest) {
   return candidates[0] || "";
 }
 
-async function resolveGeo(req: NextRequest): Promise<GeoPayload> {
+async function resolveGeo(req: NextRequest) {
   const ip = clientIp(req);
   const edgeCountry = (
     req.headers.get("x-vercel-ip-country") ||
@@ -56,59 +32,19 @@ async function resolveGeo(req: NextRequest): Promise<GeoPayload> {
   const city = cityHeader ? decodeURIComponent(cityHeader) : undefined;
   const region = req.headers.get("x-vercel-ip-country-region") || undefined;
 
-  if (edgeCountry && edgeCountry !== "XX" && edgeCountry !== "T1") {
-    return {
-      ip: ip || undefined,
-      countryCode: edgeCountry,
-      country: edgeCountry,
-      city,
-      region,
-    };
-  }
-
-  if (ip) {
-    try {
-      const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const data = (await res.json()) as {
-          success?: boolean;
-          ip?: string;
-          country?: string;
-          country_code?: string;
-          region?: string;
-          city?: string;
-          latitude?: number;
-          longitude?: number;
-          timezone?: { id?: string } | string;
-          connection?: { isp?: string };
-        };
-        if (data.success !== false) {
-          const tz =
-            typeof data.timezone === "string"
-              ? data.timezone
-              : data.timezone?.id;
-          return {
-            ip: data.ip || ip,
-            country: data.country,
-            countryCode: data.country_code,
-            region: data.region,
-            city: data.city,
-            latitude: data.latitude,
-            longitude: data.longitude,
-            timezone: tz,
-            isp: data.connection?.isp,
-          };
+  const edge =
+    edgeCountry && edgeCountry !== "XX" && edgeCountry !== "T1"
+      ? {
+          ip: ip || undefined,
+          countryCode: edgeCountry,
+          country: edgeCountry,
+          city,
+          region,
         }
-      }
-    } catch {
-      /* ignore */
-    }
-  }
+      : { ip: ip || undefined, city, region };
 
-  return { ip: ip || undefined };
+  // Always enrich — edge alone has no lat/long/ISP/full country name
+  return enrichGeo({ ip, edge });
 }
 
 /**
@@ -133,13 +69,15 @@ export async function POST(req: NextRequest) {
   }
 
   const path = String(body.path ?? "/").trim().slice(0, 500);
-  // Don't record admin/designer portal as public traffic
   if (path.startsWith("/admin") || path.startsWith("/designer")) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
   const email = String(body.email ?? "").trim().toLowerCase();
-  if (email.endsWith("@creativelogomakers.com") || email === "admin@creativelogomakers.com") {
+  if (
+    email.endsWith("@creativelogomakers.com") ||
+    email === "admin@creativelogomakers.com"
+  ) {
     return NextResponse.json({ ok: true, skipped: true, reason: "staff" });
   }
 
