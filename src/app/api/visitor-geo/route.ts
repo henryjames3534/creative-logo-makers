@@ -124,11 +124,22 @@ export async function GET(req: NextRequest) {
     .toUpperCase();
 
   if (edgeCountry && edgeCountry !== "XX" && edgeCountry !== "T1") {
+    let ip = hinted;
+    if (!ip) {
+      try {
+        const geo = await lookupIpwho();
+        ip = geo?.ip || "";
+      } catch {
+        /* ignore */
+      }
+    }
     return NextResponse.json({
-      ip: hinted || undefined,
+      ip: ip || undefined,
       countryCode: edgeCountry,
       country: edgeCountry,
-      city: req.headers.get("x-vercel-ip-city") || undefined,
+      city: req.headers.get("x-vercel-ip-city")
+        ? decodeURIComponent(req.headers.get("x-vercel-ip-city") || "")
+        : undefined,
       region: req.headers.get("x-vercel-ip-country-region") || undefined,
     } satisfies GeoPayload);
   }

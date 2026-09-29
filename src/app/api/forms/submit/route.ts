@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { clmCreateLead } from "@/lib/clm-api";
 import {
   FORM_FROM_EMAIL,
   FORM_NOTIFY_EMAIL,
@@ -48,6 +49,30 @@ function normalize(body: unknown): LeadFormPayload | null {
   };
 }
 
+async function persistLead(payload: LeadFormPayload) {
+  try {
+    await clmCreateLead({
+      email: payload.email,
+      name: payload.name,
+      message: payload.message,
+      source:
+        payload.form === "contact"
+          ? "Contact form"
+          : payload.form === "studio"
+            ? "Studio form"
+            : "Signup",
+      status: "new",
+      meta: {
+        topic: payload.topic,
+        page: payload.page,
+        form: payload.form,
+      },
+    });
+  } catch {
+    /* bridge optional */
+  }
+}
+
 /**
  * POST /api/forms/submit
  * Sends inbox notification → reply@creativelogomakers.com
@@ -69,9 +94,10 @@ export async function POST(req: Request) {
     );
   }
 
+  void persistLead(payload);
+
   const apiKey = getResendKey();
   if (!apiKey) {
-    // Client will use FormSubmit classic POST (supports autoresponse).
     return NextResponse.json({
       ok: false,
       fallback: "formsubmit",
@@ -106,7 +132,6 @@ export async function POST(req: Request) {
       html: thankYouHtml(payload),
     });
     if (thanks.error) {
-      // Inbox got the lead; still report partial success
       return NextResponse.json({
         ok: true,
         partial: true,

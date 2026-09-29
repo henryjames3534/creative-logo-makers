@@ -1021,7 +1021,16 @@ export function loadCrm(): CrmState {
     return existing;
   }
   const fresh = seed();
-  saveCrm(fresh);
+  // Persist seed locally ONLY with an old timestamp so hydrate always
+  // prefers the server CRM (prevents demo seed wiping real visitors).
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(CRM_KEY, JSON.stringify(fresh));
+      localStorage.setItem(CRM_UPDATED_KEY, "1970-01-01T00:00:00.000Z");
+    } catch {
+      /* ignore */
+    }
+  }
   return fresh;
 }
 

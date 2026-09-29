@@ -6,7 +6,9 @@ import { listRememberedGoogleAccounts } from "@/lib/auth-storage";
 import {
   attachVisitorEmail,
   formatDuration,
+  hydrateCrmFromServer,
   loadCrm,
+  onCrmHydrated,
   onVisitorTracked,
   relativeDay,
   syncRememberedGoogleIntoVisitors,
@@ -73,22 +75,46 @@ export function AdminVisitors() {
   }
 
   useEffect(() => {
-    const next = loadCrm();
-    setState(next);
-    setDrafts(draftsFromState(next));
-    // Auto-fill from any remembered Google logins
-    const accounts = listRememberedGoogleAccounts();
-    if (accounts.length) {
-      syncRememberedGoogleIntoVisitors(accounts);
-      const after = loadCrm();
-      setState(after);
-      setDrafts(draftsFromState(after));
-    }
-    return onVisitorTracked(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await hydrateCrmFromServer();
+      } catch {
+        /* ignore */
+      }
+      if (cancelled) return;
+      const next = loadCrm();
+      setState(next);
+      setDrafts(draftsFromState(next));
+      const accounts = listRememberedGoogleAccounts();
+      if (accounts.length) {
+        syncRememberedGoogleIntoVisitors(accounts);
+        const after = loadCrm();
+        setState(after);
+        setDrafts(draftsFromState(after));
+      }
+    })();
+
+    const offHydrated = onCrmHydrated((s) => {
+      setState(s);
+      setDrafts(draftsFromState(s));
+    });
+    const offTracked = onVisitorTracked(() => {
       const s = loadCrm();
       setState(s);
       setDrafts(draftsFromState(s));
     });
+    // Poll server every 20s so other visitors/forms show up without refresh
+    const poll = window.setInterval(() => {
+      void hydrateCrmFromServer().catch(() => null);
+    }, 20000);
+
+    return () => {
+      cancelled = true;
+      offHydrated();
+      offTracked();
+      window.clearInterval(poll);
+    };
   }, []);
 
   const rows = useMemo(() => {

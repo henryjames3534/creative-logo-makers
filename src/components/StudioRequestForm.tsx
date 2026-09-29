@@ -9,6 +9,7 @@ import {
   type RecaptchaHandle,
 } from "@/components/RecaptchaField";
 import { submitLeadForm } from "@/lib/submit-lead-form";
+import { captureFormLead } from "@/lib/capture-form-lead";
 
 export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
   const search = useSearchParams();
@@ -58,6 +59,15 @@ export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
       captchaRef.current?.reset();
       return;
     }
+
+    captureFormLead({
+      form: "studio",
+      name,
+      email,
+      topic,
+      message,
+      page: typeof window !== "undefined" ? window.location.pathname : "/studio",
+    });
 
     try {
       sessionStorage.setItem(

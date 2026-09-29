@@ -13,6 +13,7 @@ import { Container } from "@/components/Section";
 import { media } from "@/data/media";
 import { brand } from "@/data/site";
 import { submitLeadForm } from "@/lib/submit-lead-form";
+import { captureFormLead } from "@/lib/capture-form-lead";
 
 export function ContactPageClient() {
   const search = useSearchParams();
@@ -61,6 +62,15 @@ export function ContactPageClient() {
       captchaRef.current?.reset();
       return;
     }
+
+    captureFormLead({
+      form: "contact",
+      name,
+      email,
+      topic,
+      message,
+      page: "/contact",
+    });
 
     setLoading(false);
     setSent(true);

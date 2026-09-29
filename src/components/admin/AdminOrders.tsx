@@ -39,7 +39,28 @@ export function AdminOrders() {
   });
 
   useEffect(() => {
-    setState(loadCrm());
+    let cancelled = false;
+    (async () => {
+      try {
+        const { hydrateCrmFromServer } = await import("@/lib/crm-storage");
+        await hydrateCrmFromServer();
+      } catch {
+        /* ignore */
+      }
+      if (!cancelled) setState(loadCrm());
+    })();
+    const poll = window.setInterval(() => {
+      void import("@/lib/crm-storage")
+        .then(({ hydrateCrmFromServer }) => hydrateCrmFromServer())
+        .then(() => {
+          if (!cancelled) setState(loadCrm());
+        })
+        .catch(() => null);
+    }, 20000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+    };
   }, []);
 
   const rows = useMemo(() => {

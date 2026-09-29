@@ -12,6 +12,7 @@ import {
 import { Container } from "@/components/Section";
 import { captureTypedEmail } from "@/lib/capture-visitor";
 import { submitLeadForm } from "@/lib/submit-lead-form";
+import { captureFormLead } from "@/lib/capture-form-lead";
 
 export function SignupForm() {
   const { signUp, user, ready } = useAuth();
@@ -70,6 +71,14 @@ export function SignupForm() {
       },
       { nextPath: next, allowFormSubmitFallback: false },
     );
+    captureFormLead({
+      form: "signup",
+      name,
+      email,
+      topic: "New account signup",
+      message: "New customer account created.",
+      page: "/signup",
+    });
     setLoading(false);
     router.push(next);
   }
