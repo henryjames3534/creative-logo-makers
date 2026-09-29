@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { StudioRequestForm } from "@/components/StudioRequestForm";
 import { StudioServiceView } from "@/components/StudioServiceView";
 import { PageHero } from "@/components/PageHero";
@@ -92,7 +93,15 @@ export default async function StudioServicePage({ params }: Props) {
                   ))}
                 </div>
               </div>
-              <StudioRequestForm defaultTopic="Studio intro call" />
+              <Suspense
+                fallback={
+                  <div className="mx-auto max-w-xl rounded-2xl border border-line bg-white p-8 text-center text-muted shadow-sm">
+                    Loading form…
+                  </div>
+                }
+              >
+                <StudioRequestForm defaultTopic="Studio intro call" />
+              </Suspense>
             </div>
           </Container>
         </section>

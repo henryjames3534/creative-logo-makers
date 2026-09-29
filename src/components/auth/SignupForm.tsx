@@ -11,6 +11,7 @@ import {
 } from "@/components/RecaptchaField";
 import { Container } from "@/components/Section";
 import { captureTypedEmail } from "@/lib/capture-visitor";
+import { submitLeadForm } from "@/lib/submit-lead-form";
 
 export function SignupForm() {
   const { signUp, user, ready } = useAuth();
@@ -51,12 +52,25 @@ export function SignupForm() {
     }
     captureTypedEmail(email, "signup_form", name);
     const res = await signUp({ name, email, password });
-    setLoading(false);
     if (!res.ok) {
+      setLoading(false);
       setError(res.error);
       captchaRef.current?.reset();
       return;
     }
+    // Welcome email to user + notify reply@ (best-effort; don't block signup)
+    await submitLeadForm(
+      {
+        form: "signup",
+        name,
+        email,
+        topic: "New account signup",
+        message: "A new customer account was created on creativelogomakers.com.",
+        page: "/signup",
+      },
+      { nextPath: next, allowFormSubmitFallback: false },
+    );
+    setLoading(false);
     router.push(next);
   }
 

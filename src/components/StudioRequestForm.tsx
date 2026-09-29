@@ -1,18 +1,25 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/Button";
 import {
   RecaptchaField,
   verifyRecaptchaToken,
   type RecaptchaHandle,
 } from "@/components/RecaptchaField";
+import { submitLeadForm } from "@/lib/submit-lead-form";
 
 export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
+  const search = useSearchParams();
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const captchaRef = useRef<RecaptchaHandle>(null);
+
+  useEffect(() => {
+    if (search.get("sent") === "1") setSent(true);
+  }, [search]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,20 +33,47 @@ export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
       return;
     }
     const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
+    const topic = String(fd.get("topic") ?? defaultTopic).trim();
+    const message = String(fd.get("message") ?? "").trim();
+
+    const result = await submitLeadForm(
+      {
+        form: "studio",
+        name,
+        email,
+        topic,
+        message,
+        page: typeof window !== "undefined" ? window.location.pathname : "/studio",
+      },
+      {
+        nextPath: `${typeof window !== "undefined" ? window.location.pathname : "/studio"}?sent=1`,
+      },
+    );
+
+    if (!result.ok) {
+      setError(result.error);
+      setLoading(false);
+      captchaRef.current?.reset();
+      return;
+    }
+
     try {
       sessionStorage.setItem(
         "clm_studio_request",
         JSON.stringify({
-          name: fd.get("name"),
-          email: fd.get("email"),
-          topic: fd.get("topic"),
-          message: fd.get("message"),
+          name,
+          email,
+          topic,
+          message,
           at: new Date().toISOString(),
         }),
       );
     } catch {
       /* ignore */
     }
+
     setLoading(false);
     setSent(true);
   }
@@ -49,8 +83,8 @@ export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
       <div className="mx-auto max-w-xl rounded-2xl border border-line bg-white p-10 text-center shadow-sm">
         <p className="text-2xl font-bold text-ink">Request received</p>
         <p className="mt-3 text-muted">
-          A Brand Strategist will be in touch soon — usually within one business
-          day.
+          Check your inbox for a confirmation email. A Brand Strategist will be
+          in touch soon — usually within one business day.
         </p>
         <div className="mt-6">
           <Button href="/studio" variant="primary">
@@ -101,7 +135,7 @@ export function StudioRequestForm({ defaultTopic }: { defaultTopic: string }) {
         disabled={loading}
         className="focus-ring inline-flex w-full items-center justify-center rounded-full bg-cta px-7 py-3.5 text-sm font-semibold !text-white transition-colors hover:bg-cta-hover disabled:opacity-60"
       >
-        {loading ? "Verifying…" : "Request a call"}
+        {loading ? "Sending…" : "Request a call"}
       </button>
       <p className="text-center text-xs text-muted">
         Circlemakers Studio · English & German
