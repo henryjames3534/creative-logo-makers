@@ -11,9 +11,10 @@ import {
   listRememberedGoogleAccounts,
   rememberGoogleAccount,
 } from "@/lib/auth-storage";
+import { GOOGLE_CLIENT_ID } from "@/lib/google-auth-config";
 
 const DISMISS_KEY = "clm_google_onetap_dismissed";
-const CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim();
+const CLIENT_ID = GOOGLE_CLIENT_ID;
 
 /** Prevent Strict Mode / remount from firing two FedCM get() calls */
 let oneTapGeneration = 0;

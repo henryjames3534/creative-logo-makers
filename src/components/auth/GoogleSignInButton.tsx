@@ -6,8 +6,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { captureVisitorEmail } from "@/lib/capture-visitor";
 import { rememberGoogleAccount } from "@/lib/auth-storage";
+import { GOOGLE_CLIENT_ID } from "@/lib/google-auth-config";
 
-const CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim();
+const CLIENT_ID = GOOGLE_CLIENT_ID;
 
 type CredentialResponse = { credential: string };
 
