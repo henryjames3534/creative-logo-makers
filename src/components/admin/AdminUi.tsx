@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 export function AdminCard({
   children,
@@ -83,5 +83,26 @@ export function EmptyState({ text }: { text: string }) {
     <p className="rounded-xl border border-dashed border-[color:var(--a-border)] px-4 py-10 text-center text-sm text-[color:var(--a-faint)]">
       {text}
     </p>
+  );
+}
+
+export function DeleteBtn({
+  onClick,
+  label = "Delete",
+  className = "",
+}: {
+  onClick: (e: MouseEvent) => void;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border border-[#fe5f50]/55 bg-[#fe5f50]/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide hover:bg-[#fe5f50]/25 ${className}`}
+      style={{ color: "var(--a-badge-coral-fg)" }}
+    >
+      {label}
+    </button>
   );
 }

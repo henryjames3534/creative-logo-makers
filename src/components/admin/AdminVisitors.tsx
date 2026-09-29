@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AdminCard, Badge } from "@/components/admin/AdminUi";
+import { AdminCard, Badge, DeleteBtn } from "@/components/admin/AdminUi";
 import { listRememberedGoogleAccounts } from "@/lib/auth-storage";
 import {
   attachVisitorEmail,
@@ -292,13 +292,11 @@ export function AdminVisitors() {
                     >
                       Save email
                     </button>
-                    <button
-                      type="button"
+                    <DeleteBtn
+                      label="Delete"
+                      className="px-4 py-2.5 text-sm"
                       onClick={() => onDeleteVisitor(v)}
-                      className="rounded-full border border-[#fe5f50]/40 px-4 py-2.5 text-sm font-semibold text-[#ff9b90] hover:bg-[#fe5f50]/15"
-                    >
-                      Delete
-                    </button>
+                    />
                   </form>
                   {savedId === v.id ? (
                     <p className="mt-2 text-xs text-[#5ee0bf]">

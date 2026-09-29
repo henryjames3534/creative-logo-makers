@@ -289,6 +289,12 @@ export function mergeCrmDocuments(
         ...asArray<string>((i.deleted as Dict | undefined)?.contacts),
       ]),
     ).slice(-500),
+    inbox: Array.from(
+      new Set([
+        ...asArray<string>((r.deleted as Dict | undefined)?.inbox),
+        ...asArray<string>((i.deleted as Dict | undefined)?.inbox),
+      ]),
+    ).slice(-500),
   };
 
   return {
@@ -332,7 +338,7 @@ export function mergeCrmDocuments(
     deals,
     tasks,
     companies,
-    inbox,
+    inbox: applyDeleted(inbox, deleted.inbox, (x) => [String(x.id || "")]),
     reviews,
     owners: asArray(i.owners).length ? i.owners : r.owners,
     deleted,

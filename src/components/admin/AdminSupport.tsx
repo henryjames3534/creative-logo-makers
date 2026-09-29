@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import { adminReplyToCustomer } from "@/lib/auth-storage";
 import {
+  deleteInboxItem,
   formatDuration,
   loadCrm,
   onInboxUpdated,
@@ -51,6 +52,20 @@ export function AdminSupport() {
       adminReply: reply.trim(),
     });
     setReply("");
+  }
+
+  function onDeleteActive() {
+    if (!active) return;
+    if (
+      !window.confirm(
+        `Delete inbox entry from ${active.customerName}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    const next = deleteInboxItem(active.id);
+    setState({ ...next });
+    setActive(null);
   }
 
   if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
@@ -101,7 +116,7 @@ export function AdminSupport() {
               </li>
             ) : (
               rows.map((item) => (
-                <li key={item.id}>
+                <li key={item.id} className="flex items-stretch">
                   <button
                     type="button"
                     onClick={() => {
@@ -114,8 +129,8 @@ export function AdminSupport() {
                         setActive({ ...item, status: "in_progress" });
                       }
                     }}
-                    className={`w-full px-4 py-3 text-left hover:bg-[var(--a-hover)] ${
-                      active?.id === item.id ? "bg-white/[0.05]" : ""
+                    className={`min-w-0 flex-1 px-4 py-3 text-left hover:bg-[var(--a-hover)] ${
+                      active?.id === item.id ? "bg-[var(--a-hover)]" : ""
                     }`}
                   >
                     <div className="flex flex-wrap items-center gap-2">
@@ -153,6 +168,23 @@ export function AdminSupport() {
                       {item.body}
                     </p>
                   </button>
+                  <div className="flex items-center border-l border-[color:var(--a-border)] px-2">
+                    <DeleteBtn
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          !window.confirm(
+                            `Delete inbox entry from ${item.customerName}?`,
+                          )
+                        ) {
+                          return;
+                        }
+                        const next = deleteInboxItem(item.id);
+                        setState({ ...next });
+                        if (active?.id === item.id) setActive(null);
+                      }}
+                    />
+                  </div>
                 </li>
               ))
             )}
@@ -209,6 +241,7 @@ export function AdminSupport() {
                   >
                     Mark resolved
                   </button>
+                  <DeleteBtn onClick={() => onDeleteActive()} />
                 </div>
               </form>
               <p className="mt-3 text-[11px] text-[color:var(--a-faint)]">

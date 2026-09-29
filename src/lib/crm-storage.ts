@@ -329,6 +329,7 @@ export type CrmState = {
     leads?: string[];
     orders?: string[];
     contacts?: string[];
+    inbox?: string[];
   };
 };
 
@@ -1995,6 +1996,29 @@ export function deleteContact(id: string) {
     relatedId: id,
   });
   saveCrm(state);
+  return state;
+}
+
+export function deleteInboxItem(id: string) {
+  const state = loadCrm();
+  const item = state.inbox?.find((x) => x.id === id);
+  state.inbox = (state.inbox || []).filter((x) => x.id !== id);
+  state.deleted = state.deleted || {};
+  state.deleted.inbox = Array.from(
+    new Set([...(state.deleted.inbox || []), id]),
+  ).slice(-500);
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "Inbox entry deleted",
+    body: item
+      ? `${item.customerName} <${item.customerEmail}> · ${item.serviceTitle || item.kind}`
+      : id,
+    createdAt: new Date().toISOString(),
+    ownerId: "own_admin",
+  });
+  saveCrm(state);
+  emitCrm(INBOX_EVENT);
   return state;
 }
 

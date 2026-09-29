@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   deleteContact,
   loadCrm,
@@ -139,7 +139,7 @@ export function AdminContacts() {
                 <th className="px-4 py-3 font-medium">Company</th>
                 <th className="px-4 py-3 font-medium">Tags</th>
                 <th className="px-4 py-3 font-medium">Last touch</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
+                <th className="sticky right-0 bg-[var(--a-surface)] px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -173,14 +173,8 @@ export function AdminContacts() {
                   <td className="px-4 py-3 text-[color:var(--a-faint)]">
                     {relativeDay(c.lastTouchAt)}
                   </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={(e) => onDelete(c.id, e)}
-                      className="rounded-full border border-[#fe5f50]/40 px-2.5 py-1 text-[11px] font-semibold text-[#ff9b90] hover:bg-[#fe5f50]/15"
-                    >
-                      Delete
-                    </button>
+                  <td className="sticky right-0 bg-[var(--a-surface)] px-4 py-3 shadow-[-8px_0_12px_rgba(0,0,0,0.08)]">
+                    <DeleteBtn onClick={(e) => onDelete(c.id, e)} />
                   </td>
                 </tr>
               ))}

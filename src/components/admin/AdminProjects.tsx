@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   addProjectRevision,
   deleteOrder,
@@ -222,13 +222,11 @@ export function AdminProjects() {
                   <p className="text-xs capitalize text-[color:var(--a-faint)]">
                     {project.status.replace(/_/g, " ")}
                   </p>
-                  <button
-                    type="button"
-                    onClick={onDeleteProject}
-                    className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/20"
-                  >
-                    Delete project
-                  </button>
+                  <DeleteBtn
+                    label="Delete project"
+                    className="mt-2"
+                    onClick={() => onDeleteProject()}
+                  />
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-[color:var(--a-muted)]">

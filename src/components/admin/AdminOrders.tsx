@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   deleteOrder,
   loadCrm,
@@ -181,7 +181,7 @@ export function AdminOrders() {
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Payment</th>
                 <th className="px-4 py-3 font-medium">Updated</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
+                <th className="sticky right-0 bg-[var(--a-surface)] px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -225,14 +225,8 @@ export function AdminOrders() {
                   <td className="px-4 py-3 text-[color:var(--a-faint)]">
                     {relativeDay(o.updatedAt)}
                   </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={(e) => onDelete(o.id, e)}
-                      className="rounded-full border border-[#fe5f50]/40 px-2.5 py-1 text-[11px] font-semibold text-[#ff9b90] hover:bg-[#fe5f50]/15"
-                    >
-                      Delete
-                    </button>
+                  <td className="sticky right-0 bg-[var(--a-surface)] px-4 py-3 shadow-[-8px_0_12px_rgba(0,0,0,0.08)]">
+                    <DeleteBtn onClick={(e) => onDelete(o.id, e)} />
                   </td>
                 </tr>
               ))}
