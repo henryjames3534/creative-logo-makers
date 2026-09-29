@@ -30,6 +30,14 @@ export function ContactPageClient() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    // Capture before any await — React nulls currentTarget after yield
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const name = String(fd.get("name") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
+    const topic = String(fd.get("topic") ?? "").trim();
+    const message = String(fd.get("message") ?? "").trim();
+
     try {
       const check = await verifyRecaptchaToken(captchaRef.current?.getToken());
       if (!check.ok) {
@@ -37,12 +45,6 @@ export function ContactPageClient() {
         captchaRef.current?.reset();
         return;
       }
-
-      const fd = new FormData(e.currentTarget);
-      const name = String(fd.get("name") ?? "").trim();
-      const email = String(fd.get("email") ?? "").trim();
-      const topic = String(fd.get("topic") ?? "").trim();
-      const message = String(fd.get("message") ?? "").trim();
 
       const result = await submitLeadForm(
         {
@@ -76,8 +78,12 @@ export function ContactPageClient() {
       }
 
       setSent(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
       captchaRef.current?.reset();
     } finally {
       setLoading(false);
