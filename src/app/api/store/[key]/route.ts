@@ -4,7 +4,7 @@ import { mergeCrmDocuments, mergeUsersDocuments } from "@/lib/merge-store";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED = new Set(["crm", "users", "chat", "brand"]);
+const ALLOWED = new Set(["crm", "users", "chat", "brand", "geo-block"]);
 
 type Ctx = { params: Promise<{ key: string }> };
 

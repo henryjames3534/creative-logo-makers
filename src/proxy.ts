@@ -4,11 +4,62 @@ import { NextResponse } from "next/server";
 const CANONICAL_HOST = "www.creativelogomakers.com";
 const APEX_HOST = "creativelogomakers.com";
 
+type GeoBlockPayload = {
+  enabled?: boolean;
+  blockedCountries?: string[];
+};
+
+let geoCache: { at: number; enabled: boolean; blocked: Set<string> } | null =
+  null;
+const GEO_TTL_MS = 20_000;
+
+async function loadBlockedCountries(request: NextRequest) {
+  const now = Date.now();
+  if (geoCache && now - geoCache.at < GEO_TTL_MS) {
+    return geoCache;
+  }
+  try {
+    const url = new URL("/api/geo-block", request.url);
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout
+        ? AbortSignal.timeout(2500)
+        : undefined,
+    });
+    if (!res.ok) {
+      return geoCache || { at: now, enabled: false, blocked: new Set<string>() };
+    }
+    const data = (await res.json()) as GeoBlockPayload;
+    const blocked = new Set(
+      (data.blockedCountries || [])
+        .map((c) => String(c).toUpperCase())
+        .filter((c) => /^[A-Z]{2}$/.test(c)),
+    );
+    geoCache = {
+      at: now,
+      enabled: Boolean(data.enabled) && blocked.size > 0,
+      blocked,
+    };
+    return geoCache;
+  } catch {
+    return geoCache || { at: now, enabled: false, blocked: new Set<string>() };
+  }
+}
+
+function isExemptPath(pathname: string) {
+  return (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/designer") ||
+    pathname.startsWith("/geo-blocked") ||
+    pathname.startsWith("/_next")
+  );
+}
+
 /**
- * Force HTTPS + www so the address bar never stays on plain HTTP
- * (Chrome "Not secure").
+ * Force HTTPS + www, and optionally geo-block selected countries.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const host = (request.headers.get("host") || url.host || "")
     .toLowerCase()
@@ -23,6 +74,27 @@ export function proxy(request: NextRequest) {
     host === "localhost" ||
     host === "127.0.0.1" ||
     host.endsWith(".vercel.app");
+
+  // Geo-block public site pages (admin / API always allowed)
+  if (!isExemptPath(url.pathname)) {
+    const country = (
+      request.headers.get("x-vercel-ip-country") ||
+      request.headers.get("cf-ipcountry") ||
+      ""
+    )
+      .trim()
+      .toUpperCase();
+
+    if (country && country !== "XX" && country !== "T1") {
+      const geo = await loadBlockedCountries(request);
+      if (geo.enabled && geo.blocked.has(country)) {
+        const blockedUrl = request.nextUrl.clone();
+        blockedUrl.pathname = "/geo-blocked";
+        blockedUrl.search = "";
+        return NextResponse.rewrite(blockedUrl);
+      }
+    }
+  }
 
   if (isLocal) {
     return NextResponse.next();
