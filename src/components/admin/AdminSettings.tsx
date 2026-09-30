@@ -125,6 +125,31 @@ export function AdminSettings() {
     });
   }
 
+  const visibleCodes = useMemo(
+    () => filteredCountries.map((c) => c.code),
+    [filteredCountries],
+  );
+  const allVisibleSelected =
+    visibleCodes.length > 0 &&
+    visibleCodes.every((code) => blockedSet.has(code));
+  const someVisibleSelected =
+    visibleCodes.some((code) => blockedSet.has(code)) && !allVisibleSelected;
+
+  function toggleSelectAllVisible() {
+    setGeo((prev) => {
+      const set = new Set(prev.blockedCountries);
+      if (allVisibleSelected) {
+        for (const code of visibleCodes) set.delete(code);
+      } else {
+        for (const code of visibleCodes) set.add(code);
+      }
+      return {
+        ...prev,
+        blockedCountries: Array.from(set).sort(),
+      };
+    });
+  }
+
   async function persistGeo(next: GeoBlockConfig) {
     setGeoSaving(true);
     setGeoMsg(null);
@@ -208,6 +233,23 @@ export function AdminSettings() {
         ) : null}
 
         <div className="max-h-72 overflow-y-auto rounded-xl border border-[color:var(--a-border)]">
+          <label className="sticky top-0 z-[1] flex cursor-pointer items-center gap-3 border-b border-[color:var(--a-border)] bg-[var(--a-panel)] px-3 py-2.5 text-sm font-semibold text-[var(--a-text)]">
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someVisibleSelected;
+              }}
+              onChange={toggleSelectAllVisible}
+              className="h-4 w-4 accent-[#fe5f50]"
+            />
+            <span className="min-w-0 flex-1">
+              {allVisibleSelected ? "Deselect all" : "Select all"}
+              {geoQ.trim()
+                ? ` (${filteredCountries.length} shown)`
+                : ` (${COUNTRIES.length} countries)`}
+            </span>
+          </label>
           <ul className="divide-y divide-[color:var(--a-border)]">
             {filteredCountries.map((c) => {
               const on = blockedSet.has(c.code);
