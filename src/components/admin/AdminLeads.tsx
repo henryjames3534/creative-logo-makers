@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   LEAD_STATUSES,
@@ -15,6 +16,8 @@ import {
 } from "@/lib/crm-storage";
 
 export function AdminLeads() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("id");
   const [state, setState] = useState<CrmState | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<LeadStatus | "all">("all");
@@ -57,6 +60,26 @@ export function AdminLeads() {
       window.clearInterval(poll);
     };
   }, []);
+
+  useEffect(() => {
+    if (!state || !focusId) return;
+    const lead = state.leads.find((l) => l.id === focusId);
+    if (!lead) return;
+    setEditing(lead);
+    setDraft({
+      name: lead.name,
+      email: lead.email,
+      company: lead.company ?? "",
+      phone: lead.phone ?? "",
+      source: lead.source,
+      interest: lead.interest,
+      valueEstimate: String(lead.valueEstimate),
+      notes: lead.notes,
+      status: lead.status,
+      score: String(lead.score),
+    });
+    setFormOpen(true);
+  }, [state, focusId]);
 
   const rows = useMemo(() => {
     if (!state) return [];

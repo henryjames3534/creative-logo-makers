@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   deleteContact,
@@ -12,6 +13,8 @@ import {
 } from "@/lib/crm-storage";
 
 export function AdminContacts() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("id");
   const [state, setState] = useState<CrmState | null>(null);
   const [q, setQ] = useState("");
   const [formOpen, setFormOpen] = useState(false);
@@ -28,6 +31,22 @@ export function AdminContacts() {
   useEffect(() => {
     setState(loadCrm());
   }, []);
+
+  useEffect(() => {
+    if (!state || !focusId) return;
+    const contact = state.contacts.find((c) => c.id === focusId);
+    if (!contact) return;
+    setEditing(contact);
+    setDraft({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone ?? "",
+      title: contact.title ?? "",
+      companyId: contact.companyId ?? "",
+      tags: contact.tags.join(", "),
+    });
+    setFormOpen(true);
+  }, [state, focusId]);
 
   const companyMap = useMemo(() => {
     const m = new Map<string, string>();

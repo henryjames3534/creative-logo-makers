@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   addProjectRevision,
@@ -29,6 +30,8 @@ const REV_STATUSES: ProjectRevisionStatus[] = [
 ];
 
 export function AdminProjects() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("id");
   const [state, setState] = useState<CrmState | null>(null);
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -52,8 +55,12 @@ export function AdminProjects() {
   }, []);
 
   useEffect(() => {
+    if (focusId) {
+      setSelectedId(focusId);
+      return;
+    }
     if (!selectedId && state?.orders[0]) setSelectedId(state.orders[0].id);
-  }, [state, selectedId]);
+  }, [state, selectedId, focusId]);
 
   const projects = useMemo(() => {
     if (!state) return [];

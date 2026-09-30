@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn } from "@/components/admin/AdminUi";
 import {
   attachVisitorEmail,
@@ -44,6 +45,8 @@ function draftsFromState(state: CrmState): Drafts {
 }
 
 export function AdminVisitors() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("id");
   const [state, setState] = useState<CrmState | null>(null);
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -114,6 +117,11 @@ export function AdminVisitors() {
       window.clearInterval(poll);
     };
   }, []);
+
+  useEffect(() => {
+    if (!focusId) return;
+    setSelectedId(focusId);
+  }, [focusId]);
 
   const rows = useMemo(() => {
     if (!state?.visitors) return [];

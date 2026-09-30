@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   deleteOrder,
@@ -23,6 +24,8 @@ const STATUSES = [
 const PAYMENTS = ["paid", "pending", "refunded"] as const;
 
 export function AdminOrders() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("id");
   const [state, setState] = useState<CrmState | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
@@ -63,6 +66,26 @@ export function AdminOrders() {
       window.clearInterval(poll);
     };
   }, []);
+
+  useEffect(() => {
+    if (!state || !focusId) return;
+    const order = state.orders.find(
+      (o) => o.id === focusId || o.orderId === focusId,
+    );
+    if (!order) return;
+    setEditing(order);
+    setDraft({
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      categoryName: order.categoryName,
+      packageName: order.packageName,
+      amount: String(order.amount),
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      designerCount: String(order.designerCount),
+    });
+    setFormOpen(true);
+  }, [state, focusId]);
 
   const rows = useMemo(() => {
     if (!state) return [];

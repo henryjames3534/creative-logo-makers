@@ -24,6 +24,13 @@ type NotifItem = {
   tone: "green" | "blue" | "coral" | "violet" | "amber";
 };
 
+function detailHref(
+  kind: "activity" | "lead" | "visitor" | "order" | "contact" | "deal" | "company",
+  id: string,
+) {
+  return `/admin/notifications/${kind}/${encodeURIComponent(id)}`;
+}
+
 function readAt(): number {
   try {
     return Number(sessionStorage.getItem(READ_KEY) || 0) || 0;
@@ -41,17 +48,30 @@ function markRead(ts: number) {
 }
 
 function hrefFor(a: CrmActivity): string {
-  if (a.relatedType === "lead") return "/admin/leads";
-  if (a.relatedType === "order" || a.relatedType === "project")
-    return "/admin/projects";
-  if (a.relatedType === "contact") return "/admin/contacts";
+  if (a.relatedType === "lead" && a.relatedId) {
+    return detailHref("lead", a.relatedId);
+  }
+  if (
+    (a.relatedType === "order" || a.relatedType === "project") &&
+    a.relatedId
+  ) {
+    return detailHref("order", a.relatedId);
+  }
+  if (a.relatedType === "contact" && a.relatedId) {
+    return detailHref("contact", a.relatedId);
+  }
+  if (a.relatedType === "deal" && a.relatedId) {
+    return detailHref("deal", a.relatedId);
+  }
+  if (a.relatedType === "company" && a.relatedId) {
+    return detailHref("company", a.relatedId);
+  }
   const t = (a.title || "").toLowerCase();
+  if (t.includes("visitor") && a.relatedId) {
+    return detailHref("visitor", a.relatedId);
+  }
   if (t.includes("visitor")) return "/admin/visitors";
-  if (t.includes("lead") || t.includes("form")) return "/admin/leads";
-  if (t.includes("payment") || t.includes("project") || t.includes("order"))
-    return "/admin/orders";
-  if (t.includes("chat")) return "/admin/live-chat";
-  return "/admin/activity";
+  return detailHref("activity", a.id);
 }
 
 function toneFor(a: CrmActivity): NotifItem["tone"] {
@@ -84,7 +104,7 @@ function buildFeed(state: CrmState): NotifItem[] {
       title: "Visitor activity",
       body: `${v.email || v.name || "Anonymous"} · ${v.geo?.ip || "no IP"} · ${v.path || "/"}`,
       createdAt: v.lastSeenAt,
-      href: "/admin/visitors",
+      href: detailHref("visitor", v.id),
       tone: "blue",
     });
   }
@@ -94,7 +114,7 @@ function buildFeed(state: CrmState): NotifItem[] {
       title: "Lead",
       body: `${l.name} <${l.email}> · ${l.source} · ${l.interest}`,
       createdAt: l.updatedAt || l.createdAt,
-      href: "/admin/leads",
+      href: detailHref("lead", l.id),
       tone: "violet",
     });
   }
@@ -104,7 +124,7 @@ function buildFeed(state: CrmState): NotifItem[] {
       title: o.paymentStatus === "paid" ? "Payment / project" : "Project",
       body: `${o.orderId} · ${o.customerName} · ${o.packageName} · $${o.amount}`,
       createdAt: o.updatedAt || o.createdAt,
-      href: "/admin/projects",
+      href: detailHref("order", o.id),
       tone: o.paymentStatus === "paid" ? "green" : "amber",
     });
   }
