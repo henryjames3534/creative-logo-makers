@@ -342,6 +342,14 @@ export function mergeCrmDocuments(
     reviews,
     owners: asArray(i.owners).length ? i.owners : r.owners,
     deleted,
+    // Prefer newer geo-block settings object
+    geoBlock: (() => {
+      const a = r.geoBlock && typeof r.geoBlock === "object" ? (r.geoBlock as Dict) : null;
+      const b = i.geoBlock && typeof i.geoBlock === "object" ? (i.geoBlock as Dict) : null;
+      if (!a) return b || undefined;
+      if (!b) return a;
+      return ts(b.updatedAt) >= ts(a.updatedAt) ? { ...a, ...b } : { ...b, ...a };
+    })(),
   };
 }
 

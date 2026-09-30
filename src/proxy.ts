@@ -11,7 +11,7 @@ type GeoBlockPayload = {
 
 let geoCache: { at: number; enabled: boolean; blocked: Set<string> } | null =
   null;
-const GEO_TTL_MS = 20_000;
+const GEO_TTL_MS = 8_000;
 
 async function loadBlockedCountries(request: NextRequest) {
   const now = Date.now();
@@ -20,8 +20,10 @@ async function loadBlockedCountries(request: NextRequest) {
   }
   try {
     const url = new URL("/api/geo-block", request.url);
+    url.searchParams.set("_", String(now));
     const res = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", "Cache-Control": "no-cache" },
+      cache: "no-store",
       signal: AbortSignal.timeout
         ? AbortSignal.timeout(2500)
         : undefined,
@@ -44,6 +46,29 @@ async function loadBlockedCountries(request: NextRequest) {
   } catch {
     return geoCache || { at: now, enabled: false, blocked: new Set<string>() };
   }
+}
+
+function requestCountry(request: NextRequest) {
+  const fromHeader = (
+    request.headers.get("x-vercel-ip-country") ||
+    request.headers.get("cf-ipcountry") ||
+    request.headers.get("x-country-code") ||
+    ""
+  )
+    .trim()
+    .toUpperCase();
+  if (fromHeader && fromHeader !== "XX" && fromHeader !== "T1") {
+    return fromHeader;
+  }
+  // Next.js / Vercel request geo (when provided by the platform)
+  const geo = (
+    request as NextRequest & { geo?: { country?: string | null } }
+  ).geo?.country;
+  const fromGeo = String(geo || "")
+    .trim()
+    .toUpperCase();
+  if (fromGeo && fromGeo !== "XX" && fromGeo !== "T1") return fromGeo;
+  return "";
 }
 
 function isExemptPath(pathname: string) {
@@ -77,15 +102,8 @@ export async function proxy(request: NextRequest) {
 
   // Geo-block public site pages (admin / API always allowed)
   if (!isExemptPath(url.pathname)) {
-    const country = (
-      request.headers.get("x-vercel-ip-country") ||
-      request.headers.get("cf-ipcountry") ||
-      ""
-    )
-      .trim()
-      .toUpperCase();
-
-    if (country && country !== "XX" && country !== "T1") {
+    const country = requestCountry(request);
+    if (country) {
       const geo = await loadBlockedCountries(request);
       if (geo.enabled && geo.blocked.has(country)) {
         const blockedUrl = request.nextUrl.clone();

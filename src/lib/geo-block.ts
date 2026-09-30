@@ -12,6 +12,9 @@ export type GeoBlockConfig = {
 
 const LOCAL_KEY = "clm_geo_block_v1";
 
+/** Nested on the CRM store document (payment API has no /geo-block key). */
+export const GEO_BLOCK_CRM_FIELD = "geoBlock";
+
 export function emptyGeoBlock(): GeoBlockConfig {
   return {
     enabled: false,
@@ -39,6 +42,12 @@ export function normalizeGeoBlock(raw: unknown): GeoBlockConfig {
   };
 }
 
+export function geoBlockFromCrmPayload(payload: unknown): GeoBlockConfig {
+  if (!payload || typeof payload !== "object") return emptyGeoBlock();
+  const field = (payload as Record<string, unknown>)[GEO_BLOCK_CRM_FIELD];
+  return normalizeGeoBlock(field);
+}
+
 export function readGeoBlockLocal(): GeoBlockConfig {
   if (typeof window === "undefined") return emptyGeoBlock();
   try {
@@ -62,9 +71,33 @@ export function writeGeoBlockLocal(config: GeoBlockConfig) {
 export async function hydrateGeoBlock(): Promise<GeoBlockConfig> {
   const local = readGeoBlockLocal();
   try {
-    const doc = await fetchStoreDocument<GeoBlockConfig>("geo-block");
+    // Prefer dedicated API (reads CRM.geoBlock on the server)
+    const res = await fetch("/api/geo-block", { cache: "no-store" });
+    if (res.ok) {
+      const data = (await res.json()) as {
+        ok?: boolean;
+        enabled?: boolean;
+        blockedCountries?: string[];
+        updatedAt?: string | null;
+      };
+      if (data.ok !== false) {
+        const remote = normalizeGeoBlock({
+          enabled: data.enabled,
+          blockedCountries: data.blockedCountries,
+          updatedAt: data.updatedAt || undefined,
+        });
+        writeGeoBlockLocal(remote);
+        return remote;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const doc = await fetchStoreDocument<Record<string, unknown>>("crm");
     if (doc.ok && doc.payload) {
-      const remote = normalizeGeoBlock(doc.payload);
+      const remote = geoBlockFromCrmPayload(doc.payload);
       writeGeoBlockLocal(remote);
       return remote;
     }
@@ -83,13 +116,61 @@ export async function saveGeoBlock(
     updatedAt: new Date().toISOString(),
   });
   writeGeoBlockLocal(next);
-  const saved = await putStoreDocument("geo-block", next, next.updatedAt);
-  if (!saved.ok) {
-    return {
-      ok: false,
-      config: next,
-      error: saved.error || "Could not sync geo-block to server.",
+
+  try {
+    const res = await fetch("/api/geo-block", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      config?: GeoBlockConfig;
+      error?: string;
     };
+    if (!res.ok || !data.ok) {
+      return {
+        ok: false,
+        config: next,
+        error: data.error || "Could not sync geo-block to server.",
+      };
+    }
+    const saved = normalizeGeoBlock(data.config || next);
+    writeGeoBlockLocal(saved);
+    return { ok: true, config: saved };
+  } catch (e) {
+    // Fallback: nest into CRM document directly
+    try {
+      const doc = await fetchStoreDocument<Record<string, unknown>>("crm");
+      const base =
+        doc.ok && doc.payload && typeof doc.payload === "object"
+          ? doc.payload
+          : { version: 1 };
+      const payload = {
+        ...base,
+        version: 1,
+        [GEO_BLOCK_CRM_FIELD]: next,
+      };
+      const saved = await putStoreDocument("crm", payload, next.updatedAt);
+      if (!saved.ok) {
+        return {
+          ok: false,
+          config: next,
+          error: saved.error || "Could not sync geo-block to server.",
+        };
+      }
+      return { ok: true, config: next };
+    } catch (err) {
+      return {
+        ok: false,
+        config: next,
+        error:
+          err instanceof Error
+            ? err.message
+            : e instanceof Error
+              ? e.message
+              : "Save failed",
+      };
+    }
   }
-  return { ok: true, config: next };
 }
