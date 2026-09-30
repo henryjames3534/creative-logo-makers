@@ -133,6 +133,26 @@ export async function hydrateStoreKey(opts: {
     return "server";
   }
 
+  // Prefer server when it has more leads (form submissions must not be wiped
+  // by an older localStorage that still carries email delete-tombstones).
+  if (opts.key === "crm" && hasRemote && hasLocal && localPayload) {
+    const remoteLeads = Array.isArray(
+      (remote.payload as { leads?: unknown[] } | null)?.leads,
+    )
+      ? ((remote.payload as { leads: unknown[] }).leads?.length ?? 0)
+      : 0;
+    const localLeads = Array.isArray(
+      (localPayload as { leads?: unknown[] }).leads,
+    )
+      ? ((localPayload as { leads: unknown[] }).leads?.length ?? 0)
+      : 0;
+    if (remoteLeads > localLeads) {
+      const raw = JSON.stringify(remote.payload);
+      opts.writeLocal(raw, remote.updatedAt || new Date().toISOString());
+      return "server";
+    }
+  }
+
   if (hasRemote && remoteAt >= localAt) {
     const raw = JSON.stringify(remote.payload);
     opts.writeLocal(raw, remote.updatedAt || new Date().toISOString());

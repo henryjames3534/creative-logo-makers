@@ -124,12 +124,23 @@ function buildLeadPatch(payload: LeadFormPayload) {
     relatedId: lead.id,
   };
 
-  return { now, source, lead, visitor, activity };
+  const leadNote = {
+    id: uid("ac"),
+    type: "note",
+    title: "New lead",
+    body: `${payload.name} <${payload.email}> · ${source} · ${payload.topic || payload.form}`,
+    createdAt: now,
+    ownerId: "own_admin",
+    relatedType: "lead",
+    relatedId: lead.id,
+  };
+
+  return { now, source, lead, visitor, activity, leadNote };
 }
 
 /** Persist via sibling host that already has INTERNAL_API_KEY (www). */
 async function persistLeadViaCrmProxy(payload: LeadFormPayload) {
-  const { now, lead, visitor, activity } = buildLeadPatch(payload);
+  const { now, lead, visitor, activity, leadNote } = buildLeadPatch(payload);
   const url = crmProxyUrl();
   if (!url) throw new Error("CRM proxy URL is not configured.");
 
@@ -148,7 +159,7 @@ async function persistLeadViaCrmProxy(payload: LeadFormPayload) {
     version: 1,
     leads: [lead],
     visitors: [visitor],
-    activities: [activity],
+    activities: [activity, leadNote],
   });
 
   const putRes = await fetch(url, {
@@ -168,7 +179,7 @@ async function persistLeadViaCrmProxy(payload: LeadFormPayload) {
 
 /** Write lead + visitor into the CRM blob admin dashboard reads. */
 async function persistLeadToCrm(payload: LeadFormPayload) {
-  const { now, source, lead, visitor, activity } = buildLeadPatch(payload);
+  const { now, source, lead, visitor, activity, leadNote } = buildLeadPatch(payload);
 
   try {
     await clmCreateLead({
@@ -209,7 +220,7 @@ async function persistLeadToCrm(payload: LeadFormPayload) {
     version: 1,
     leads: [lead],
     visitors: [visitor],
-    activities: [activity],
+    activities: [activity, leadNote],
   });
 
   const saved = await clmApiFetch("/crm", {

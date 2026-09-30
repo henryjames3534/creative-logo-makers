@@ -1959,11 +1959,7 @@ export function deleteLead(id: string) {
   state.leads = state.leads.filter((l) => l.id !== id);
   state.deleted = state.deleted || {};
   state.deleted.leads = Array.from(
-    new Set([
-      ...(state.deleted.leads || []),
-      id,
-      ...(lead?.email ? [`e:${lead.email.toLowerCase()}`] : []),
-    ]),
+    new Set([...(state.deleted.leads || []), id]),
   ).slice(-500);
   state.activities.unshift({
     id: uid("ac"),

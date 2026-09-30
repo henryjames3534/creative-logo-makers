@@ -201,9 +201,12 @@ export function mergeCrmDocuments(
     return true;
   });
 
+  const incomingLeads = asArray<Dict>(i.leads);
+  const remoteLeads = asArray<Dict>(r.leads);
+
   const leads = mergeByKeys(
-    asArray<Dict>(r.leads),
-    asArray<Dict>(i.leads),
+    remoteLeads,
+    incomingLeads,
     leadKey,
     ["updatedAt", "createdAt"],
   ).filter((l) => !looksLikeSeedEmail(String(l.email || "")));
@@ -264,6 +267,16 @@ export function mergeCrmDocuments(
     ["updatedAt", "createdAt"],
   );
 
+  // Incoming leads (e.g. contact form) clear their tombstones so a deleted
+  // email can submit again and still appear in the admin dashboard.
+  const resurrectLeadKeys = new Set<string>();
+  for (const l of incomingLeads) {
+    const id = String(l.id || "");
+    const email = String(l.email || "").trim().toLowerCase();
+    if (id) resurrectLeadKeys.add(id);
+    if (email) resurrectLeadKeys.add(`e:${email}`);
+  }
+
   const deleted = {
     visitors: Array.from(
       new Set([
@@ -276,7 +289,9 @@ export function mergeCrmDocuments(
         ...asArray<string>((r.deleted as Dict | undefined)?.leads),
         ...asArray<string>((i.deleted as Dict | undefined)?.leads),
       ]),
-    ).slice(-500),
+    )
+      .filter((t) => !resurrectLeadKeys.has(t))
+      .slice(-500),
     orders: Array.from(
       new Set([
         ...asArray<string>((r.deleted as Dict | undefined)?.orders),
