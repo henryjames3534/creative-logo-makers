@@ -52,6 +52,10 @@ function listHref(kind: NotifKind, id: string) {
   return "/admin/activity";
 }
 
+function contactFormListHref(id: string) {
+  return `/admin/contact-form-entries?id=${encodeURIComponent(id)}`;
+}
+
 function relatedActivities(state: CrmState, type: string, id: string) {
   return (state.activities || []).filter(
     (a) => a.relatedType === type && a.relatedId === id,
@@ -420,8 +424,19 @@ export function AdminNotificationDetail({ kind, id }: Props) {
     if (!state) return null;
     if (safeKind === "lead") {
       const lead = state.leads.find((l) => l.id === id);
+      const contactForm =
+        (lead?.source || "").toLowerCase() === "contact form";
       return lead
-        ? { title: `Lead · ${lead.name}`, subtitle: lead.email, node: <LeadDetail lead={lead} state={state} />, list: listHref("lead", id) }
+        ? {
+            title: contactForm
+              ? `Contact form · ${lead.name}`
+              : `Lead · ${lead.name}`,
+            subtitle: lead.email,
+            node: <LeadDetail lead={lead} state={state} />,
+            list: contactForm
+              ? contactFormListHref(id)
+              : listHref("lead", id),
+          }
         : null;
     }
     if (safeKind === "visitor") {

@@ -359,6 +359,19 @@ export const LEAD_STATUSES: { id: LeadStatus; label: string }[] = [
   { id: "lost", label: "Lost" },
 ];
 
+/** Website /contact (and studio/signup form) sources saved by /api/forms/submit */
+export function isContactFormLead(lead: { source?: string }) {
+  const s = String(lead.source || "").trim().toLowerCase();
+  return s === "contact form";
+}
+
+export function isWebsiteFormLead(lead: { source?: string }) {
+  const s = String(lead.source || "").trim().toLowerCase();
+  return (
+    s === "contact form" || s === "studio form" || s === "signup"
+  );
+}
+
 function uid(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
 }

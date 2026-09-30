@@ -6,6 +6,7 @@ import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/Ad
 import {
   LEAD_STATUSES,
   deleteLead,
+  isContactFormLead,
   loadCrm,
   money,
   relativeDay,
@@ -84,11 +85,17 @@ export function AdminLeads() {
   const rows = useMemo(() => {
     if (!state) return [];
     return state.leads.filter((l) => {
+      if (isContactFormLead(l)) return false;
       if (status !== "all" && l.status !== status) return false;
       const hay = `${l.name} ${l.email} ${l.company ?? ""} ${l.interest}`.toLowerCase();
       return !q.trim() || hay.includes(q.trim().toLowerCase());
     });
   }, [state, q, status]);
+
+  const contactFormCount = useMemo(
+    () => (state ? state.leads.filter(isContactFormLead).length : 0),
+    [state],
+  );
 
   function openCreate() {
     setEditing(null);
@@ -160,6 +167,19 @@ export function AdminLeads() {
           <h1 className="text-2xl font-semibold text-[var(--a-text)]">Leads</h1>
           <p className="mt-1 text-sm text-[color:var(--a-muted)]">
             Capture, score, and progress inbound demand.
+            {contactFormCount > 0 ? (
+              <>
+                {" "}
+                Contact form submissions are under{" "}
+                <a
+                  href="/admin/contact-form-entries"
+                  className="text-[#5ee0bf] hover:underline"
+                >
+                  Contact form entries
+                </a>
+                .
+              </>
+            ) : null}
           </p>
         </div>
         <button

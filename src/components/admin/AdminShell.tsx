@@ -30,6 +30,7 @@ const nav = [
   { href: "/admin/projects", label: "Projects" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/leads", label: "Leads" },
+  { href: "/admin/contact-form-entries", label: "Contact form entries" },
   { href: "/admin/pipeline", label: "Pipeline" },
   { href: "/admin/contacts", label: "Contacts" },
   { href: "/admin/companies", label: "Companies" },

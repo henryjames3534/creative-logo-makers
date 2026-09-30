@@ -49,6 +49,10 @@ function markRead(ts: number) {
 
 function hrefFor(a: CrmActivity): string {
   if (a.relatedType === "lead" && a.relatedId) {
+    const t = `${a.title} ${a.body}`.toLowerCase();
+    if (t.includes("contact form") || t.includes("form: contact")) {
+      return `/admin/contact-form-entries?id=${encodeURIComponent(a.relatedId)}`;
+    }
     return detailHref("lead", a.relatedId);
   }
   if (
@@ -109,12 +113,15 @@ function buildFeed(state: CrmState): NotifItem[] {
     });
   }
   for (const l of (state.leads || []).slice(0, 8)) {
+    const isContact = (l.source || "").toLowerCase() === "contact form";
     extras.push({
       id: `ld-${l.id}-${l.updatedAt}`,
-      title: "Lead",
+      title: isContact ? "Contact form" : "Lead",
       body: `${l.name} <${l.email}> · ${l.source} · ${l.interest}`,
       createdAt: l.updatedAt || l.createdAt,
-      href: detailHref("lead", l.id),
+      href: isContact
+        ? `/admin/contact-form-entries?id=${encodeURIComponent(l.id)}`
+        : detailHref("lead", l.id),
       tone: "violet",
     });
   }
