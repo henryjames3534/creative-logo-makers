@@ -85,9 +85,19 @@ function ts(value: string | null | undefined) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function countCrmRows(payload: unknown) {
+  if (!payload || typeof payload !== "object") return 0;
+  const p = payload as Record<string, unknown>;
+  let n = 0;
+  for (const key of ["leads", "visitors", "orders", "contacts", "activities"]) {
+    if (Array.isArray(p[key])) n += (p[key] as unknown[]).length;
+  }
+  return n;
+}
+
 /**
  * Pull server doc into localStorage when newer; otherwise push local up.
- * Returns true if localStorage was replaced from server.
+ * Never push an empty/thin local CRM over a richer server document.
  */
 export async function hydrateStoreKey(opts: {
   key: StoreKey;
@@ -103,18 +113,48 @@ export async function hydrateStoreKey(opts: {
   const hasRemote = remote.payload != null;
   const hasLocal = Boolean(opts.localRaw);
 
+  let localPayload: unknown = null;
+  if (hasLocal) {
+    try {
+      localPayload = JSON.parse(opts.localRaw!);
+    } catch {
+      localPayload = null;
+    }
+  }
+
+  // Prefer server whenever it has more CRM rows (guards against stale local wipe).
+  if (
+    opts.key === "crm" &&
+    hasRemote &&
+    countCrmRows(remote.payload) > countCrmRows(localPayload)
+  ) {
+    const raw = JSON.stringify(remote.payload);
+    opts.writeLocal(raw, remote.updatedAt || new Date().toISOString());
+    return "server";
+  }
+
   if (hasRemote && remoteAt >= localAt) {
     const raw = JSON.stringify(remote.payload);
     opts.writeLocal(raw, remote.updatedAt || new Date().toISOString());
     return "server";
   }
 
-  if (hasLocal && (!hasRemote || localAt > remoteAt)) {
+  if (hasLocal && localPayload && (!hasRemote || localAt > remoteAt)) {
+    // Don't overwrite a non-empty server CRM with an empty local shell.
+    if (
+      opts.key === "crm" &&
+      hasRemote &&
+      countCrmRows(localPayload) === 0 &&
+      countCrmRows(remote.payload) > 0
+    ) {
+      const raw = JSON.stringify(remote.payload);
+      opts.writeLocal(raw, remote.updatedAt || new Date().toISOString());
+      return "server";
+    }
     try {
-      const payload = JSON.parse(opts.localRaw!);
       await putStoreDocument(
         opts.key,
-        payload,
+        localPayload,
         opts.localUpdatedAt || new Date().toISOString(),
       );
       return "pushed";

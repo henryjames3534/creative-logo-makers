@@ -20,8 +20,22 @@ export const runtime = "nodejs";
 
 const ALLOWED: LeadFormType[] = ["contact", "studio", "signup"];
 
+const DEFAULT_EMAIL_RELAY =
+  "https://creative-logo-makers-lovat.vercel.app/api/forms/email";
+
+const DEFAULT_CRM_PROXY =
+  "https://www.creativelogomakers.com/api/store/crm";
+
 function getResendKey() {
   return (process.env.RESEND_API_KEY ?? "").trim();
+}
+
+function emailRelayUrl() {
+  return (process.env.FORM_EMAIL_RELAY_URL ?? DEFAULT_EMAIL_RELAY).trim();
+}
+
+function crmProxyUrl() {
+  return (process.env.CRM_STORE_PROXY_URL ?? DEFAULT_CRM_PROXY).trim();
 }
 
 function uid(prefix: string) {
@@ -61,8 +75,7 @@ function sourceLabel(form: LeadFormType) {
   return "Signup";
 }
 
-/** Write lead + visitor into the CRM blob admin dashboard reads. */
-async function persistLeadToCrm(payload: LeadFormPayload) {
+function buildLeadPatch(payload: LeadFormPayload) {
   const now = new Date().toISOString();
   const source = sourceLabel(payload.form);
 
@@ -111,6 +124,52 @@ async function persistLeadToCrm(payload: LeadFormPayload) {
     relatedId: lead.id,
   };
 
+  return { now, source, lead, visitor, activity };
+}
+
+/** Persist via sibling host that already has INTERNAL_API_KEY (www). */
+async function persistLeadViaCrmProxy(payload: LeadFormPayload) {
+  const { now, lead, visitor, activity } = buildLeadPatch(payload);
+  const url = crmProxyUrl();
+  if (!url) throw new Error("CRM proxy URL is not configured.");
+
+  const currentRes = await fetch(url, { cache: "no-store" });
+  const current = (await currentRes.json().catch(() => null)) as {
+    ok?: boolean;
+    payload?: unknown;
+  } | null;
+
+  const base =
+    current?.ok && current.payload && typeof current.payload === "object"
+      ? (current.payload as Record<string, unknown>)
+      : { version: 1 };
+
+  const merged = mergeCrmDocuments(base, {
+    version: 1,
+    leads: [lead],
+    visitors: [visitor],
+    activities: [activity],
+  });
+
+  const putRes = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ payload: merged, updatedAt: now }),
+  });
+  const putData = (await putRes.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+  } | null;
+
+  if (!putRes.ok || !putData?.ok) {
+    throw new Error(putData?.error || `CRM proxy HTTP ${putRes.status}`);
+  }
+}
+
+/** Write lead + visitor into the CRM blob admin dashboard reads. */
+async function persistLeadToCrm(payload: LeadFormPayload) {
+  const { now, source, lead, visitor, activity } = buildLeadPatch(payload);
+
   try {
     await clmCreateLead({
       id: lead.id,
@@ -127,30 +186,43 @@ async function persistLeadToCrm(payload: LeadFormPayload) {
 
   const current = await clmApiFetch<{
     ok: boolean;
+    error?: string;
     payload?: unknown;
     updatedAt?: string | null;
   }>("/crm");
 
+  if (!current.ok) {
+    // awsvision deploy has SMTP but no INTERNAL_API_KEY — use www store.
+    if (current.error === "INTERNAL_API_KEY is not set") {
+      await persistLeadViaCrmProxy(payload);
+      return;
+    }
+    throw new Error(current.error || "Could not read CRM store.");
+  }
+
   const base =
-    current.ok && current.payload && typeof current.payload === "object"
+    current.payload && typeof current.payload === "object"
       ? (current.payload as Record<string, unknown>)
       : { version: 1 };
 
-  const patch = {
+  const merged = mergeCrmDocuments(base, {
     version: 1,
     leads: [lead],
     visitors: [visitor],
     activities: [activity],
-  };
+  });
 
-  const merged = mergeCrmDocuments(base, patch);
-  await clmApiFetch("/crm", {
+  const saved = await clmApiFetch("/crm", {
     method: "PUT",
     body: JSON.stringify({
       payload: merged,
       updatedAt: now,
     }),
   });
+
+  if (!saved.ok) {
+    throw new Error(saved.error || "Could not save lead to CRM.");
+  }
 }
 
 async function notifyViaSmtp(payload: LeadFormPayload) {
@@ -162,18 +234,50 @@ async function notifyViaSmtp(payload: LeadFormPayload) {
     html: notifyHtml(payload),
   });
 
-  await sendSmtpMail({
-    to: payload.email,
-    replyTo: FORM_NOTIFY_EMAIL,
-    subject: thankYouSubject(payload.form),
-    text: thankYouText(payload),
-    html: thankYouHtml(payload),
-  });
+  // Thank-you is best-effort — never block admin notify.
+  try {
+    await sendSmtpMail({
+      to: payload.email,
+      replyTo: FORM_NOTIFY_EMAIL,
+      subject: thankYouSubject(payload.form),
+      text: thankYouText(payload),
+      html: thankYouHtml(payload),
+    });
+  } catch {
+    /* ignore */
+  }
 
   return true;
 }
 
-/** Fallback if SMTP is down — FormSubmit AJAX (no browser redirect). */
+/** When this host has no SMTP, relay to the awsvision deploy that does. */
+async function notifyViaEmailRelay(payload: LeadFormPayload) {
+  const url = emailRelayUrl();
+  if (!url) throw new Error("Email relay URL is not configured.");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  const secret = (process.env.FORM_RELAY_SECRET ?? "").trim();
+  if (secret) headers["x-clm-relay-key"] = secret;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+  };
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || `Email relay HTTP ${res.status}`);
+  }
+  return true;
+}
+
+/** Last-resort FormSubmit AJAX (often Cloudflare-blocked from servers). */
 async function notifyViaFormSubmit(payload: LeadFormPayload) {
   const res = await fetch(
     `https://formsubmit.co/ajax/${encodeURIComponent(FORM_NOTIFY_EMAIL)}`,
@@ -258,7 +362,7 @@ export async function POST(req: Request) {
   }
 
   let emailed = false;
-  let emailVia: "smtp" | "resend" | "formsubmit" | undefined;
+  let emailVia: "smtp" | "resend" | "relay" | "formsubmit" | undefined;
   let emailWarning: string | undefined;
 
   try {
@@ -270,22 +374,24 @@ export async function POST(req: Request) {
       emailed = await notifyViaResend(payload);
       emailVia = emailed ? "resend" : undefined;
     } else {
-      await notifyViaFormSubmit(payload);
+      await notifyViaEmailRelay(payload);
       emailed = true;
-      emailVia = "formsubmit";
+      emailVia = "relay";
     }
   } catch (err) {
     emailWarning =
       err instanceof Error ? err.message : "Email notify failed.";
-    // Last-resort fallbacks so lead email still reaches inbox when possible
     if (!emailed) {
       try {
-        if (isSmtpConfigured() && emailVia !== "smtp") {
-          /* already failed smtp */
+        if (!isSmtpConfigured()) {
+          await notifyViaEmailRelay(payload);
+          emailed = true;
+          emailVia = "relay";
+          emailWarning = undefined;
         } else if (getResendKey()) {
           emailed = await notifyViaResend(payload);
           emailVia = emailed ? "resend" : emailVia;
-          emailWarning = undefined;
+          if (emailed) emailWarning = undefined;
         } else {
           await notifyViaFormSubmit(payload);
           emailed = true;
