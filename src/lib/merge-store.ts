@@ -277,13 +277,44 @@ export function mergeCrmDocuments(
     if (email) resurrectLeadKeys.add(`e:${email}`);
   }
 
+  // Incoming visitors (live pings) clear id / visitorKey / email / IP tombstones
+  // so a deleted visitor can return from the same browser or IP.
+  const incomingVisitors = asArray<Dict>(i.visitors);
+  const resurrectVisitorKeys = new Set<string>();
+  for (const v of incomingVisitors) {
+    const id = String(v.id || "");
+    const email = String(v.email || "").trim().toLowerCase();
+    const vk = String(v.visitorKey || "").trim();
+    const ip = String(
+      (v.geo && typeof v.geo === "object"
+        ? (v.geo as Dict).ip
+        : "") || "",
+    )
+      .trim()
+      .toLowerCase();
+    if (id) resurrectVisitorKeys.add(id);
+    if (email) resurrectVisitorKeys.add(`e:${email}`);
+    if (vk) resurrectVisitorKeys.add(`vk:${vk}`);
+    if (ip) resurrectVisitorKeys.add(`ip:${ip}`);
+  }
+
   const deleted = {
+    // Drop legacy vk:/e:/ip: tombstones — deletes are id-only so the same
+    // browser or IP can visit again after an admin removes a row.
     visitors: Array.from(
       new Set([
         ...asArray<string>((r.deleted as Dict | undefined)?.visitors),
         ...asArray<string>((i.deleted as Dict | undefined)?.visitors),
       ]),
-    ).slice(-500),
+    )
+      .filter((t) => !resurrectVisitorKeys.has(t))
+      .filter((t) => {
+        const s = String(t);
+        return (
+          !s.startsWith("vk:") && !s.startsWith("e:") && !s.startsWith("ip:")
+        );
+      })
+      .slice(-500),
     leads: Array.from(
       new Set([
         ...asArray<string>((r.deleted as Dict | undefined)?.leads),
@@ -319,11 +350,19 @@ export function mergeCrmDocuments(
     visitors: applyDeleted(
       visitors,
       deleted.visitors,
-      (v) => [
-        String(v.id || ""),
-        v.email ? `e:${String(v.email).toLowerCase()}` : "",
-        v.visitorKey ? `vk:${String(v.visitorKey)}` : "",
-      ],
+      (v) => {
+        const geo =
+          v.geo && typeof v.geo === "object" ? (v.geo as Dict) : null;
+        const ip = String(geo?.ip || "")
+          .trim()
+          .toLowerCase();
+        return [
+          String(v.id || ""),
+          v.email ? `e:${String(v.email).toLowerCase()}` : "",
+          v.visitorKey ? `vk:${String(v.visitorKey)}` : "",
+          ip ? `ip:${ip}` : "",
+        ];
+      },
     ),
     leads: applyDeleted(
       leads,

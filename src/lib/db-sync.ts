@@ -151,6 +151,21 @@ export async function hydrateStoreKey(opts: {
       opts.writeLocal(raw, remote.updatedAt || new Date().toISOString());
       return "server";
     }
+    const remoteVisitors = Array.isArray(
+      (remote.payload as { visitors?: unknown[] } | null)?.visitors,
+    )
+      ? ((remote.payload as { visitors: unknown[] }).visitors?.length ?? 0)
+      : 0;
+    const localVisitors = Array.isArray(
+      (localPayload as { visitors?: unknown[] }).visitors,
+    )
+      ? ((localPayload as { visitors: unknown[] }).visitors?.length ?? 0)
+      : 0;
+    if (remoteVisitors > localVisitors) {
+      const raw = JSON.stringify(remote.payload);
+      opts.writeLocal(raw, remote.updatedAt || new Date().toISOString());
+      return "server";
+    }
   }
 
   if (hasRemote && remoteAt >= localAt) {

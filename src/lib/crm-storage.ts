@@ -2001,9 +2001,8 @@ export function deleteVisitors(ids: string[]) {
   state.deleted = state.deleted || {};
   const keys: string[] = [];
   for (const v of removed) {
+    // Only tombstone by row id — same browser / IP / email can visit again.
     keys.push(v.id);
-    if (v.visitorKey) keys.push(`vk:${v.visitorKey}`);
-    if (v.email) keys.push(`e:${v.email.toLowerCase()}`);
   }
   state.deleted.visitors = Array.from(
     new Set([...(state.deleted.visitors || []), ...keys]),
