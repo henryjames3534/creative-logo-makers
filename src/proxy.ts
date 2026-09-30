@@ -13,6 +13,48 @@ let geoCache: { at: number; enabled: boolean; blocked: Set<string> } | null =
   null;
 const GEO_TTL_MS = 8_000;
 
+const BLOCKED_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Unavailable in your region | Creative Logo Makers</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#0f1115;
+      color:#e8e7e4;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      padding:24px;
+      text-align:center;
+    }
+    .wrap{max-width:28rem}
+    .eyebrow{
+      font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#00a581
+    }
+    h1{margin-top:12px;font-size:1.5rem;line-height:1.25;font-weight:600}
+    p{margin-top:12px;font-size:.9rem;line-height:1.5;color:rgba(255,255,255,.55)}
+    a{color:#5ee0bf}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Creative Logo Makers</p>
+    <h1>This site is not available in your region</h1>
+    <p>
+      Access from your country has been restricted. If you believe this is a mistake, contact
+      <a href="mailto:reply@creativelogomakers.com">reply@creativelogomakers.com</a>.
+    </p>
+  </div>
+</body>
+</html>`;
+
 async function loadBlockedCountries(request: NextRequest) {
   const now = Date.now();
   if (geoCache && now - geoCache.at < GEO_TTL_MS) {
@@ -60,7 +102,6 @@ function requestCountry(request: NextRequest) {
   if (fromHeader && fromHeader !== "XX" && fromHeader !== "T1") {
     return fromHeader;
   }
-  // Next.js / Vercel request geo (when provided by the platform)
   const geo = (
     request as NextRequest & { geo?: { country?: string | null } }
   ).geo?.country;
@@ -76,13 +117,24 @@ function isExemptPath(pathname: string) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/designer") ||
-    pathname.startsWith("/geo-blocked") ||
     pathname.startsWith("/_next")
   );
 }
 
+function blockedResponse() {
+  return new NextResponse(BLOCKED_HTML, {
+    status: 451,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+
 /**
  * Force HTTPS + www, and optionally geo-block selected countries.
+ * Blocked visitors get a bare HTML page — no site chrome.
  */
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -100,16 +152,18 @@ export async function proxy(request: NextRequest) {
     host === "127.0.0.1" ||
     host.endsWith(".vercel.app");
 
+  // Always serve bare block page for this path (no header/footer layout)
+  if (url.pathname === "/geo-blocked" || url.pathname.startsWith("/geo-blocked/")) {
+    return blockedResponse();
+  }
+
   // Geo-block public site pages (admin / API always allowed)
   if (!isExemptPath(url.pathname)) {
     const country = requestCountry(request);
     if (country) {
       const geo = await loadBlockedCountries(request);
       if (geo.enabled && geo.blocked.has(country)) {
-        const blockedUrl = request.nextUrl.clone();
-        blockedUrl.pathname = "/geo-blocked";
-        blockedUrl.search = "";
-        return NextResponse.rewrite(blockedUrl);
+        return blockedResponse();
       }
     }
   }
