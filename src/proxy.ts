@@ -113,6 +113,15 @@ function requestCountry(request: NextRequest) {
 }
 
 function isExemptPath(pathname: string) {
+  // Keep crawlers + IndexNow verification reachable even when geo-block is on.
+  if (
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === "/manifest.webmanifest" ||
+    pathname.endsWith(".txt") // IndexNow key file /{key}.txt
+  ) {
+    return true;
+  }
   return (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/api") ||
