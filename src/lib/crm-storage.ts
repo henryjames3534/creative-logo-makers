@@ -418,6 +418,152 @@ export const LEAD_STATUSES: { id: LeadStatus; label: string }[] = [
   { id: "lost", label: "Lost" },
 ];
 
+/** Map lead status → pipeline stage so Leads and Pipeline stay linked. */
+export function leadStatusToDealStage(status?: string): DealStage {
+  const s = String(status || "").toLowerCase();
+  if (s === "won") return "won";
+  if (s === "lost") return "lost";
+  if (s === "qualified") return "qualified";
+  if (s === "proposal") return "proposal";
+  if (s === "contacted") return "lead";
+  return "lead";
+}
+
+/**
+ * Every lead must have a pipeline deal (auto-connect).
+ * Returns true if state was mutated.
+ */
+function ensurePipelineDealForLead(state: CrmState, lead: CrmLead): boolean {
+  if (!lead?.id) return false;
+  const existing = (state.deals || []).find((d) => d.leadId === lead.id);
+  if (existing) return false;
+
+  const now = new Date().toISOString();
+  const stage = leadStatusToDealStage(lead.status);
+  // Prefer linking an order for this customer if one exists
+  const email = (lead.email || "").toLowerCase();
+  const order =
+    (state.orders || []).find(
+      (o) => (o.customerEmail || "").toLowerCase() === email,
+    ) || null;
+
+  const dealId = uid("dl");
+  state.deals = state.deals || [];
+  state.deals.unshift({
+    id: dealId,
+    title: `${lead.interest || "Lead"} — ${lead.name}`,
+    stage: order?.paymentStatus === "paid" ? "won" : stage,
+    value: Number(lead.valueEstimate) || Number(order?.amount) || 299,
+    currency: "USD",
+    probability:
+      order?.paymentStatus === "paid"
+        ? 100
+        : stage === "won"
+          ? 100
+          : stage === "lost"
+            ? 0
+            : Math.min(90, Math.max(15, lead.score || 20)),
+    leadId: lead.id,
+    orderId: order?.id,
+    orderCode: order?.orderId,
+    ownerId: lead.ownerId || "own_admin",
+    category: lead.interest,
+    packageName: order?.packageName,
+    closeDate: isoDays(14),
+    createdAt: lead.createdAt || now,
+    updatedAt: now,
+    notes: `Auto-linked from lead ${lead.id}`,
+  });
+
+  // Don't let old delete-tombstones block this new deal / order link
+  if (state.deleted?.deals?.length) {
+    const block = new Set(
+      [
+        dealId,
+        order?.id ? `ordid:${order.id}` : "",
+        order?.orderId ? `ord:${order.orderId}` : "",
+      ].filter(Boolean),
+    );
+    state.deleted.deals = state.deleted.deals.filter((t) => !block.has(t));
+  }
+  return true;
+}
+
+/** Paid/open orders without a deal also get a pipeline card. */
+function ensurePipelineDealForOrder(state: CrmState, order: CrmOrder): boolean {
+  if (!order?.id) return false;
+  const has =
+    (state.deals || []).some(
+      (d) =>
+        d.orderId === order.id ||
+        (order.orderId && d.orderCode === order.orderId),
+    ) ||
+    (state.deals || []).some((d) => {
+      if (!d.leadId) return false;
+      const lead = state.leads.find((l) => l.id === d.leadId);
+      return (
+        !!lead &&
+        (lead.email || "").toLowerCase() ===
+          (order.customerEmail || "").toLowerCase()
+      );
+    });
+  if (has) return false;
+
+  const email = (order.customerEmail || "").toLowerCase();
+  const lead =
+    (state.leads || []).find(
+      (l) => (l.email || "").toLowerCase() === email,
+    ) || null;
+
+  // Prefer attaching via lead path
+  if (lead) return ensurePipelineDealForLead(state, lead);
+
+  const now = new Date().toISOString();
+  const dealId = uid("dl");
+  const paid = String(order.paymentStatus || "").toLowerCase() === "paid";
+  state.deals = state.deals || [];
+  state.deals.unshift({
+    id: dealId,
+    title: order.title || `${order.categoryName} — ${order.customerName}`,
+    stage: paid ? "won" : "brief",
+    value: Number(order.amount) || 0,
+    currency: "USD",
+    probability: paid ? 100 : 45,
+    orderId: order.id,
+    orderCode: order.orderId,
+    ownerId: "own_admin",
+    category: order.categoryName,
+    packageName: order.packageName,
+    closeDate: isoDays(14),
+    createdAt: order.createdAt || now,
+    updatedAt: now,
+    notes: `Auto-linked from order ${order.orderId}`,
+  });
+  if (state.deleted?.deals?.length) {
+    const block = new Set(
+      [
+        dealId,
+        `ordid:${order.id}`,
+        order.orderId ? `ord:${order.orderId}` : "",
+      ].filter(Boolean),
+    );
+    state.deleted.deals = state.deleted.deals.filter((t) => !block.has(t));
+  }
+  return true;
+}
+
+/** Backfill missing pipeline deals after hydrate / load. */
+export function ensurePipelineLinks(state: CrmState): boolean {
+  let dirty = false;
+  for (const lead of state.leads || []) {
+    if (ensurePipelineDealForLead(state, lead)) dirty = true;
+  }
+  for (const order of state.orders || []) {
+    if (ensurePipelineDealForOrder(state, order)) dirty = true;
+  }
+  return dirty;
+}
+
 /** Website /contact (and studio/signup form) sources saved by /api/forms/submit */
 export function isContactFormLead(lead: { source?: string }) {
   const s = String(lead.source || "").trim().toLowerCase();
@@ -624,6 +770,9 @@ export async function hydrateCrmFromServer(): Promise<CrmState> {
     saveCrm(state);
   }
   if (purgeJunkLeads(state)) {
+    saveCrm(state);
+  }
+  if (ensurePipelineLinks(state)) {
     saveCrm(state);
   }
   emitCrm(CRM_HYDRATED_EVENT, state);
@@ -1537,6 +1686,15 @@ export function upsertLead(input: Partial<CrmLead> & { name: string; email: stri
         email,
         updatedAt: now,
       };
+      ensurePipelineDealForLead(state, state.leads[i]);
+      // Keep linked deal stage in sync with lead status when status changes
+      if (input.status) {
+        const deal = state.deals.find((d) => d.leadId === state.leads[i].id);
+        if (deal && deal.stage !== "won" && deal.stage !== "lost") {
+          deal.stage = leadStatusToDealStage(input.status);
+          deal.updatedAt = now;
+        }
+      }
       saveCrm(state);
       return state;
     }
@@ -1563,6 +1721,7 @@ export function upsertLead(input: Partial<CrmLead> & { name: string; email: stri
       valueEstimate: input.valueEstimate ?? prev.valueEstimate,
       updatedAt: now,
     };
+    ensurePipelineDealForLead(state, state.leads[existingIdx]);
     saveCrm(state);
     return state;
   }
@@ -1599,6 +1758,7 @@ export function upsertLead(input: Partial<CrmLead> & { name: string; email: stri
     relatedType: "lead",
     relatedId: lead.id,
   });
+  ensurePipelineDealForLead(state, lead);
   saveCrm(state);
   return state;
 }
@@ -2448,6 +2608,7 @@ export function upsertOrder(
         updatedAt: now,
       };
       markLinkedDealsWon(state.orders[i]);
+      ensurePipelineDealForOrder(state, state.orders[i]);
       saveCrm(state);
       return state;
     }
@@ -2488,6 +2649,7 @@ export function upsertOrder(
       updatedAt: now,
     };
     markLinkedDealsWon(state.orders[existingIdx]);
+    ensurePipelineDealForOrder(state, state.orders[existingIdx]);
     saveCrm(state);
     return state;
   }
@@ -2537,6 +2699,7 @@ export function upsertOrder(
     relatedId: order.id,
   });
   markLinkedDealsWon(order);
+  ensurePipelineDealForOrder(state, order);
   saveCrm(state);
   return state;
 }

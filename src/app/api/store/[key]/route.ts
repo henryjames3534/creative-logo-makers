@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clmApiFetch } from "@/lib/clm-api";
+import {
+  ensurePipelineLinks,
+  type CrmState,
+} from "@/lib/crm-storage";
 import { mergeCrmDocuments, mergeUsersDocuments } from "@/lib/merge-store";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +11,22 @@ export const dynamic = "force-dynamic";
 const ALLOWED = new Set(["crm", "users", "chat", "brand", "geo-block"]);
 
 type Ctx = { params: Promise<{ key: string }> };
+
+/** Auto-create missing Lead↔Deal↔Order pipeline cards on every CRM read/write. */
+function repairCrmPipeline(payload: unknown): { payload: unknown; dirty: boolean } {
+  if (!payload || typeof payload !== "object") {
+    return { payload, dirty: false };
+  }
+  const state = payload as CrmState;
+  if (!Array.isArray(state.leads)) state.leads = [];
+  if (!Array.isArray(state.deals)) state.deals = [];
+  if (!Array.isArray(state.orders)) state.orders = [];
+  if (!state.deleted || typeof state.deleted !== "object") {
+    state.deleted = {};
+  }
+  const dirty = ensurePipelineLinks(state);
+  return { payload: state, dirty };
+}
 
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const { key } = await ctx.params;
@@ -18,6 +38,22 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     payload?: unknown;
     updatedAt?: string | null;
   }>(`/${key}`);
+
+  // Backfill missing pipeline deals so admin Pipeline never stays empty
+  // when leads/orders already exist (visitor email, fulfill, etc.).
+  if (key === "crm" && data.ok && data.payload != null) {
+    const { payload, dirty } = repairCrmPipeline(data.payload);
+    if (dirty) {
+      const updatedAt = new Date().toISOString();
+      await clmApiFetch(`/${key}`, {
+        method: "PUT",
+        body: JSON.stringify({ payload, updatedAt }),
+      });
+      data.payload = payload;
+      data.updatedAt = updatedAt;
+    }
+  }
+
   return NextResponse.json(data, { status: data.ok ? 200 : 502 });
 }
 
@@ -50,6 +86,10 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
           ? mergeCrmDocuments(current.payload, payload)
           : mergeUsersDocuments(current.payload, payload);
     }
+  }
+
+  if (key === "crm") {
+    payload = repairCrmPipeline(payload).payload;
   }
 
   const data = await clmApiFetch(`/${key}`, {

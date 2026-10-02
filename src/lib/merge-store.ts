@@ -472,6 +472,18 @@ export function mergeCrmDocuments(
     if (email) resurrectLeadKeys.add(`e:${email}`);
   }
 
+  // Incoming / backfilled deals clear tombstones so pipeline cards can return
+  // after an order/deal delete (same orderCode / orderId).
+  const resurrectDealKeys = new Set<string>();
+  for (const d of asArray<Dict>(i.deals)) {
+    const id = String(d.id || "").trim();
+    const orderCode = String(d.orderCode || "").trim();
+    const orderId = String(d.orderId || "").trim();
+    if (id) resurrectDealKeys.add(id);
+    if (orderCode) resurrectDealKeys.add(`ord:${orderCode}`);
+    if (orderId) resurrectDealKeys.add(`ordid:${orderId}`);
+  }
+
   // Incoming visitors (live pings) clear id / visitorKey / email / IP tombstones
   // so a deleted visitor can return from the same browser or IP.
   const incomingVisitors = asArray<Dict>(i.visitors);
@@ -541,7 +553,14 @@ export function mergeCrmDocuments(
         ...asArray<string>((r.deleted as Dict | undefined)?.deals),
         ...asArray<string>((i.deleted as Dict | undefined)?.deals),
       ]),
-    ).slice(-500),
+    )
+      .filter((t) => {
+        // Incoming deals resurrect matching tombstones (id / ord / ordid)
+        const s = String(t);
+        if (resurrectDealKeys.has(s)) return false;
+        return true;
+      })
+      .slice(-500),
   };
 
   return {
