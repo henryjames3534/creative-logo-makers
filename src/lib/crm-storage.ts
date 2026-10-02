@@ -1354,6 +1354,93 @@ const VISITOR_EVENT = "clm_crm_visitor";
 const INBOX_EVENT = "clm_crm_inbox";
 const REVIEW_EVENT = "clm_crm_review";
 export const CRM_CHANGED_EVENT = "clm_crm_changed";
+/** Fired when admin marks leads as seen (sidebar unread badge). */
+export const LEADS_SEEN_EVENT = "clm_admin_leads_seen";
+
+const LEADS_SEEN_KEY = "clm_admin_leads_seen_ids_v1";
+const LEADS_SEEN_BOOT_KEY = "clm_admin_leads_seen_boot_v1";
+
+function loadSeenLeadIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(LEADS_SEEN_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.map(String).filter(Boolean).slice(-800));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeenLeadIds(ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      LEADS_SEEN_KEY,
+      JSON.stringify([...ids].slice(-800)),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/** First run: treat current leads as already seen so the badge only counts new arrivals. */
+function bootstrapLeadSeenIfNeeded() {
+  if (typeof window === "undefined") return;
+  try {
+    if (localStorage.getItem(LEADS_SEEN_BOOT_KEY) === "1") return;
+    const leads = loadCrm().leads || [];
+    // Wait until CRM local snapshot exists (post-hydrate) so we don't mark boot on empty shell
+    if (!localStorage.getItem(CRM_KEY) && leads.length === 0) return;
+    saveSeenLeadIds(new Set(leads.map((l) => l.id).filter(Boolean)));
+    localStorage.setItem(LEADS_SEEN_BOOT_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isLeadUnread(leadId: string): boolean {
+  if (typeof window === "undefined" || !leadId) return false;
+  bootstrapLeadSeenIfNeeded();
+  return !loadSeenLeadIds().has(leadId);
+}
+
+/** Sidebar badge: unread non–contact-form leads (Contact form has its own page). */
+export function unreadLeadCount(): number {
+  if (typeof window === "undefined") return 0;
+  bootstrapLeadSeenIfNeeded();
+  const seen = loadSeenLeadIds();
+  return loadCrm().leads.filter(
+    (l) => !isContactFormLead(l) && l.id && !seen.has(l.id),
+  ).length;
+}
+
+export function markLeadsSeen(leadIds?: string[]) {
+  if (typeof window === "undefined") return;
+  bootstrapLeadSeenIfNeeded();
+  const seen = loadSeenLeadIds();
+  const ids =
+    leadIds && leadIds.length
+      ? leadIds
+      : loadCrm()
+          .leads.filter((l) => !isContactFormLead(l))
+          .map((l) => l.id);
+  let changed = false;
+  for (const id of ids) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    changed = true;
+  }
+  if (!changed) return;
+  saveSeenLeadIds(seen);
+  window.dispatchEvent(new CustomEvent(LEADS_SEEN_EVENT));
+}
+
+export function markLeadSeen(leadId: string) {
+  if (!leadId) return;
+  markLeadsSeen([leadId]);
+}
 
 function emitCrm(event: string, detail?: unknown) {
   if (typeof window === "undefined") return;

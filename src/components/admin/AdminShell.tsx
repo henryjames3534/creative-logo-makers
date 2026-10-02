@@ -9,7 +9,11 @@ import {
   adminLogout,
   getAdminSession,
   hydrateCrmFromServer,
+  LEADS_SEEN_EVENT,
   rememberStaffEmail,
+  unreadLeadCount,
+  CRM_CHANGED_EVENT,
+  CRM_HYDRATED_EVENT,
 } from "@/lib/crm-storage";
 import {
   hydrateChatFromServer,
@@ -64,6 +68,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [mobileNav, setMobileNav] = useState(false);
   const [chatUnread, setChatUnread] = useState(0);
+  const [leadsUnread, setLeadsUnread] = useState(0);
   const [theme, setTheme] = useState<AdminTheme>("dark");
   const [chatToast, setChatToast] = useState<LiveChatSession | null>(null);
 
@@ -99,7 +104,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!session) return;
     const refreshUnread = () => setChatUnread(unreadChatCount());
+    const refreshLeads = () => setLeadsUnread(unreadLeadCount());
     refreshUnread();
+    refreshLeads();
     const offUpdate = onLiveChatUpdated(refreshUnread);
     const offOpen = onLiveChatOpened((s) => {
       setChatUnread(unreadChatCount());
@@ -122,9 +129,21 @@ export function AdminShell({ children }: { children: ReactNode }) {
         /* ignore */
       }
     });
+    const onCrm = () => refreshLeads();
+    window.addEventListener(CRM_CHANGED_EVENT, onCrm);
+    window.addEventListener(CRM_HYDRATED_EVENT, onCrm);
+    window.addEventListener(LEADS_SEEN_EVENT, onCrm);
+    const poll = window.setInterval(() => {
+      refreshUnread();
+      refreshLeads();
+    }, 15000);
     return () => {
       offUpdate();
       offOpen();
+      window.removeEventListener(CRM_CHANGED_EVENT, onCrm);
+      window.removeEventListener(CRM_HYDRATED_EVENT, onCrm);
+      window.removeEventListener(LEADS_SEEN_EVENT, onCrm);
+      window.clearInterval(poll);
     };
   }, [session]);
 
@@ -294,6 +313,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               ? pathname === item.href
               : pathname.startsWith(item.href);
             const isChat = item.href === "/admin/live-chat";
+            const isLeads = item.href === "/admin/leads";
             return (
               <Link
                 key={item.href}
@@ -308,7 +328,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <span className="truncate">{item.label}</span>
                 {isChat && chatUnread > 0 ? (
                   <span className="shrink-0 rounded-full bg-[#fe5f50] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {chatUnread}
+                    {chatUnread > 99 ? "99+" : chatUnread}
+                  </span>
+                ) : null}
+                {isLeads && leadsUnread > 0 ? (
+                  <span
+                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                      active
+                        ? "bg-white text-[#00a581]"
+                        : "bg-[#fe5f50] text-white"
+                    }`}
+                  >
+                    {leadsUnread > 99 ? "99+" : leadsUnread}
                   </span>
                 ) : null}
               </Link>

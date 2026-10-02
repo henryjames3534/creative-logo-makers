@@ -7,7 +7,10 @@ import {
   LEAD_STATUSES,
   deleteLead,
   isContactFormLead,
+  isLeadUnread,
   loadCrm,
+  markLeadSeen,
+  markLeadsSeen,
   money,
   relativeDay,
   upsertLead,
@@ -20,6 +23,7 @@ export function AdminLeads() {
   const searchParams = useSearchParams();
   const focusId = searchParams.get("id");
   const [state, setState] = useState<CrmState | null>(null);
+  const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<LeadStatus | "all">("all");
   const [formOpen, setFormOpen] = useState(false);
@@ -46,13 +50,27 @@ export function AdminLeads() {
       } catch {
         /* ignore */
       }
-      if (!cancelled) setState(loadCrm());
+      if (cancelled) return;
+      const crm = loadCrm();
+      setState(crm);
+      // Snapshot unread rows for this visit, then clear sidebar badge
+      const fresh = new Set(
+        crm.leads
+          .filter((l) => !isContactFormLead(l) && isLeadUnread(l.id))
+          .map((l) => l.id),
+      );
+      setUnreadIds(fresh);
+      markLeadsSeen();
     })();
     const poll = window.setInterval(() => {
       void import("@/lib/crm-storage")
         .then(({ hydrateCrmFromServer }) => hydrateCrmFromServer())
         .then(() => {
-          if (!cancelled) setState(loadCrm());
+          if (cancelled) return;
+          const crm = loadCrm();
+          setState(crm);
+          // While staying on Leads, keep sidebar clear for any new arrivals
+          markLeadsSeen();
         })
         .catch(() => null);
     }, 20000);
@@ -66,6 +84,13 @@ export function AdminLeads() {
     if (!state || !focusId) return;
     const lead = state.leads.find((l) => l.id === focusId);
     if (!lead) return;
+    setUnreadIds((prev) => {
+      if (!prev.has(lead.id)) return prev;
+      const next = new Set(prev);
+      next.delete(lead.id);
+      return next;
+    });
+    markLeadSeen(lead.id);
     setEditing(lead);
     setDraft({
       name: lead.name,
@@ -115,6 +140,13 @@ export function AdminLeads() {
   }
 
   function openEdit(l: CrmLead) {
+    markLeadSeen(l.id);
+    setUnreadIds((prev) => {
+      if (!prev.has(l.id)) return prev;
+      const next = new Set(prev);
+      next.delete(l.id);
+      return next;
+    });
     setEditing(l);
     setDraft({
       name: l.name,
@@ -227,14 +259,21 @@ export function AdminLeads() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((l) => (
+              {rows.map((l) => {
+                const unread = unreadIds.has(l.id);
+                return (
                 <tr
                   key={l.id}
-                  className="cursor-pointer border-b border-[color:var(--a-border)] hover:bg-[var(--a-hover)]"
+                  className={`cursor-pointer border-b border-[color:var(--a-border)] hover:bg-[var(--a-hover)] ${
+                    unread ? "bg-[#fe5f50]/[0.06]" : ""
+                  }`}
                   onClick={() => openEdit(l)}
                 >
                   <td className="px-4 py-3">
-                    <p className="font-medium text-[var(--a-text)]">{l.name}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-[var(--a-text)]">{l.name}</p>
+                      {unread ? <Badge tone="coral">New</Badge> : null}
+                    </div>
                     <p className="text-xs text-[color:var(--a-faint)]">
                       {l.email}
                       {l.company ? ` · ${l.company}` : ""}
@@ -257,7 +296,8 @@ export function AdminLeads() {
                     <DeleteBtn onClick={(e) => onDelete(l.id, e)} />
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
