@@ -428,6 +428,12 @@ export function mergeCrmDocuments(
         ...asArray<string>((i.deleted as Dict | undefined)?.inbox),
       ]),
     ).slice(-500),
+    deals: Array.from(
+      new Set([
+        ...asArray<string>((r.deleted as Dict | undefined)?.deals),
+        ...asArray<string>((i.deleted as Dict | undefined)?.deals),
+      ]),
+    ).slice(-500),
   };
 
   return {
@@ -476,7 +482,11 @@ export function mergeCrmDocuments(
       ],
     ),
     activities,
-    deals,
+    deals: applyDeleted(deals, deleted.deals, (d) => [
+      String(d.id || ""),
+      d.orderId ? `ordid:${String(d.orderId)}` : "",
+      d.orderCode ? `ord:${String(d.orderCode)}` : "",
+    ]),
     tasks,
     companies,
     inbox: applyDeleted(inbox, deleted.inbox, (x) => [String(x.id || "")]),

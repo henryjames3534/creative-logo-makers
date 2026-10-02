@@ -93,6 +93,10 @@ export type CrmDeal = {
   contactId?: string;
   companyId?: string;
   leadId?: string;
+  /** Internal CRM order/project id — cascade-deleted with the project */
+  orderId?: string;
+  /** Public ORD-… code */
+  orderCode?: string;
   ownerId: string;
   category?: string;
   packageName?: string;
@@ -332,6 +336,7 @@ export type CrmState = {
     orders?: string[];
     contacts?: string[];
     inbox?: string[];
+    deals?: string[];
   };
 };
 
@@ -1409,15 +1414,29 @@ export function deleteLead(id: string) {
   const state = loadCrm();
   const lead = state.leads.find((l) => l.id === id);
   state.leads = state.leads.filter((l) => l.id !== id);
+
+  // Cascade pipeline deals tied to this lead
+  const dealIds = state.deals
+    .filter((d) => d.leadId === id)
+    .map((d) => d.id);
+  state.deals = state.deals.filter((d) => d.leadId !== id);
+
   state.deleted = state.deleted || {};
   state.deleted.leads = Array.from(
     new Set([...(state.deleted.leads || []), id]),
   ).slice(-500);
+  if (dealIds.length) {
+    state.deleted.deals = Array.from(
+      new Set([...(state.deleted.deals || []), ...dealIds]),
+    ).slice(-500);
+  }
   state.activities.unshift({
     id: uid("ac"),
     type: "note",
     title: "Lead deleted",
-    body: lead ? `${lead.name} <${lead.email}>` : id,
+    body: lead
+      ? `${lead.name} <${lead.email}>${dealIds.length ? ` · ${dealIds.length} pipeline deal(s) removed` : ""}`
+      : id,
     createdAt: new Date().toISOString(),
     ownerId: "own_admin",
     relatedType: "lead",
@@ -1515,24 +1534,163 @@ function isInternalSitePath(path?: string) {
   return p.startsWith("/admin") || p.startsWith("/designer");
 }
 
-export function deleteOrder(id: string) {
+/** Find pipeline deals that belong to a project/order (for cascade delete). */
+function dealsLinkedToOrder(state: CrmState, order: CrmOrder): CrmDeal[] {
+  const email = (order.customerEmail || "").toLowerCase();
+  const name = (order.customerName || "").toLowerCase();
+  const expectedTitle = `${order.categoryName} — ${order.customerName}`.toLowerCase();
+  const orderTitle = (order.title || "").toLowerCase();
+  const orderCreated = Date.parse(order.createdAt || "") || 0;
+  const code = order.orderId || "";
+
+  return state.deals.filter((d) => {
+    if (d.orderId && d.orderId === order.id) return true;
+    if (d.orderCode && code && d.orderCode === code) return true;
+
+    if (d.leadId) {
+      const lead = state.leads.find((l) => l.id === d.leadId);
+      if (lead?.notes && code && lead.notes.includes(code)) return true;
+    }
+
+    const title = (d.title || "").toLowerCase();
+    const titleMatch =
+      (orderTitle && title === orderTitle) ||
+      (expectedTitle && title === expectedTitle) ||
+      Boolean(
+        name &&
+          title.includes(name) &&
+          order.categoryName &&
+          title.includes(order.categoryName.toLowerCase()),
+      );
+    if (!titleMatch) return false;
+
+    const pkgOk =
+      !d.packageName ||
+      !order.packageName ||
+      d.packageName === order.packageName;
+    if (!pkgOk) return false;
+
+    if (d.leadId) {
+      const lead = state.leads.find((l) => l.id === d.leadId);
+      if (lead && lead.email?.toLowerCase() === email) return true;
+    }
+    if (d.contactId) {
+      const c = state.contacts.find((x) => x.id === d.contactId);
+      if (c && c.email?.toLowerCase() === email) return true;
+    }
+
+    const dealCreated = Date.parse(d.createdAt || "") || 0;
+    if (
+      orderCreated &&
+      dealCreated &&
+      Math.abs(orderCreated - dealCreated) < 7 * 86400000
+    ) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
+export function deleteDeal(id: string) {
   const state = loadCrm();
-  const o = state.orders.find((x) => x.id === id);
-  state.orders = state.orders.filter((x) => x.id !== id);
-  state.tasks = state.tasks.filter((t) => t.projectId !== id);
+  const deal = state.deals.find((d) => d.id === id);
+  state.deals = state.deals.filter((d) => d.id !== id);
   state.deleted = state.deleted || {};
-  const keys = [id];
-  if (o?.orderId) keys.push(`ord:${o.orderId}`);
-  state.deleted.orders = Array.from(
-    new Set([...(state.deleted.orders || []), ...keys]),
+  state.deleted.deals = Array.from(
+    new Set([...(state.deleted.deals || []), id]),
   ).slice(-500);
   state.activities.unshift({
     id: uid("ac"),
     type: "note",
+    title: "Deal deleted",
+    body: deal ? `${deal.title} · ${money(deal.value)}` : id,
+    createdAt: new Date().toISOString(),
+    ownerId: "own_admin",
+    relatedType: "deal",
+    relatedId: id,
+  });
+  saveCrm(state);
+  return state;
+}
+
+export function deleteOrder(id: string) {
+  const state = loadCrm();
+  const o = state.orders.find((x) => x.id === id);
+  if (!o) {
+    state.orders = state.orders.filter((x) => x.id !== id);
+    saveCrm(state);
+    return state;
+  }
+
+  const linkedDeals = dealsLinkedToOrder(state, o);
+  const linkedDealIds = linkedDeals.map((d) => d.id);
+  const linkedLeadIds = Array.from(
+    new Set(
+      linkedDeals
+        .map((d) => d.leadId)
+        .filter((x): x is string => Boolean(x)),
+    ),
+  );
+
+  // Also drop leads whose notes mention this ORD code
+  const code = o.orderId || "";
+  for (const lead of state.leads) {
+    if (code && lead.notes?.includes(code) && !linkedLeadIds.includes(lead.id)) {
+      linkedLeadIds.push(lead.id);
+    }
+  }
+
+  state.orders = state.orders.filter((x) => x.id !== id);
+  state.tasks = state.tasks.filter((t) => t.projectId !== id);
+  state.deals = state.deals.filter((d) => !linkedDealIds.includes(d.id));
+  state.leads = state.leads.filter((l) => !linkedLeadIds.includes(l.id));
+
+  // Inbox / reviews tied to this project
+  if (Array.isArray(state.inbox)) {
+    state.inbox = state.inbox.filter(
+      (item) =>
+        item.serviceId !== o.serviceId &&
+        item.serviceId !== o.id &&
+        item.serviceId !== o.orderId,
+    );
+  }
+  if (Array.isArray(state.reviews)) {
+    state.reviews = state.reviews.filter(
+      (r) =>
+        r.projectId !== o.id &&
+        r.orderId !== o.orderId &&
+        r.serviceId !== o.serviceId,
+    );
+  }
+
+  state.deleted = state.deleted || {};
+  const orderKeys = [id];
+  if (o.orderId) orderKeys.push(`ord:${o.orderId}`);
+  state.deleted.orders = Array.from(
+    new Set([...(state.deleted.orders || []), ...orderKeys]),
+  ).slice(-500);
+  if (linkedDealIds.length) {
+    state.deleted.deals = Array.from(
+      new Set([
+        ...(state.deleted.deals || []),
+        ...linkedDealIds,
+        `ordid:${o.id}`,
+        ...(o.orderId ? [`ord:${o.orderId}`] : []),
+      ]),
+    ).slice(-500);
+  }
+  if (linkedLeadIds.length) {
+    state.deleted.leads = Array.from(
+      new Set([...(state.deleted.leads || []), ...linkedLeadIds]),
+    ).slice(-500);
+  }
+
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
     title: "Project deleted",
-    body: o
-      ? `${o.orderId} · ${o.customerName} <${o.customerEmail}>`
-      : id,
+    body: `${o.orderId} · ${o.customerName} <${o.customerEmail}> · removed ${linkedDealIds.length} deal(s)${linkedLeadIds.length ? `, ${linkedLeadIds.length} lead(s)` : ""}`,
     createdAt: new Date().toISOString(),
     ownerId: "own_admin",
     relatedType: "order",
@@ -2163,6 +2321,8 @@ export function upsertDeal(
       contactId: input.contactId,
       companyId: input.companyId,
       leadId: input.leadId,
+      orderId: input.orderId,
+      orderCode: input.orderCode,
       ownerId: input.ownerId || "own_admin",
       category: input.category,
       packageName: input.packageName,

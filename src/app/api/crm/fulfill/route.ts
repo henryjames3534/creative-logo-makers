@@ -199,6 +199,8 @@ export async function POST(req: Request) {
     probability: paymentStatus === "paid" ? 100 : 45,
     contactId,
     leadId,
+    orderId: orderInternalId,
+    orderCode,
     ownerId: "own_admin",
     category: categoryName,
     packageName,

@@ -181,6 +181,8 @@ function buildLeadPatch(payload: LeadFormPayload) {
             probability: payload.form === "package" ? 45 : 35,
             contactId,
             leadId,
+            orderId: payload.form === "package" ? orderIdInternal : undefined,
+            orderCode: payload.form === "package" ? orderCode : undefined,
             ownerId: "own_admin",
             category: meta?.categoryName,
             packageName:

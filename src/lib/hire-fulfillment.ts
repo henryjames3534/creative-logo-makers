@@ -113,6 +113,7 @@ export function fulfillDirectHireAfterPayment(input: {
       ownerId: "own_admin",
       category: brief.categoryName,
       closeDate: now,
+      orderCode: input.orderId,
     });
   } catch {
     /* ignore */

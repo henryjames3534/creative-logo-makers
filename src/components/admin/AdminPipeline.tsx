@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { FormEvent, useMemo, useState } from "react";
+import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   DEAL_STAGES,
+  deleteDeal,
   money,
   relativeDay,
   updateDealStage,
@@ -46,6 +47,19 @@ export function AdminPipeline() {
     setDragging(null);
   }
 
+  function onDeleteDeal(d: CrmDeal, e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (
+      !window.confirm(
+        `Delete deal "${d.title}" from pipeline? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setState({ ...deleteDeal(d.id) });
+  }
+
   function onSave(e: FormEvent) {
     e.preventDefault();
     const next = upsertDeal({
@@ -75,7 +89,8 @@ export function AdminPipeline() {
         <div>
           <h1 className="text-2xl font-semibold text-[var(--a-text)]">Sales pipeline</h1>
           <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-            Drag deals across stages — CRM updates probability and activity log.
+            Drag deals across stages. Project delete also removes its pipeline
+            deal automatically.
           </p>
         </div>
         <button
@@ -123,9 +138,16 @@ export function AdminPipeline() {
                       onDragStart={() => setDragging(d.id)}
                       onDragEnd={() => setDragging(null)}
                     >
-                      <p className="text-sm font-semibold text-[var(--a-text)]">
-                        {d.title}
-                      </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-[var(--a-text)]">
+                          {d.title}
+                        </p>
+                        <DeleteBtn
+                          label="×"
+                          className="shrink-0 px-2 py-0.5 text-xs"
+                          onClick={(e) => onDeleteDeal(d, e)}
+                        />
+                      </div>
                       <p className="mt-1 text-lg font-bold text-[#5ee0bf]">
                         {money(d.value)}
                       </p>

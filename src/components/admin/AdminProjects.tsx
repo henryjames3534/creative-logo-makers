@@ -90,7 +90,7 @@ export function AdminProjects() {
     if (!project) return;
     if (
       !window.confirm(
-        `Delete project ${project.orderId} (${project.customerName})?`,
+        `Delete project ${project.orderId} (${project.customerName})?\n\nPipeline deal + linked lead for this project will also be removed.`,
       )
     ) {
       return;

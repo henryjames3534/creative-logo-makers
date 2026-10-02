@@ -146,7 +146,7 @@ export function AdminOrders() {
 
   function onDelete(id: string, e?: React.MouseEvent) {
     e?.stopPropagation();
-    if (!window.confirm("Delete this order/project permanently?")) return;
+    if (!window.confirm("Delete this order/project permanently?\n\nLinked pipeline deal will also be removed.")) return;
     setState({ ...deleteOrder(id) });
     if (editing?.id === id) setFormOpen(false);
   }
