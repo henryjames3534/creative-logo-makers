@@ -9,6 +9,7 @@ import {
   skillLabel,
   type DesignerProfile,
 } from "@/data/designers";
+import { PACKAGE_DISCOUNT_PERCENT } from "@/data/packages";
 import {
   designerExperience,
   designerProjectPackages,
@@ -377,7 +378,7 @@ export function DesignerProfileView({
                           <LocalizedPrice value={pkg.compareAtPrice} />
                         </p>
                         <span className="rounded bg-coral/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-coral">
-                          50% off
+                          {PACKAGE_DISCOUNT_PERCENT}% off
                         </span>
                       </>
                     ) : null}

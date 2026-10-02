@@ -17,8 +17,8 @@ type TierPrices = {
   platinum: string;
 };
 
-/** Sitewide package sale — 50% off list prices */
-export const PACKAGE_DISCOUNT_PERCENT = 50;
+/** Sitewide package sale — 70% off list prices */
+export const PACKAGE_DISCOUNT_PERCENT = 70;
 
 export function parsePackageAmount(raw: string): number {
   return Number(String(raw).replace(/[^0-9.]/g, "")) || 0;
@@ -28,7 +28,7 @@ export function formatUsdPrice(amount: number): string {
   return `$${Math.round(amount).toLocaleString("en-US")}`;
 }
 
-/** Halve any "$X" / "From $X" price string. Leaves Custom / Available alone. */
+/** Apply sitewide PACKAGE_DISCOUNT_PERCENT to any "$X" / "From $X" price. Leaves Custom / Available alone. */
 export function applyPackageDiscount(price: string): string {
   if (!price || /custom|contact|available|quote/i.test(price)) return price;
   const amount = parsePackageAmount(price);
@@ -219,7 +219,7 @@ const RAW_NINETY_NINE_DESIGN_PRICES: Record<string, TierPrices> = {
   "social-content": { bronze: "$79", silver: "$129", gold: "$199", platinum: "$299" },
 };
 
-/** Live (50% off) contest prices by service slug */
+/** Live (discounted) contest prices by service slug */
 export const ninetyNineDesignPrices: Record<string, TierPrices> =
   Object.fromEntries(
     Object.entries(RAW_NINETY_NINE_DESIGN_PRICES).map(([slug, tiers]) => [

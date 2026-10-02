@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LocalizedPrice } from "@/components/locale/LocalizedPrice";
-import { PackageTier } from "@/data/packages";
+import { PACKAGE_DISCOUNT_PERCENT, PackageTier } from "@/data/packages";
 import { categoryLaunchHref } from "@/data/serviceRoutes";
 
 export function PackageGrid({
@@ -46,7 +46,7 @@ export function PackageGrid({
                     <LocalizedPrice value={pkg.compareAtPrice} />
                   </p>
                   <span className="rounded bg-coral/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-coral">
-                    50% off
+                    {PACKAGE_DISCOUNT_PERCENT}% off
                   </span>
                 </>
               ) : null}

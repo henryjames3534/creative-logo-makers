@@ -17,7 +17,11 @@ import {
 } from "@/data/categories";
 import { getDesignerByHandle } from "@/data/designers";
 import { categoryImages, groupImages } from "@/data/media";
-import { getContestPackages, type PackageTier } from "@/data/packages";
+import {
+  getContestPackages,
+  PACKAGE_DISCOUNT_PERCENT,
+  type PackageTier,
+} from "@/data/packages";
 import { categoryDetailsHref, categoryLaunchHref } from "@/data/serviceRoutes";
 import {
   designerProjectPackages,
@@ -94,7 +98,7 @@ function PackageCard({
               selected ? "bg-white/20 text-white" : "bg-coral/15 text-coral"
             }`}
           >
-            50% off
+            {PACKAGE_DISCOUNT_PERCENT}% off
           </span>
         ) : null}
       </div>

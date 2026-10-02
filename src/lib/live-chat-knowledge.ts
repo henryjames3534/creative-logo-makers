@@ -517,7 +517,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for brand logo"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For logo, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For logo, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for logo. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -1058,7 +1058,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for landing page"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For website, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For website, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for website. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -1599,7 +1599,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for product packaging"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For packaging, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For packaging, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for packaging. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -2140,7 +2140,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for stationery"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For business card, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For business card, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for business card. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -2681,7 +2681,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for apparel"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For t-shirt, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For t-shirt, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for t-shirt. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -3222,7 +3222,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for magazine cover"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For book cover, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For book cover, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for book cover. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -3763,7 +3763,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for facebook cover"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For social media, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For social media, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for social media. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -4304,7 +4304,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for character design"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For illustration, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For illustration, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for illustration. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -4845,7 +4845,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for brand kit"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For branding, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For branding, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for branding. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },
@@ -5386,7 +5386,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for brochure"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 50% off list on many tiers). For flyer, locking in sooner helps while the promo runs. Want current starting prices?",
+      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For flyer, locking in sooner helps while the promo runs. Want current starting prices?",
       "Discounts are already reflected on package pages for flyer. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
     ]
   },

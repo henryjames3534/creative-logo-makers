@@ -15,7 +15,7 @@ import {
   locationPath,
 } from "@/data/us-locations";
 import { categoryImages, groupImages } from "@/data/media";
-import { getContestPackages } from "@/data/packages";
+import { getContestPackages, PACKAGE_DISCOUNT_PERCENT } from "@/data/packages";
 import { clm } from "@/data/clm-assets";
 import {
   categoryDetailsHref,
@@ -361,7 +361,7 @@ export function CategoryDetails({ cat }: { cat: Category }) {
                             <LocalizedPrice value={pkg.compareAtPrice} />
                           </p>
                           <span className="rounded bg-coral/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-coral">
-                            50% off
+                            {PACKAGE_DISCOUNT_PERCENT}% off
                           </span>
                         </>
                       ) : null}

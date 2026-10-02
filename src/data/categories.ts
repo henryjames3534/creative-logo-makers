@@ -1,3 +1,5 @@
+import { applyPackageDiscount } from "@/data/packages";
+
 export type BriefFamily =
   | "logo"
   | "website"
@@ -65,10 +67,8 @@ type CatInput = {
   reviewCount?: string;
 };
 
-function halveStartingPrice(price: string): string {
-  const amount = Number(String(price).replace(/[^0-9.]/g, "")) || 0;
-  if (!amount) return price;
-  return `$${Math.round(amount / 2).toLocaleString("en-US")}`;
+function discountedStartingPrice(price: string): string {
+  return applyPackageDiscount(price);
 }
 
 function cat(input: CatInput): Category {
@@ -82,7 +82,7 @@ function cat(input: CatInput): Category {
     longDescription: `${input.description} Work with vetted designers through a contest — pick a fixed package and launch your brief.`,
     services: input.services ?? [productName],
     whatYouGet: stdWhatYouGet(productName.toLowerCase()),
-    startingPrice: halveStartingPrice(input.startingPrice),
+    startingPrice: discountedStartingPrice(input.startingPrice),
     compareAtStartingPrice: input.startingPrice,
     rating: "4.8",
     reviewCount: input.reviewCount ?? "5k+",
@@ -90,7 +90,7 @@ function cat(input: CatInput): Category {
     group: input.group,
     briefFamily: input.briefFamily,
     icon: input.icon,
-    save: input.save ?? "50% off packages",
+    save: input.save ?? "70% off packages",
   };
 }
 

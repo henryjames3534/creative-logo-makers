@@ -11,6 +11,7 @@ import { media } from "@/data/media";
 import {
   addOns,
   getContestPackages,
+  PACKAGE_DISCOUNT_PERCENT,
   projectPackages,
   studioPackages,
 } from "@/data/packages";
@@ -44,10 +45,10 @@ export default function PricingPage() {
         <Container>
           <SectionHeading
             title="Logo design contest packages"
-            description="Start a contest from US$125 (was $249). Four fixed packages — higher tiers attract more (and more senior) designers. 50% off sitewide."
+            description={`Start a contest from US$75 (was $249). Four fixed packages — higher tiers attract more (and more senior) designers. ${PACKAGE_DISCOUNT_PERCENT}% off sitewide.`}
           />
           <p className="mt-2 text-sm text-muted">
-            Example: from <LocalizedPrice value="US$125" /> (was{" "}
+            Example: from <LocalizedPrice value="US$75" /> (was{" "}
             <LocalizedPrice value="$249" />)
           </p>
           <div className="mt-10">
