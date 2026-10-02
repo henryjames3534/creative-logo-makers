@@ -569,8 +569,44 @@ export async function hydrateCrmFromServer(): Promise<CrmState> {
   if (dedupeOrdersAndDeals(state)) {
     saveCrm(state);
   }
+  if (purgeJunkLeads(state)) {
+    saveCrm(state);
+  }
   emitCrm(CRM_HYDRATED_EVENT, state);
   return state;
+}
+
+/** Remove staff / auto "Site visit" junk that kept regenerating. */
+function purgeJunkLeads(state: CrmState): boolean {
+  const before = state.leads.length;
+  const removed: string[] = [];
+  state.leads = (state.leads || []).filter((l) => {
+    const email = (l.email || "").toLowerCase();
+    if (isStaffEmail(email)) {
+      removed.push(l.id);
+      if (email) removed.push(`e:${email}`);
+      return false;
+    }
+    const interest = (l.interest || "").toLowerCase();
+    const notes = (l.notes || "").toLowerCase();
+    const isSiteVisitJunk =
+      interest.includes("site visit") ||
+      notes.includes("auto-captured visitor") ||
+      notes.includes("email typed from google one tap");
+    if (isSiteVisitJunk && !isWebsiteFormLead(l)) {
+      removed.push(l.id);
+      if (email) removed.push(`e:${email}`);
+      return false;
+    }
+    return true;
+  });
+  if (removed.length) {
+    state.deleted = state.deleted || {};
+    state.deleted.leads = Array.from(
+      new Set([...(state.deleted.leads || []), ...removed]),
+    ).slice(-500);
+  }
+  return state.leads.length !== before;
 }
 
 /** Collapse duplicate projects/deals from client+server dual writes. */
@@ -929,7 +965,8 @@ export function trackVisitor(input: {
     });
   }
 
-  if (email && input.createLead !== false) {
+  // Leads only when explicitly requested — never auto from page visits / Google
+  if (email && input.createLead === true && !isStaffEmail(email)) {
     const leadIdx = state.leads.findIndex((l) => l.email === email);
     if (leadIdx < 0) {
       state.leads.unshift({
@@ -1070,6 +1107,7 @@ export function attachVisitorEmail(input: {
 }) {
   const email = input.email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return loadCrm();
+  if (isStaffEmail(email) || isStaffBrowser()) return loadCrm();
 
   const state = loadCrm();
   let v =
@@ -1085,13 +1123,13 @@ export function attachVisitorEmail(input: {
     "Visitor";
 
   if (!v) {
-    return trackVisitor({
-      email,
-      name,
-      source: "manual",
-      signedIn: false,
-      createLead: true,
-    });
+    // Contact only — do not invent a "Site visit / login" lead
+    try {
+      upsertContact({ name, email, title: "Email captured", tags: ["manual"] });
+    } catch {
+      /* ignore */
+    }
+    return loadCrm();
   }
 
   // Merge if another row already has this email
@@ -1118,25 +1156,6 @@ export function attachVisitorEmail(input: {
     v.name = name;
     v.source = "manual";
     v.lastSeenAt = new Date().toISOString();
-  }
-
-  const leadIdx = state.leads.findIndex((l) => l.email === email);
-  if (leadIdx < 0) {
-    const now = new Date().toISOString();
-    state.leads.unshift({
-      id: uid("ld"),
-      name,
-      email,
-      source: "Google One Tap (manual)",
-      status: "new",
-      score: 75,
-      interest: "Site visit",
-      valueEstimate: 299,
-      ownerId: "own_admin",
-      notes: "Email typed from Google One Tap display",
-      createdAt: now,
-      updatedAt: now,
-    });
   }
 
   saveCrm(state);
@@ -1166,7 +1185,7 @@ export function startVisitorSession(input: {
       email: input.email,
       source: "page_visit",
       path: input.path,
-      createLead: Boolean(input.email),
+      createLead: false,
       userAgent: input.userAgent,
       language: input.language,
     });
@@ -1454,6 +1473,7 @@ export function upsertLead(input: Partial<CrmLead> & { name: string; email: stri
   const state = loadCrm();
   const now = new Date().toISOString();
   const email = input.email.toLowerCase();
+  if (isStaffEmail(email)) return state;
   if (input.id) {
     const i = state.leads.findIndex((l) => l.id === input.id);
     if (i >= 0) {
@@ -1541,8 +1561,10 @@ export function deleteLead(id: string) {
   state.deals = state.deals.filter((d) => d.leadId !== id);
 
   state.deleted = state.deleted || {};
+  const tomb: string[] = [id];
+  if (lead?.email) tomb.push(`e:${lead.email.toLowerCase()}`);
   state.deleted.leads = Array.from(
-    new Set([...(state.deleted.leads || []), id]),
+    new Set([...(state.deleted.leads || []), ...tomb]),
   ).slice(-500);
   if (dealIds.length) {
     state.deleted.deals = Array.from(

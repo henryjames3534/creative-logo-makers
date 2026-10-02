@@ -7,10 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { brand } from "@/data/site";
 import { captureVisitorEmail } from "@/lib/capture-visitor";
-import {
-  listRememberedGoogleAccounts,
-  rememberGoogleAccount,
-} from "@/lib/auth-storage";
+import { rememberGoogleAccount } from "@/lib/auth-storage";
 import { GOOGLE_CLIENT_ID } from "@/lib/google-auth-config";
 
 const DISMISS_KEY = "clm_google_onetap_dismissed";
@@ -144,21 +141,9 @@ export function GoogleContinuePrompt() {
   );
 
   useEffect(() => {
+    // Do NOT auto-inject remembered Google accounts into CRM leads.
+    // That recreated staff emails as "Site visit" leads on every page load.
     if (!ready || hideOnAuthPages) return;
-    try {
-      for (const a of listRememberedGoogleAccounts()) {
-        captureVisitorEmail({
-          email: a.email,
-          name: a.name,
-          picture: a.picture,
-          source: "remembered",
-          signedIn: false,
-          silent: true,
-        });
-      }
-    } catch {
-      /* ignore */
-    }
   }, [ready, hideOnAuthPages]);
 
   useEffect(() => {

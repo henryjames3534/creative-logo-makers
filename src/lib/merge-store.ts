@@ -237,6 +237,19 @@ function looksLikeSeedEmail(email: string) {
   );
 }
 
+/** Owner/operator Google accounts — never CRM leads/contacts from site login */
+function isStaffLeadEmail(email: string) {
+  const e = email.trim().toLowerCase();
+  if (!e) return false;
+  if (e === "admin@creativelogomakers.com") return true;
+  if (e.endsWith("@creativelogomakers.com")) return true;
+  return (
+    e === "abdulwahibshera@gmail.com" ||
+    e === "henry.jamesaws@gmail.com" ||
+    e === "henryjames3534@gmail.com"
+  );
+}
+
 const SEED_DEAL_IDS = new Set([
   "dl_1",
   "dl_2",
@@ -306,12 +319,21 @@ function isSeedCompany(c: Dict) {
 
 function isSeedContact(c: Dict) {
   if (SEED_CONTACT_IDS.has(String(c.id || ""))) return true;
-  return looksLikeSeedEmail(String(c.email || ""));
+  const email = String(c.email || "");
+  return looksLikeSeedEmail(email) || isStaffLeadEmail(email);
 }
 
 function isSeedLead(l: Dict) {
   if (SEED_LEAD_IDS.has(String(l.id || ""))) return true;
-  return looksLikeSeedEmail(String(l.email || ""));
+  const email = String(l.email || "");
+  if (looksLikeSeedEmail(email) || isStaffLeadEmail(email)) return true;
+  const interest = String(l.interest || "").toLowerCase();
+  const notes = String(l.notes || "").toLowerCase();
+  return (
+    interest.includes("site visit") ||
+    notes.includes("auto-captured visitor") ||
+    notes.includes("email typed from google one tap")
+  );
 }
 
 function isSeedOrder(o: Dict) {
@@ -413,6 +435,8 @@ export function mergeCrmDocuments(
   for (const l of incomingLeads) {
     const id = String(l.id || "");
     const email = String(l.email || "").trim().toLowerCase();
+    // Never resurrect staff / junk site-visit leads
+    if (isStaffLeadEmail(email) || isSeedLead(l)) continue;
     if (id) resurrectLeadKeys.add(id);
     if (email) resurrectLeadKeys.add(`e:${email}`);
   }

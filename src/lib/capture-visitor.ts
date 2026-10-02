@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Capture emails into Leads/Contacts only — never into Visitors.
- * Visitors are anonymous IP/session traffic from VisitorTracker.
+ * Capture emails into Contacts (and real form leads only).
+ * Google One Tap / remembered logins do NOT create Leads —
+ * those were flooding admin with staff & casual "Site visit" junk.
  */
 import { notifyVisitorCaptured } from "@/components/analytics/VisitorCaptureToast";
 import {
@@ -12,6 +13,15 @@ import {
   upsertLead,
 } from "@/lib/crm-storage";
 import type { VisitorSource } from "@/lib/crm-storage";
+
+/** Sources that mean a real intent to become a lead */
+function shouldCreateLead(source: VisitorSource) {
+  return (
+    source === "login_form" ||
+    source === "signup_form" ||
+    source === "portal"
+  );
+}
 
 export function captureVisitorEmail(input: {
   email: string;
@@ -42,23 +52,25 @@ export function captureVisitorEmail(input: {
     /* ignore */
   }
 
+  // Google One Tap / remembered / button → contact only, not a lead
+  if (!shouldCreateLead(input.source)) {
+    if (!input.silent) notifyVisitorCaptured(email, input.name);
+    return;
+  }
+
   try {
     upsertLead({
       name,
       email,
       source:
-        input.source === "google_onetap" || input.source === "google_button"
-          ? "Google"
-          : input.source === "login_form"
-            ? "Login form"
-            : input.source === "signup_form"
-              ? "Signup form"
-              : input.source === "portal"
-                ? "Customer portal"
-                : "Visitor email",
+        input.source === "login_form"
+          ? "Login form"
+          : input.source === "signup_form"
+            ? "Signup form"
+            : "Customer portal",
       interest: "Email captured on site",
       notes: `Captured via ${input.source.replace(/_/g, " ")}${path ? ` · ${path}` : ""}`,
-      score: input.source.startsWith("google") ? 70 : 50,
+      score: 50,
       status: "new",
       valueEstimate: 299,
     });
