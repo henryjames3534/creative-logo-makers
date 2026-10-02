@@ -1,4 +1,5 @@
 import { clmApiFetch } from "@/lib/clm-api";
+import { isPrivateIp } from "@/lib/ip-geo";
 import { mergeCrmDocuments } from "@/lib/merge-store";
 
 export type VisitorPingInput = {
@@ -137,6 +138,11 @@ export async function upsertVisitorOnServer(input: VisitorPingInput) {
 
   const path = input.path?.trim() || "/";
   const ip = String(input.geo?.ip || "").trim().toLowerCase();
+
+  // Dev / LAN IPs must never become CRM visitors
+  if (!ip || isPrivateIp(ip)) {
+    return { ok: true as const, skipped: true as const, reason: "private_ip" };
+  }
 
   const current = await readCrm();
   if (!current.ok || !current.payload) {

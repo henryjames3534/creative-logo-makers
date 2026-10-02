@@ -772,11 +772,55 @@ export async function hydrateCrmFromServer(): Promise<CrmState> {
   if (purgeJunkLeads(state)) {
     saveCrm(state);
   }
+  if (purgePrivateIpVisitors(state)) {
+    saveCrm(state);
+  }
   if (ensurePipelineLinks(state)) {
     saveCrm(state);
   }
   emitCrm(CRM_HYDRATED_EVENT, state);
   return state;
+}
+
+/** Drop localhost / LAN rows that leaked in from npm run dev. */
+function purgePrivateIpVisitors(state: CrmState): boolean {
+  const before = state.visitors.length;
+  const removedKeys: string[] = [];
+  state.visitors = (state.visitors || []).filter((v) => {
+    const ip = (v.geo?.ip || "").trim().toLowerCase();
+    if (!ip) return true;
+    const privateIp =
+      ip === "::1" ||
+      ip === "127.0.0.1" ||
+      ip === "localhost" ||
+      ip.startsWith("10.") ||
+      ip.startsWith("192.168.") ||
+      ip.startsWith("fc") ||
+      ip.startsWith("fd") ||
+      ip.startsWith("fe80:");
+    const lan172 =
+      ip.startsWith("172.") &&
+      (() => {
+        const second = Number(ip.split(".")[1]);
+        return second >= 16 && second <= 31;
+      })();
+    if (!privateIp && !lan172) return true;
+    removedKeys.push(v.id);
+    if (v.visitorKey) removedKeys.push(`vk:${v.visitorKey}`);
+    removedKeys.push(`ip:${ip}`);
+    return false;
+  });
+  if (state.visitors.length === before) return false;
+  if (!state.deleted) state.deleted = {};
+  state.deleted.visitors = Array.from(
+    new Set([...(state.deleted.visitors || []), ...removedKeys]),
+  ).slice(-500);
+  // Also hard-ban localhost so pings never recreate them
+  const ban = ["::1", "127.0.0.1", "localhost"];
+  state.excludedVisitorIps = Array.from(
+    new Set([...(state.excludedVisitorIps || []), ...ban]),
+  ).slice(-200);
+  return true;
 }
 
 /** Remove staff / auto "Site visit" junk that kept regenerating. */
@@ -1844,18 +1888,32 @@ export function isWebsiteVisitor(v: CrmVisitor): boolean {
 
   const ip = (v.geo?.ip || "").trim().toLowerCase();
 
-  // Staff IP registered via /api/visitors/exclude-staff
-  if (ip) {
-    try {
-      const banned = loadCrm().excludedVisitorIps || [];
-      if (banned.some((x) => x.toLowerCase() === ip)) return false;
-    } catch {
-      /* ignore */
-    }
+  // Must have a real public client IP — not localhost / LAN
+  if (!ip) return false;
+  if (
+    ip === "::1" ||
+    ip === "127.0.0.1" ||
+    ip === "localhost" ||
+    ip.startsWith("10.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("fc") ||
+    ip.startsWith("fd") ||
+    ip.startsWith("fe80:")
+  ) {
+    return false;
+  }
+  if (ip.startsWith("172.")) {
+    const second = Number(ip.split(".")[1]);
+    if (second >= 16 && second <= 31) return false;
   }
 
-  // Must have a real client IP — form/email rows without geo are not visitors
-  if (!ip) return false;
+  // Staff IP registered via /api/visitors/exclude-staff
+  try {
+    const banned = loadCrm().excludedVisitorIps || [];
+    if (banned.some((x) => x.toLowerCase() === ip)) return false;
+  } catch {
+    /* ignore */
+  }
 
   if (v.source === "remembered" || v.source === "manual") return false;
 

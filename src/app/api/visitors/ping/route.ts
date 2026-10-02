@@ -75,6 +75,14 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = clientIp(req).trim().toLowerCase();
+  // Localhost / LAN — never pollute CRM Visitors (npm run dev → ::1)
+  if (!ip || isPrivateIp(ip)) {
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: "private_ip",
+    });
+  }
   if (ip) {
     const blocked = await getExcludedVisitorIps();
     if (blocked.includes(ip)) {

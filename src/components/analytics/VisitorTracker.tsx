@@ -105,6 +105,16 @@ export function VisitorTracker() {
     (typeof window !== "undefined" &&
       (() => {
         try {
+          const host = window.location.hostname.toLowerCase();
+          // Local npm run dev — ::1 / 127.0.0.1 must not hit live Visitors
+          if (
+            host === "localhost" ||
+            host === "127.0.0.1" ||
+            host === "::1" ||
+            host.endsWith(".local")
+          ) {
+            return true;
+          }
           if (isStaffBrowser()) return true;
           return (
             !!sessionStorage.getItem("clm_admin_session_v1") ||
