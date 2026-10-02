@@ -13,7 +13,8 @@ import {
   isWebsiteVisitor,
 } from "@/lib/crm-storage";
 
-const READ_KEY = "clm_admin_notif_read_at";
+const READ_IDS_KEY = "clm_admin_notif_read_ids_v2";
+const CLEARED_IDS_KEY = "clm_admin_notif_cleared_ids_v2";
 
 type NotifItem = {
   id: string;
@@ -31,17 +32,21 @@ function detailHref(
   return `/admin/notifications/${kind}/${encodeURIComponent(id)}`;
 }
 
-function readAt(): number {
+function loadIdSet(key: string): Set<string> {
   try {
-    return Number(sessionStorage.getItem(READ_KEY) || 0) || 0;
+    const raw = localStorage.getItem(key);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.map(String).filter(Boolean).slice(-800));
   } catch {
-    return 0;
+    return new Set();
   }
 }
 
-function markRead(ts: number) {
+function saveIdSet(key: string, set: Set<string>) {
   try {
-    sessionStorage.setItem(READ_KEY, String(ts));
+    localStorage.setItem(key, JSON.stringify([...set].slice(-800)));
   } catch {
     /* ignore */
   }
@@ -88,11 +93,11 @@ function toneFor(a: CrmActivity): NotifItem["tone"] {
   return "blue";
 }
 
-function buildFeed(state: CrmState): NotifItem[] {
+function buildFeed(state: CrmState, cleared: Set<string>): NotifItem[] {
   const fromActivities: NotifItem[] = (state.activities || [])
     .slice(0, 40)
     .map((a) => ({
-      id: a.id,
+      id: `ac-${a.id}`,
       title: a.title,
       body: a.body,
       createdAt: a.createdAt,
@@ -100,14 +105,14 @@ function buildFeed(state: CrmState): NotifItem[] {
       tone: toneFor(a),
     }));
 
-  // Also surface very recent visitors / leads / paid orders if activity log lagged
   const extras: NotifItem[] = [];
   for (const v of (state.visitors || []).filter(isWebsiteVisitor).slice(0, 8)) {
     extras.push({
-      id: `vis-${v.id}-${v.lastSeenAt}`,
+      // Stable id — do NOT embed lastSeenAt or every poll re-opens as unread
+      id: `vis-${v.id}`,
       title: "Visitor activity",
       body: `${v.email || v.name || "Anonymous"} · ${v.geo?.ip || "no IP"} · ${v.path || "/"}`,
-      createdAt: v.lastSeenAt,
+      createdAt: v.lastSeenAt || v.firstSeenAt,
       href: detailHref("visitor", v.id),
       tone: "blue",
     });
@@ -115,10 +120,10 @@ function buildFeed(state: CrmState): NotifItem[] {
   for (const l of (state.leads || []).slice(0, 8)) {
     const isContact = (l.source || "").toLowerCase() === "contact form";
     extras.push({
-      id: `ld-${l.id}-${l.updatedAt}`,
+      id: `ld-${l.id}`,
       title: isContact ? "Contact form" : "Lead",
       body: `${l.name} <${l.email}> · ${l.source} · ${l.interest}`,
-      createdAt: l.updatedAt || l.createdAt,
+      createdAt: l.createdAt || l.updatedAt,
       href: isContact
         ? `/admin/contact-form-entries?id=${encodeURIComponent(l.id)}`
         : detailHref("lead", l.id),
@@ -127,10 +132,10 @@ function buildFeed(state: CrmState): NotifItem[] {
   }
   for (const o of (state.orders || []).slice(0, 8)) {
     extras.push({
-      id: `or-${o.id}-${o.updatedAt}`,
+      id: `or-${o.id}`,
       title: o.paymentStatus === "paid" ? "Payment / project" : "Project",
       body: `${o.orderId} · ${o.customerName} · ${o.packageName} · $${o.amount}`,
-      createdAt: o.updatedAt || o.createdAt,
+      createdAt: o.createdAt || o.updatedAt,
       href: detailHref("order", o.id),
       tone: o.paymentStatus === "paid" ? "green" : "amber",
     });
@@ -138,6 +143,7 @@ function buildFeed(state: CrmState): NotifItem[] {
 
   const map = new Map<string, NotifItem>();
   for (const n of [...fromActivities, ...extras]) {
+    if (cleared.has(n.id)) continue;
     if (!map.has(n.id)) map.set(n.id, n);
   }
   return [...map.values()]
@@ -156,12 +162,14 @@ const TONE: Record<NotifItem["tone"], string> = {
 export function AdminNotificationBar() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotifItem[]>([]);
-  const [seenAt, setSeenAt] = useState(0);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [clearedIds, setClearedIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<NotifItem | null>(null);
   const [panelPos, setPanelPos] = useState({ top: 56, right: 16 });
   const known = useRef<Set<string>>(new Set());
   const bootstrapped = useRef(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
+  const clearedRef = useRef<Set<string>>(new Set());
 
   function placePanel() {
     const el = btnRef.current;
@@ -173,8 +181,8 @@ export function AdminNotificationBar() {
     setPanelPos({ top, right: Math.min(right, window.innerWidth - width - 8) });
   }
 
-  function refresh() {
-    const feed = buildFeed(loadCrm());
+  function refresh(cleared = clearedRef.current) {
+    const feed = buildFeed(loadCrm(), cleared);
     setItems(feed);
 
     if (!bootstrapped.current) {
@@ -201,14 +209,18 @@ export function AdminNotificationBar() {
   }
 
   useEffect(() => {
-    setSeenAt(readAt());
-    refresh();
-    const onChange = () => refresh();
+    const read = loadIdSet(READ_IDS_KEY);
+    const cleared = loadIdSet(CLEARED_IDS_KEY);
+    clearedRef.current = cleared;
+    setReadIds(read);
+    setClearedIds(cleared);
+    refresh(cleared);
+    const onChange = () => refresh(clearedRef.current);
     window.addEventListener(CRM_CHANGED_EVENT, onChange);
     window.addEventListener(CRM_HYDRATED_EVENT, onChange);
     const poll = window.setInterval(() => {
       void hydrateCrmFromServer()
-        .then(() => refresh())
+        .then(() => refresh(clearedRef.current))
         .catch(() => null);
     }, 10000);
     return () => {
@@ -225,16 +237,38 @@ export function AdminNotificationBar() {
   }, [toast]);
 
   const unread = useMemo(() => {
-    if (!seenAt) return items.slice(0, 12).length;
-    return items.filter((n) => +new Date(n.createdAt) > seenAt).length;
-  }, [items, seenAt]);
+    return items.filter((n) => !readIds.has(n.id)).length;
+  }, [items, readIds]);
+
+  function markAllRead() {
+    const next = new Set(readIds);
+    for (const n of items) next.add(n.id);
+    setReadIds(next);
+    saveIdSet(READ_IDS_KEY, next);
+  }
+
+  function clearAll() {
+    const nextCleared = new Set(clearedIds);
+    const nextRead = new Set(readIds);
+    for (const n of items) {
+      nextCleared.add(n.id);
+      nextRead.add(n.id);
+      known.current.add(n.id);
+    }
+    clearedRef.current = nextCleared;
+    setClearedIds(nextCleared);
+    setReadIds(nextRead);
+    saveIdSet(CLEARED_IDS_KEY, nextCleared);
+    saveIdSet(READ_IDS_KEY, nextRead);
+    setItems([]);
+    setToast(null);
+    setOpen(false);
+  }
 
   function openPanel() {
     setOpen((v) => {
       if (v) {
-        const now = Date.now();
-        markRead(now);
-        setSeenAt(now);
+        markAllRead();
         return false;
       }
       placePanel();
@@ -250,9 +284,7 @@ export function AdminNotificationBar() {
   }
 
   function closePanel() {
-    const now = Date.now();
-    markRead(now);
-    setSeenAt(now);
+    markAllRead();
     setOpen(false);
   }
 
@@ -320,9 +352,11 @@ export function AdminNotificationBar() {
             role="dialog"
             aria-label="Notifications"
           >
-            <div className="flex items-center justify-between border-b border-[color:var(--a-border)] px-4 py-3">
+            <div className="flex items-start justify-between gap-2 border-b border-[color:var(--a-border)] px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-[var(--a-text)]">Notifications</p>
+                <p className="text-sm font-semibold text-[var(--a-text)]">
+                  Notifications
+                </p>
                 <p className="text-[11px] text-[color:var(--a-faint)]">
                   {unread > 0
                     ? `${unread} unread`
@@ -331,13 +365,33 @@ export function AdminNotificationBar() {
                       : "No activity yet"}
                 </p>
               </div>
-              <Link
-                href="/admin/activity"
-                onClick={closePanel}
-                className="text-[11px] text-[#5ee0bf] hover:underline"
-              >
-                View all
-              </Link>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {unread > 0 ? (
+                  <button
+                    type="button"
+                    onClick={markAllRead}
+                    className="text-[11px] font-medium text-[#5ee0bf] hover:underline"
+                  >
+                    Mark read
+                  </button>
+                ) : null}
+                {items.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="text-[11px] font-medium text-[#fe5f50] hover:underline"
+                  >
+                    Clear all
+                  </button>
+                ) : null}
+                <Link
+                  href="/admin/activity"
+                  onClick={closePanel}
+                  className="text-[11px] text-[color:var(--a-muted)] hover:underline"
+                >
+                  View all
+                </Link>
+              </div>
             </div>
             <ul className="max-h-[min(28rem,70vh)] overflow-y-auto">
               {items.length === 0 ? (
@@ -346,12 +400,18 @@ export function AdminNotificationBar() {
                 </li>
               ) : (
                 items.map((n) => {
-                  const isUnread = !seenAt || +new Date(n.createdAt) > seenAt;
+                  const isUnread = !readIds.has(n.id);
                   return (
                     <li key={n.id} className="border-b border-[color:var(--a-border)]">
                       <Link
                         href={n.href}
-                        onClick={closePanel}
+                        onClick={() => {
+                          const next = new Set(readIds);
+                          next.add(n.id);
+                          setReadIds(next);
+                          saveIdSet(READ_IDS_KEY, next);
+                          closePanel();
+                        }}
                         className={`block px-4 py-3 hover:bg-[var(--a-hover)] ${
                           isUnread ? "bg-[var(--a-hover)]" : ""
                         }`}
@@ -399,14 +459,26 @@ export function AdminNotificationBar() {
           <div className="mt-3 flex gap-2">
             <Link
               href={toast.href}
-              onClick={() => setToast(null)}
+              onClick={() => {
+                const next = new Set(readIds);
+                next.add(toast.id);
+                setReadIds(next);
+                saveIdSet(READ_IDS_KEY, next);
+                setToast(null);
+              }}
               className="rounded-full bg-[#00a581] px-3 py-1.5 text-xs font-semibold text-white"
             >
               Open
             </Link>
             <button
               type="button"
-              onClick={() => setToast(null)}
+              onClick={() => {
+                const next = new Set(readIds);
+                next.add(toast.id);
+                setReadIds(next);
+                saveIdSet(READ_IDS_KEY, next);
+                setToast(null);
+              }}
               className="rounded-full border border-[color:var(--a-border-strong)] px-3 py-1.5 text-xs text-[color:var(--a-muted)]"
             >
               Dismiss
