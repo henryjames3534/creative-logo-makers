@@ -542,6 +542,218 @@ export const USA_INTENTS: UsaIntent[] = [
       "Law firm logo design for US attorneys — polished, credible identity concepts via contest.",
     h1: "Law firm logo design that signals authority",
   },
+
+  // —— 70% off sale intents (append-only; do not edit rows above) ——
+  {
+    slug: "70-off-logo-design",
+    keyword: "70% off logo design",
+    related: [
+      "logo design 70 percent off",
+      "logo design discount USA",
+      "70% off logo design USA",
+      "logo package sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "70% Off Logo Design USA — Sale Packages from $75 (Was $249)",
+    description:
+      "70% off logo design for US businesses. Contest packages on sale — Bronze from $75 (was $249). Multiple concepts, revisions, commercial files.",
+    h1: "70% off logo design — USA package sale",
+  },
+  {
+    slug: "logo-design-discount-usa",
+    keyword: "logo design discount USA",
+    related: [
+      "logo design sale USA",
+      "discount logo design packages",
+      "logo contest discount",
+      "cheap logo design sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "Logo Design Discount USA — 70% Off Contest Packages",
+    description:
+      "Logo design discount USA: sitewide 70% off contest packages. Launch a brief, compare concepts, and pick a winner with sale pricing.",
+    h1: "Logo design discount for American brands",
+  },
+  {
+    slug: "logo-design-package-sale",
+    keyword: "logo design package sale",
+    related: [
+      "logo package deal",
+      "logo design sale",
+      "logo contest package discount",
+      "business logo package sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "Logo Design Package Sale USA — 70% Off Bronze to Platinum",
+    description:
+      "Logo design package sale across Bronze, Silver, Gold, and Platinum. US startups lock in 70% off list while the promo runs.",
+    h1: "Logo design package sale — every tier 70% off",
+  },
+  {
+    slug: "cheap-logo-design-70-off",
+    keyword: "cheap logo design 70% off",
+    related: [
+      "budget logo design sale",
+      "affordable logo design 70% off",
+      "low cost logo design discount",
+      "inexpensive logo package sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "Cheap Logo Design 70% Off USA — From $75",
+    description:
+      "Cheap logo design with 70% off sale pricing. Professional contest concepts for US businesses starting at $75 (was $249).",
+    h1: "Cheap logo design — 70% off sale pricing",
+  },
+  {
+    slug: "70-off-website-design",
+    keyword: "70% off website design",
+    related: [
+      "website design discount USA",
+      "web design 70 percent off",
+      "website package sale",
+      "affordable website design sale",
+    ],
+    serviceSlug: "web-design",
+    title: "70% Off Website Design USA — Contest Packages on Sale",
+    description:
+      "70% off website design for US businesses. Contest and package tiers on sale — clear pricing, custom concepts, commercial delivery.",
+    h1: "70% off website design packages",
+  },
+  {
+    slug: "website-design-discount",
+    keyword: "website design discount",
+    related: [
+      "web design discount",
+      "website design sale",
+      "discount website design USA",
+      "landing page design discount",
+    ],
+    serviceSlug: "web-design",
+    title: "Website Design Discount USA — 70% Off Packages",
+    description:
+      "Website design discount with 70% off sitewide packages. Launch a contest for web or landing page concepts built for US brands.",
+    h1: "Website design discount — sale pricing live",
+  },
+  {
+    slug: "design-contest-70-off",
+    keyword: "design contest 70% off",
+    related: [
+      "logo contest sale",
+      "design contest discount USA",
+      "graphic design contest 70% off",
+      "design competition package sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "Design Contest 70% Off USA — Logo & Brand Packages",
+    description:
+      "Design contest 70% off for USA clients. Get multiple designer concepts with sale package pricing — logo, branding, and more.",
+    h1: "Design contest sale — 70% off packages",
+  },
+  {
+    slug: "70-off-branding-package",
+    keyword: "70% off branding package",
+    related: [
+      "branding package sale",
+      "brand identity discount USA",
+      "branding services 70% off",
+      "full branding package discount",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "70% Off Branding Package USA — Identity Contests on Sale",
+    description:
+      "70% off branding packages for US companies. Brand identity contests and packages with sale pricing while the promo lasts.",
+    h1: "70% off branding packages for US teams",
+  },
+  {
+    slug: "packaging-design-discount-usa",
+    keyword: "packaging design discount USA",
+    related: [
+      "product packaging design sale",
+      "packaging design 70% off",
+      "label design discount",
+      "packaging package sale",
+    ],
+    serviceSlug: "product-packaging-design",
+    title: "Packaging Design Discount USA — 70% Off Packages",
+    description:
+      "Packaging design discount USA: 70% off contest packages for product packaging and labels. Shelf-ready concepts from US-focused designers.",
+    h1: "Packaging design discount — 70% off sale",
+  },
+  {
+    slug: "mobile-app-design-discount",
+    keyword: "mobile app design discount",
+    related: [
+      "app design sale",
+      "UI UX design discount USA",
+      "mobile app design 70% off",
+      "app design package sale",
+    ],
+    serviceSlug: "mobile-app-design",
+    title: "Mobile App Design Discount USA — 70% Off Packages",
+    description:
+      "Mobile app design discount with 70% off packages. Contest UI concepts for US startups — clear tiers and commercial files.",
+    h1: "Mobile app design discount — sale packages",
+  },
+  {
+    slug: "hire-logo-designer-sale",
+    keyword: "hire logo designer sale",
+    related: [
+      "hire logo designer discount",
+      "hire a logo designer 70% off",
+      "logo designer sale USA",
+      "hire designer package sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "Hire a Logo Designer Sale USA — 70% Off Packages",
+    description:
+      "Hire a logo designer during our USA package sale — 70% off contest tiers. Compare concepts and own the final mark.",
+    h1: "Hire a logo designer on sale — 70% off",
+  },
+  {
+    slug: "business-logo-design-70-percent-off",
+    keyword: "business logo design 70 percent off",
+    related: [
+      "company logo design sale",
+      "business logo package discount",
+      "startup logo 70% off",
+      "small business logo design sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "Business Logo Design 70% Off USA — Sale from $75",
+    description:
+      "Business logo design 70 percent off for US companies. Contest packages on sale from $75 — multiple concepts and full ownership.",
+    h1: "Business logo design — 70 percent off sale",
+  },
+  {
+    slug: "graphic-design-services-discount",
+    keyword: "graphic design services discount",
+    related: [
+      "graphic design sale USA",
+      "graphic design package discount",
+      "70% off graphic design",
+      "affordable graphic design sale",
+    ],
+    serviceSlug: "logo-design",
+    title: "Graphic Design Services Discount USA — 70% Off",
+    description:
+      "Graphic design services discount: 70% off Creative Logo Makers packages for US businesses — logos, ads, and more via contest.",
+    h1: "Graphic design services — 70% off packages",
+  },
+  {
+    slug: "t-shirt-design-discount-usa",
+    keyword: "t-shirt design discount USA",
+    related: [
+      "t shirt design sale",
+      "merch design 70% off",
+      "apparel design discount",
+      "t-shirt design package sale",
+    ],
+    serviceSlug: "t-shirt-design",
+    title: "T-Shirt Design Discount USA — 70% Off Packages",
+    description:
+      "T-shirt design discount USA with 70% off contest packages. Custom merch concepts for US brands at sale pricing.",
+    h1: "T-shirt design discount — 70% off sale",
+  },
 ];
 
 type CatalogFile = {
@@ -619,6 +831,10 @@ export function usaKeywordFooterLinks(limit = 16): { href: string; label: string
     "startup-logo-design",
     "restaurant-logo-design",
     "law-firm-logo-design",
+    "70-off-logo-design",
+    "logo-design-discount-usa",
+    "70-off-website-design",
+    "design-contest-70-off",
   ];
   const links: { href: string; label: string }[] = [];
   for (const slug of preferred) {

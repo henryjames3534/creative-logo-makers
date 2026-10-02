@@ -487,6 +487,13 @@ export const USA_SEO_PILLARS = {
       "branding agency USA",
       "app design services",
       "Creative Logo Makers",
+      // 70% sale — append only
+      "70% off logo design",
+      "logo design discount USA",
+      "logo design package sale",
+      "70% off website design",
+      "design contest 70% off",
+      "website design discount",
     ],
   },
   contests: {
@@ -499,6 +506,8 @@ export const USA_SEO_PILLARS = {
       "graphic design contest",
       "design competition USA",
       "crowdsourced design",
+      "design contest 70% off",
+      "logo contest sale",
     ],
   },
   projects: {

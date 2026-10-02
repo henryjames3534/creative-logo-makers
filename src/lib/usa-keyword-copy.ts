@@ -24,6 +24,8 @@ export function buildUsaKeywordCopy(
   const n = hash(k);
   const near = k.includes("near me");
   const hire = k.includes("hire");
+  const discount =
+    /70\s*%|70 percent|percent off|discount|package sale|\bsale\b/.test(k);
   const cheap = /cheap|affordable|budget|inexpensive/.test(k);
   const agency = /agency|company|firm|services/.test(k);
 
@@ -59,6 +61,8 @@ export function buildUsaKeywordCopy(
     how = `“Near me” searches often just mean you want US-friendly vendors. You don’t need an office down the street — publish the brief, get concepts from designers across the USA, and keep USD pricing + English support.`;
   } else if (hire) {
     how = `Ready to hire? Use a contest when you want side-by-side concepts, or open a 1-to-1 project when you prefer a single designer with milestones and chat.`;
+  } else if (discount) {
+    how = `Sale pricing is live sitewide — about 70% off list on contest packages. You’ll see the struck-through list price next to the sale price on each tier. Pick Bronze for a lean launch or step up for more designer participation while the promo runs.`;
   } else if (cheap) {
     how = `Budget-friendly doesn’t have to mean disposable. Pick Bronze for lean launches, or step up a tier when you need more designer participation — still fixed pricing, not open-ended retainers.`;
   } else if (agency) {
