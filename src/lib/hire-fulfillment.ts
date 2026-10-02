@@ -119,10 +119,18 @@ export function fulfillDirectHireAfterPayment(input: {
     /* ignore */
   }
 
-  // Upsert CRM project linked to customer service
+  // Upsert CRM project linked to customer service — never create a 2nd copy
   let project =
     state.orders.find((o) => o.serviceId === input.serviceId) ||
-    state.orders.find((o) => o.orderId === input.orderId);
+    state.orders.find((o) => o.orderId === input.orderId) ||
+    state.orders.find(
+      (o) =>
+        (o.customerEmail || "").toLowerCase() === email &&
+        (o.packageName || "").toLowerCase() ===
+          brief.packageName.toLowerCase() &&
+        (o.categoryName || "").toLowerCase() ===
+          brief.categoryName.toLowerCase(),
+    );
 
   if (!project) {
     const revisionLimit = brief.packageName.toLowerCase().includes("platinum")

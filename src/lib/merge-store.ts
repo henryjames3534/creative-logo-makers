@@ -145,13 +145,65 @@ function leadKey(l: Dict) {
 }
 
 function orderKey(o: Dict) {
-  const id = String(o.id || "").trim();
-  if (id) return `id:${id}`;
+  // serviceId is unique per customer payment/service
+  const serviceId = String(o.serviceId || "").trim();
+  if (serviceId) return `svc:${serviceId}`;
+  const email = String(o.customerEmail || "").toLowerCase().trim();
+  const pkg = String(o.packageName || "").toLowerCase().trim();
+  const cat = String(o.categoryName || "").toLowerCase().trim();
+  // Same client + package + category = one project (stops dual-write dupes)
+  if (email && (pkg || cat)) return `em:${email}:${pkg}:${cat}`;
   const orderId = String(o.orderId || "").trim();
   if (orderId) return `ord:${orderId}`;
-  const email = String(o.customerEmail || "").toLowerCase().trim();
-  const created = String(o.createdAt || "");
-  return `em:${email}:${created}`;
+  const id = String(o.id || "").trim();
+  if (id) return `id:${id}`;
+  return `em:${email}:${String(o.createdAt || "")}`;
+}
+
+function mergeOrderRow(a: Dict, b: Dict): Dict {
+  const newer = pickNewer(a, b, ["updatedAt", "createdAt"]);
+  const older = newer === a ? b : a;
+  const aPaid = String(a.paymentStatus || "") === "paid";
+  const bPaid = String(b.paymentStatus || "") === "paid";
+  return {
+    ...newer,
+    id: newer.id || older.id,
+    orderId: newer.orderId || older.orderId,
+    serviceId: newer.serviceId || older.serviceId,
+    paymentStatus: aPaid || bPaid ? "paid" : newer.paymentStatus || older.paymentStatus,
+    amount: Math.max(Number(a.amount || 0), Number(b.amount || 0)) || newer.amount,
+    revisions: asArray(newer.revisions).length
+      ? newer.revisions
+      : older.revisions,
+    messages: asArray(newer.messages).length
+      ? newer.messages
+      : older.messages,
+    assignedDesignerIds: Array.from(
+      new Set([
+        ...asArray<string>(a.assignedDesignerIds),
+        ...asArray<string>(b.assignedDesignerIds),
+      ]),
+    ),
+    createdAt:
+      ts(a.createdAt) && ts(b.createdAt)
+        ? ts(a.createdAt) <= ts(b.createdAt)
+          ? a.createdAt
+          : b.createdAt
+        : newer.createdAt || older.createdAt,
+  };
+}
+
+function dealKey(d: Dict) {
+  const orderCode = String(d.orderCode || "").trim();
+  if (orderCode) return `ord:${orderCode}`;
+  const orderId = String(d.orderId || "").trim();
+  if (orderId) return `ordid:${orderId}`;
+  const leadId = String(d.leadId || "").trim();
+  const pkg = String(d.packageName || "").toLowerCase().trim();
+  const title = String(d.title || "").toLowerCase().trim();
+  if (leadId && (pkg || title)) return `lead:${leadId}:${pkg || title}`;
+  if (title && pkg) return `t:${title}:${pkg}`;
+  return String(d.id || "");
 }
 
 function contactKey(c: Dict) {
@@ -301,6 +353,7 @@ export function mergeCrmDocuments(
     asArray<Dict>(i.orders),
     orderKey,
     ["updatedAt", "createdAt"],
+    mergeOrderRow,
   ).filter((o) => !isSeedOrder(o));
 
   const contacts = mergeByKeys(
@@ -322,7 +375,7 @@ export function mergeCrmDocuments(
   const deals = mergeByKeys(
     asArray<Dict>(r.deals),
     asArray<Dict>(i.deals),
-    (d) => String(d.id || ""),
+    dealKey,
     ["updatedAt", "createdAt"],
   ).filter((d) => !isSeedDeal(d));
 

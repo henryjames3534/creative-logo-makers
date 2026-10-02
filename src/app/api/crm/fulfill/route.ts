@@ -260,17 +260,26 @@ export async function POST(req: Request) {
     );
   }
 
-  // Prefer updating existing order by orderId / email+package when present
+  // Prefer updating existing brief/order for this customer+package
   const existingOrders = Array.isArray(current.payload.orders)
     ? (current.payload.orders as Record<string, unknown>[])
     : [];
-  const match = existingOrders.find(
-    (o) =>
-      String(o.orderId || "") === orderCode ||
-      (String(o.customerEmail || "").toLowerCase() === email &&
-        String(o.packageName || "") === packageName &&
-        String(o.serviceId || "") === String(body.serviceId || "")),
-  );
+  const match = existingOrders.find((o) => {
+    if (String(o.orderId || "") === orderCode) return true;
+    if (
+      body.serviceId &&
+      String(o.serviceId || "") === String(body.serviceId)
+    ) {
+      return true;
+    }
+    return (
+      String(o.customerEmail || "").toLowerCase() === email &&
+      String(o.packageName || "").toLowerCase() ===
+        packageName.toLowerCase() &&
+      String(o.categoryName || "").toLowerCase() ===
+        categoryName.toLowerCase()
+    );
+  });
 
   let ordersPatch: Record<string, unknown>[] = [order];
   if (match) {

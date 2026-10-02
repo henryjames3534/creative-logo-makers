@@ -566,8 +566,99 @@ export async function hydrateCrmFromServer(): Promise<CrmState> {
     },
   });
   const state = loadCrm();
+  if (dedupeOrdersAndDeals(state)) {
+    saveCrm(state);
+  }
   emitCrm(CRM_HYDRATED_EVENT, state);
   return state;
+}
+
+/** Collapse duplicate projects/deals from client+server dual writes. */
+function dedupeOrdersAndDeals(state: CrmState): boolean {
+  let dirty = false;
+
+  const orderMap = new Map<string, CrmOrder>();
+  for (const o of state.orders || []) {
+    const email = (o.customerEmail || "").toLowerCase();
+    const pkg = (o.packageName || "").toLowerCase();
+    const cat = (o.categoryName || "").toLowerCase();
+    const key = o.serviceId
+      ? `svc:${o.serviceId}`
+      : email && (pkg || cat)
+        ? `em:${email}:${pkg}:${cat}`
+        : `id:${o.id}`;
+    const prev = orderMap.get(key);
+    if (!prev) {
+      orderMap.set(key, o);
+      continue;
+    }
+    dirty = true;
+    const preferNewer =
+      Date.parse(o.updatedAt || "") >= Date.parse(prev.updatedAt || "");
+    const base = preferNewer ? o : prev;
+    const other = preferNewer ? prev : o;
+    orderMap.set(key, {
+      ...other,
+      ...base,
+      id: prev.id,
+      orderId: base.orderId || other.orderId,
+      serviceId: base.serviceId || other.serviceId,
+      paymentStatus:
+        base.paymentStatus === "paid" || other.paymentStatus === "paid"
+          ? "paid"
+          : base.paymentStatus || other.paymentStatus,
+      amount: Math.max(base.amount || 0, other.amount || 0),
+      revisions: (base.revisions || []).length
+        ? base.revisions
+        : other.revisions,
+      messages: (base.messages || []).length ? base.messages : other.messages,
+      assignedDesignerIds: Array.from(
+        new Set([
+          ...(base.assignedDesignerIds || []),
+          ...(other.assignedDesignerIds || []),
+        ]),
+      ),
+      createdAt:
+        Date.parse(base.createdAt || "") <= Date.parse(other.createdAt || "")
+          ? base.createdAt
+          : other.createdAt,
+    });
+  }
+  if (dirty) state.orders = [...orderMap.values()];
+
+  const dealMap = new Map<string, CrmDeal>();
+  for (const d of state.deals || []) {
+    const title = (d.title || "").toLowerCase();
+    const pkg = (d.packageName || "").toLowerCase();
+    const key = d.orderCode
+      ? `ord:${d.orderCode}`
+      : d.orderId
+        ? `ordid:${d.orderId}`
+        : title && pkg
+          ? `t:${title}:${pkg}`
+          : `id:${d.id}`;
+    const prev = dealMap.get(key);
+    if (!prev) {
+      dealMap.set(key, d);
+      continue;
+    }
+    dirty = true;
+    const preferNewer =
+      Date.parse(d.updatedAt || "") >= Date.parse(prev.updatedAt || "");
+    dealMap.set(key, {
+      ...(preferNewer ? prev : d),
+      ...(preferNewer ? d : prev),
+      id: prev.id,
+      probability: Math.max(prev.probability || 0, d.probability || 0),
+      value: Math.max(prev.value || 0, d.value || 0),
+    });
+  }
+  if (dealMap.size !== (state.deals || []).length) {
+    dirty = true;
+    state.deals = [...dealMap.values()];
+  }
+
+  return dirty;
 }
 
 export function onCrmHydrated(cb: (state: CrmState) => void) {
@@ -1362,50 +1453,78 @@ export function formatDuration(ms: number) {
 export function upsertLead(input: Partial<CrmLead> & { name: string; email: string }) {
   const state = loadCrm();
   const now = new Date().toISOString();
+  const email = input.email.toLowerCase();
   if (input.id) {
     const i = state.leads.findIndex((l) => l.id === input.id);
     if (i >= 0) {
       state.leads[i] = {
         ...state.leads[i],
         ...input,
+        email,
         updatedAt: now,
       };
+      saveCrm(state);
+      return state;
     }
-  } else {
-    const lead = {
-      id: uid("ld"),
-      name: input.name,
-      email: input.email.toLowerCase(),
-      phone: input.phone,
-      company: input.company,
-      source: input.source || "Manual",
-      status: input.status || ("new" as LeadStatus),
-      score: input.score ?? 50,
-      interest: input.interest || "Logo design",
-      valueEstimate: input.valueEstimate ?? 499,
-      ownerId: input.ownerId || "own_admin",
-      notes: input.notes || "",
-      createdAt: now,
+  }
+
+  // Same email = same lead — update instead of duplicating
+  const existingIdx = state.leads.findIndex(
+    (l) => (l.email || "").toLowerCase() === email,
+  );
+  if (existingIdx >= 0) {
+    const prev = state.leads[existingIdx];
+    state.leads[existingIdx] = {
+      ...prev,
+      ...input,
+      id: prev.id,
+      email,
+      name: input.name || prev.name,
+      notes: input.notes
+        ? prev.notes && prev.notes !== input.notes
+          ? `${input.notes}\n---\n${prev.notes}`.slice(0, 4000)
+          : input.notes
+        : prev.notes,
+      score: Math.max(prev.score || 0, input.score ?? 0),
+      valueEstimate: input.valueEstimate ?? prev.valueEstimate,
       updatedAt: now,
     };
-    state.leads.unshift(lead);
-    // Clear tombstone if re-adding same email
-    if (state.deleted?.leads) {
-      state.deleted.leads = state.deleted.leads.filter(
-        (id) => id !== lead.id && id !== `e:${lead.email}`,
-      );
-    }
-    state.activities.unshift({
-      id: uid("ac"),
-      type: "note",
-      title: "New lead",
-      body: `${lead.name} <${lead.email}> · ${lead.source} · ${lead.interest}`,
-      createdAt: now,
-      ownerId: "own_admin",
-      relatedType: "lead",
-      relatedId: lead.id,
-    });
+    saveCrm(state);
+    return state;
   }
+
+  const lead = {
+    id: uid("ld"),
+    name: input.name,
+    email,
+    phone: input.phone,
+    company: input.company,
+    source: input.source || "Manual",
+    status: input.status || ("new" as LeadStatus),
+    score: input.score ?? 50,
+    interest: input.interest || "Logo design",
+    valueEstimate: input.valueEstimate ?? 499,
+    ownerId: input.ownerId || "own_admin",
+    notes: input.notes || "",
+    createdAt: now,
+    updatedAt: now,
+  };
+  state.leads.unshift(lead);
+  if (state.deleted?.leads) {
+    state.deleted.leads = state.deleted.leads.filter(
+      (id) => id !== lead.id && id !== `e:${lead.email}`,
+    );
+  }
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "New lead",
+    body: `${lead.name} <${lead.email}> · ${lead.source} · ${lead.interest}`,
+    createdAt: now,
+    ownerId: "own_admin",
+    relatedType: "lead",
+    relatedId: lead.id,
+  });
   saveCrm(state);
   return state;
 }
@@ -2221,60 +2340,103 @@ export function upsertOrder(
 ) {
   const state = loadCrm();
   const now = new Date().toISOString();
+  const email = input.customerEmail.toLowerCase();
+
   if (input.id) {
     const i = state.orders.findIndex((o) => o.id === input.id);
     if (i >= 0) {
       state.orders[i] = {
         ...state.orders[i],
         ...input,
+        customerEmail: email,
         updatedAt: now,
       };
+      saveCrm(state);
+      return state;
     }
-  } else {
-    const orderId =
-      input.orderId ||
-      `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-    const order = {
-      id: uid("or"),
-      orderId,
-      title: input.title || `${input.categoryName} — ${input.customerName}`,
-      customerName: input.customerName,
-      customerEmail: input.customerEmail.toLowerCase(),
-      categoryName: input.categoryName,
-      packageName: input.packageName,
-      amount: input.amount,
-      status: input.status || "in_progress",
-      paymentStatus: input.paymentStatus || "paid",
-      createdAt: now,
-      updatedAt: now,
-      designerCount: input.designerCount ?? 1,
-      revisionLimit:
-        input.revisionLimit ??
-        (input.packageName.toLowerCase().includes("platinum") ? 5 : 3),
-      revisionsUsed: input.revisionsUsed ?? 0,
-      revisions: input.revisions ?? [],
-      messages: input.messages ?? [],
-      serviceId: input.serviceId,
-      assignedDesignerIds: input.assignedDesignerIds ?? [],
-    };
-    state.orders.unshift(order);
-    if (state.deleted?.orders) {
-      state.deleted.orders = state.deleted.orders.filter(
-        (x) => x !== order.id && x !== `ord:${order.orderId}`,
-      );
-    }
-    const paid = order.paymentStatus === "paid";
-    state.activities.unshift({
-      id: uid("ac"),
-      type: paid ? "payment" : "note",
-      title: paid ? "New payment" : "New project",
-      body: `${order.orderId} · ${order.customerName} · ${order.packageName} · $${order.amount}${paid ? " paid" : ` (${order.paymentStatus})`}`,
-      createdAt: now,
-      ownerId: "own_admin",
-      relatedType: "order",
-      relatedId: order.id,
-    });
   }
+
+  // Dedupe: same ORD code, service, or same email+package brief
+  const existingIdx = state.orders.findIndex((o) => {
+    if (input.orderId && o.orderId === input.orderId) return true;
+    if (input.serviceId && o.serviceId === input.serviceId) return true;
+    const sameCustomer = (o.customerEmail || "").toLowerCase() === email;
+    const samePkg =
+      (o.packageName || "").toLowerCase() ===
+      (input.packageName || "").toLowerCase();
+    const sameCat =
+      (o.categoryName || "").toLowerCase() ===
+      (input.categoryName || "").toLowerCase();
+    if (!sameCustomer || !samePkg || !sameCat) return false;
+    // Collapse recent open duplicates (client+server dual write)
+    const age = Date.now() - Date.parse(o.createdAt || "") ;
+    return !Number.isFinite(age) || age < 14 * 86400000;
+  });
+
+  if (existingIdx >= 0) {
+    const prev = state.orders[existingIdx];
+    state.orders[existingIdx] = {
+      ...prev,
+      ...input,
+      id: prev.id,
+      orderId: input.orderId || prev.orderId,
+      customerEmail: email,
+      customerName: input.customerName || prev.customerName,
+      amount: input.amount || prev.amount,
+      paymentStatus:
+        input.paymentStatus === "paid" || prev.paymentStatus === "paid"
+          ? "paid"
+          : input.paymentStatus || prev.paymentStatus,
+      serviceId: input.serviceId || prev.serviceId,
+      updatedAt: now,
+    };
+    saveCrm(state);
+    return state;
+  }
+
+  const orderId =
+    input.orderId ||
+    `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+  const order = {
+    id: uid("or"),
+    orderId,
+    title: input.title || `${input.categoryName} — ${input.customerName}`,
+    customerName: input.customerName,
+    customerEmail: email,
+    categoryName: input.categoryName,
+    packageName: input.packageName,
+    amount: input.amount,
+    status: input.status || "in_progress",
+    paymentStatus: input.paymentStatus || "paid",
+    createdAt: now,
+    updatedAt: now,
+    designerCount: input.designerCount ?? 1,
+    revisionLimit:
+      input.revisionLimit ??
+      (input.packageName.toLowerCase().includes("platinum") ? 5 : 3),
+    revisionsUsed: input.revisionsUsed ?? 0,
+    revisions: input.revisions ?? [],
+    messages: input.messages ?? [],
+    serviceId: input.serviceId,
+    assignedDesignerIds: input.assignedDesignerIds ?? [],
+  };
+  state.orders.unshift(order);
+  if (state.deleted?.orders) {
+    state.deleted.orders = state.deleted.orders.filter(
+      (x) => x !== order.id && x !== `ord:${order.orderId}`,
+    );
+  }
+  const paid = order.paymentStatus === "paid";
+  state.activities.unshift({
+    id: uid("ac"),
+    type: paid ? "payment" : "note",
+    title: paid ? "New payment" : "New project",
+    body: `${order.orderId} · ${order.customerName} · ${order.packageName} · $${order.amount}${paid ? " paid" : ` (${order.paymentStatus})`}`,
+    createdAt: now,
+    ownerId: "own_admin",
+    relatedType: "order",
+    relatedId: order.id,
+  });
   saveCrm(state);
   return state;
 }
@@ -2309,29 +2471,58 @@ export function upsertDeal(
     const i = state.deals.findIndex((d) => d.id === input.id);
     if (i >= 0) {
       state.deals[i] = { ...state.deals[i], ...input, updatedAt: now };
+      saveCrm(state);
+      return state;
     }
-  } else {
-    state.deals.unshift({
-      id: uid("dl"),
-      title: input.title,
-      stage: input.stage || "lead",
-      value: input.value,
-      currency: input.currency || "USD",
-      probability: input.probability ?? 20,
-      contactId: input.contactId,
-      companyId: input.companyId,
-      leadId: input.leadId,
-      orderId: input.orderId,
-      orderCode: input.orderCode,
-      ownerId: input.ownerId || "own_admin",
-      category: input.category,
-      packageName: input.packageName,
-      closeDate: input.closeDate || isoDays(14),
-      createdAt: now,
-      updatedAt: now,
-      notes: input.notes,
-    });
   }
+
+  const existingIdx = state.deals.findIndex((d) => {
+    if (input.orderCode && d.orderCode === input.orderCode) return true;
+    if (input.orderId && d.orderId === input.orderId) return true;
+    if (input.leadId && d.leadId === input.leadId) return true;
+    const sameTitle =
+      (d.title || "").toLowerCase() === input.title.toLowerCase();
+    const samePkg =
+      !input.packageName ||
+      !d.packageName ||
+      d.packageName === input.packageName;
+    return sameTitle && samePkg;
+  });
+
+  if (existingIdx >= 0) {
+    const prev = state.deals[existingIdx];
+    state.deals[existingIdx] = {
+      ...prev,
+      ...input,
+      id: prev.id,
+      probability: Math.max(prev.probability || 0, input.probability ?? 0),
+      value: input.value || prev.value,
+      updatedAt: now,
+    };
+    saveCrm(state);
+    return state;
+  }
+
+  state.deals.unshift({
+    id: uid("dl"),
+    title: input.title,
+    stage: input.stage || "lead",
+    value: input.value,
+    currency: input.currency || "USD",
+    probability: input.probability ?? 20,
+    contactId: input.contactId,
+    companyId: input.companyId,
+    leadId: input.leadId,
+    orderId: input.orderId,
+    orderCode: input.orderCode,
+    ownerId: input.ownerId || "own_admin",
+    category: input.category,
+    packageName: input.packageName,
+    closeDate: input.closeDate || isoDays(14),
+    createdAt: now,
+    updatedAt: now,
+    notes: input.notes,
+  });
   saveCrm(state);
   return state;
 }
