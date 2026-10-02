@@ -15,6 +15,13 @@ import {
   type UserService,
 } from "@/lib/auth-storage";
 import { getDesignerByHandle } from "@/data/designers";
+import {
+  hydrateCrmFromServer,
+  listUpsellsForEmail,
+  markUpsellPaid,
+  type CrmOrder,
+  type CrmUpsell,
+} from "@/lib/crm-storage";
 
 function resolveDesignerId(nameOrId: string, fallbackName: string) {
   if (nameOrId && !nameOrId.startsWith("name:") && nameOrId !== "general") {
@@ -29,6 +36,119 @@ function resolveDesignerId(nameOrId: string, fallbackName: string) {
 }
 
 type Tab = "overview" | "services" | "purchases" | "activity";
+
+type UpsellRow = { project: CrmOrder; upsell: CrmUpsell };
+
+function UpsellInvoices({
+  rows,
+  onPaid,
+}: {
+  rows: UpsellRow[];
+  onPaid: () => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const open = rows.filter(
+    (r) => r.upsell.status === "invoiced" || r.upsell.status === "draft",
+  );
+  const paid = rows.filter((r) => r.upsell.status === "paid");
+  if (rows.length === 0) return null;
+
+  async function pay(row: UpsellRow) {
+    setBusyId(row.upsell.id);
+    try {
+      await fetch("/api/crm/upsell/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: row.project.id,
+          upsellId: row.upsell.id,
+          token: row.upsell.payToken,
+        }),
+      });
+    } catch {
+      /* local */
+    }
+    markUpsellPaid({
+      projectId: row.project.id,
+      upsellId: row.upsell.id,
+      payToken: row.upsell.payToken,
+    });
+    setBusyId(null);
+    onPaid();
+  }
+
+  return (
+    <div className="space-y-3">
+      {open.length > 0 ? (
+        <div className="rounded-2xl border border-coral/25 bg-coral/5 p-5">
+          <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-muted">
+            Open invoices
+          </h3>
+          <ul className="mt-3 space-y-3">
+            {open.map(({ project, upsell }) => (
+              <li
+                key={upsell.id}
+                className="rounded-xl border border-line bg-white p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                      {project.orderId} · {project.packageName}
+                    </p>
+                    <p className="mt-1 font-semibold text-ink">{upsell.title}</p>
+                    {upsell.details ? (
+                      <p className="mt-1 text-sm text-muted whitespace-pre-wrap">
+                        {upsell.details}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-ink">
+                      {formatMoney(upsell.amount, upsell.currency)}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={busyId === upsell.id}
+                      onClick={() => pay({ project, upsell })}
+                      className="mt-2 rounded-full bg-ink px-3.5 py-1.5 text-xs font-semibold !text-white disabled:opacity-50"
+                    >
+                      {busyId === upsell.id ? "Paying…" : "Pay invoice"}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {paid.length > 0 ? (
+        <div className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-muted">
+            Paid upsells
+          </h3>
+          <ul className="mt-3 divide-y divide-line">
+            {paid.map(({ project, upsell }) => (
+              <li
+                key={upsell.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-3"
+              >
+                <div>
+                  <p className="font-medium text-ink">{upsell.title}</p>
+                  <p className="text-xs text-muted">
+                    under {project.orderId} · {project.categoryName}
+                  </p>
+                </div>
+                <p className="text-sm font-bold text-ink">
+                  {formatMoney(upsell.amount, upsell.currency)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -335,9 +455,13 @@ function ProjectReviewForm({
 
 function ServiceDetail({
   service,
+  upsellRows,
+  onUpsellPaid,
   onBack,
 }: {
   service: UserService;
+  upsellRows: UpsellRow[];
+  onUpsellPaid: () => void;
   onBack: () => void;
 }) {
   const {
@@ -431,6 +555,12 @@ function ServiceDetail({
             </div>
           ))}
         </div>
+
+        {upsellRows.length > 0 ? (
+          <div className="mt-5">
+            <UpsellInvoices rows={upsellRows} onPaid={onUpsellPaid} />
+          </div>
+        ) : null}
 
         <div className="mt-5 flex flex-wrap gap-2">
           {(
@@ -684,6 +814,15 @@ export function AccountDashboard() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [activeServiceId, setActiveServiceId] = useState<string | null>(null);
+  const [upsellRows, setUpsellRows] = useState<UpsellRow[]>([]);
+
+  function refreshUpsells() {
+    if (!user?.email) {
+      setUpsellRows([]);
+      return;
+    }
+    setUpsellRows(listUpsellsForEmail(user.email));
+  }
 
   useEffect(() => {
     if (ready && !user) {
@@ -698,17 +837,33 @@ export function AccountDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
+  useEffect(() => {
+    if (!user?.email) return;
+    let cancelled = false;
+    (async () => {
+      await hydrateCrmFromServer().catch(() => null);
+      if (!cancelled) setUpsellRows(listUpsellsForEmail(user.email));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.email]);
+
   const stats = useMemo(() => {
     if (!user) {
       return { spent: 0, active: 0, concepts: 0, revisions: 0 };
     }
+    const upsellPaid = upsellRows
+      .filter((r) => r.upsell.status === "paid")
+      .reduce((n, r) => n + (Number(r.upsell.amount) || 0), 0);
     return {
-      spent: user.services.reduce((n, s) => n + (s.amountPaid || 0), 0),
+      spent:
+        user.services.reduce((n, s) => n + (s.amountPaid || 0), 0) + upsellPaid,
       active: user.services.filter((s) => s.status !== "completed").length,
       concepts: user.services.reduce((n, s) => n + s.concepts.length, 0),
       revisions: user.services.reduce((n, s) => n + s.revisions.length, 0),
     };
-  }, [user]);
+  }, [user, upsellRows]);
 
   const allUpdates = useMemo(() => {
     if (!user) return [];
@@ -861,6 +1016,12 @@ export function AccountDashboard() {
         {activeService ? (
           <ServiceDetail
             service={activeService}
+            upsellRows={upsellRows.filter(
+              (r) =>
+                r.project.orderId === activeService.orderId ||
+                r.project.serviceId === activeService.id,
+            )}
+            onUpsellPaid={refreshUpsells}
             onBack={() => setActiveServiceId(null)}
           />
         ) : null}
@@ -868,6 +1029,7 @@ export function AccountDashboard() {
         {!activeService && tab === "overview" ? (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="space-y-5">
+              <UpsellInvoices rows={upsellRows} onPaid={refreshUpsells} />
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-ink">
                   Latest from admin & designers
@@ -1089,7 +1251,10 @@ export function AccountDashboard() {
             <h2 className="mb-5 text-lg font-semibold text-ink">
               Purchase history
             </h2>
-            {user.services.length === 0 ? (
+            <div className="mb-5">
+              <UpsellInvoices rows={upsellRows} onPaid={refreshUpsells} />
+            </div>
+            {user.services.length === 0 && upsellRows.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-line bg-white p-10 text-center">
                 <p className="font-semibold text-ink">No purchases yet</p>
                 <p className="mt-2 text-sm text-muted">
@@ -1106,7 +1271,16 @@ export function AccountDashboard() {
                   <span className="text-right">Amount</span>
                 </div>
                 <ul>
-                  {user.services.map((s) => (
+                  {user.services.map((s) => {
+                    const linked = upsellRows.filter(
+                      (r) =>
+                        r.project.orderId === s.orderId ||
+                        r.project.serviceId === s.id,
+                    );
+                    const paidAdd = linked
+                      .filter((r) => r.upsell.status === "paid")
+                      .reduce((n, r) => n + (Number(r.upsell.amount) || 0), 0);
+                    return (
                     <li
                       key={s.id}
                       className="grid gap-2 border-b border-line px-5 py-4 last:border-0 md:grid-cols-[1.2fr_0.8fr_0.7fr_0.7fr_0.6fr] md:items-center md:gap-3"
@@ -1114,6 +1288,25 @@ export function AccountDashboard() {
                       <div>
                         <p className="font-semibold text-ink">{s.orderId}</p>
                         <p className="text-sm text-muted">{s.categoryName}</p>
+                        {linked.filter((r) => r.upsell.status === "paid")
+                          .length > 0 ? (
+                          <ul className="mt-2 space-y-1 border-l-2 border-violet/30 pl-3">
+                            {linked
+                              .filter((r) => r.upsell.status === "paid")
+                              .map((r) => (
+                                <li
+                                  key={r.upsell.id}
+                                  className="text-xs text-muted"
+                                >
+                                  Upsell: {r.upsell.title} ·{" "}
+                                  {formatMoney(
+                                    r.upsell.amount,
+                                    r.upsell.currency,
+                                  )}
+                                </li>
+                              ))}
+                          </ul>
+                        ) : null}
                         <Link
                           href={categoryDetailsHref(s.categorySlug)}
                           className="text-xs font-semibold text-violet hover:underline"
@@ -1129,10 +1322,11 @@ export function AccountDashboard() {
                         {s.paymentStatus} · {s.paymentMethod}
                       </p>
                       <p className="text-sm font-bold text-ink md:text-right">
-                        {formatMoney(s.amountPaid, s.currency)}
+                        {formatMoney(s.amountPaid + paidAdd, s.currency)}
                       </p>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
                 <div className="flex justify-between border-t border-line bg-paper-soft px-5 py-4 text-sm">
                   <span className="font-medium text-muted">Total spent</span>

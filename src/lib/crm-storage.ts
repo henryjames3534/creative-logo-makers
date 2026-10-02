@@ -179,6 +179,28 @@ export type CrmOrder = {
   serviceId?: string;
   /** Marketplace designers assigned to this project */
   assignedDesignerIds: string[];
+  /** Add-on invoices under this paid project */
+  upsells?: CrmUpsell[];
+};
+
+export type UpsellStatus = "draft" | "invoiced" | "paid" | "cancelled";
+
+/** Project add-on / upsell invoice (sub-tree under a paid order). */
+export type CrmUpsell = {
+  id: string;
+  title: string;
+  details: string;
+  amount: number;
+  currency: string;
+  status: UpsellStatus;
+  /** Invoice emailed to customer */
+  invoicedAt?: string;
+  paidAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  /** Public pay token for email link */
+  payToken?: string;
 };
 
 /** Paid → Projects. Unpaid/pending → Orders (+ Lead stays). */
@@ -188,6 +210,27 @@ export function isPaidProject(o: { paymentStatus?: string }) {
 
 export function isOpenOrder(o: { paymentStatus?: string }) {
   return !isPaidProject(o);
+}
+
+export function projectFinancials(o: CrmOrder) {
+  const upsells = Array.isArray(o.upsells) ? o.upsells : [];
+  const paidUpsells = upsells.filter((u) => u.status === "paid");
+  const openUpsells = upsells.filter(
+    (u) => u.status === "invoiced" || u.status === "draft",
+  );
+  const base = Number(o.amount) || 0;
+  const paidAddons = paidUpsells.reduce((s, u) => s + (Number(u.amount) || 0), 0);
+  const openAddons = openUpsells.reduce((s, u) => s + (Number(u.amount) || 0), 0);
+  return {
+    base,
+    paidUpsellsTotal: paidAddons,
+    openUpsellsTotal: openAddons,
+    projectTotal: base + paidAddons,
+    pipelineTotal: base + paidAddons + openAddons,
+    paidUpsells,
+    openUpsells,
+    allUpsells: upsells,
+  };
 }
 
 export type CrmActivity = {
@@ -547,6 +590,7 @@ function normalizeOrder(o: CrmOrder): CrmOrder {
     assignedDesignerIds: Array.isArray(o.assignedDesignerIds)
       ? o.assignedDesignerIds
       : [],
+    upsells: Array.isArray(o.upsells) ? o.upsells : [],
   };
 }
 
@@ -2450,6 +2494,7 @@ export function upsertOrder(
     messages: input.messages ?? [],
     serviceId: input.serviceId,
     assignedDesignerIds: input.assignedDesignerIds ?? [],
+    upsells: input.upsells ?? [],
   };
   state.orders.unshift(order);
   if (state.deleted?.orders) {
@@ -2600,6 +2645,141 @@ export function crmStats(state: CrmState) {
 
 export function money(n: number) {
   return `$${n.toLocaleString("en-US")}`;
+}
+
+/** Create an upsell invoice under a paid project (local CRM). */
+export function createProjectUpsell(input: {
+  projectId: string;
+  title: string;
+  details: string;
+  amount: number;
+  currency?: string;
+  createdBy?: string;
+  /** When true, status=invoiced + invoicedAt set (default). */
+  invoice?: boolean;
+}): CrmState {
+  const state = loadCrm();
+  const project = state.orders.find((o) => o.id === input.projectId);
+  if (!project) return state;
+  const now = new Date().toISOString();
+  const amount = Math.max(0, Number(input.amount) || 0);
+  const invoice = input.invoice !== false;
+  const upsell: CrmUpsell = {
+    id: uid("up"),
+    title: String(input.title || "Upsell").trim() || "Upsell",
+    details: String(input.details || "").trim(),
+    amount,
+    currency: input.currency || "USD",
+    status: invoice ? "invoiced" : "draft",
+    invoicedAt: invoice ? now : undefined,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: input.createdBy || "own_admin",
+    payToken: uid("upt"),
+  };
+  project.upsells = [upsell, ...(Array.isArray(project.upsells) ? project.upsells : [])];
+  project.updatedAt = now;
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "payment",
+    title: `Upsell invoiced · ${project.orderId}`,
+    body: `${upsell.title} · $${amount} · ${project.customerEmail}`,
+    createdAt: now,
+    ownerId: "own_admin",
+    relatedType: "order",
+    relatedId: project.id,
+  });
+  saveCrm(state);
+  return state;
+}
+
+export function markUpsellPaid(input: {
+  projectId?: string;
+  upsellId?: string;
+  payToken?: string;
+}): CrmState {
+  const state = loadCrm();
+  const now = new Date().toISOString();
+  let found: { project: CrmOrder; upsell: CrmUpsell } | null = null;
+
+  for (const o of state.orders) {
+    const list = Array.isArray(o.upsells) ? o.upsells : [];
+    for (const u of list) {
+      if (input.payToken && u.payToken === input.payToken) {
+        found = { project: o, upsell: u };
+        break;
+      }
+      if (
+        input.upsellId &&
+        u.id === input.upsellId &&
+        (!input.projectId || o.id === input.projectId)
+      ) {
+        found = { project: o, upsell: u };
+        break;
+      }
+    }
+    if (found) break;
+  }
+
+  if (!found) return state;
+  if (found.upsell.status === "paid") return state;
+
+  found.upsell.status = "paid";
+  found.upsell.paidAt = now;
+  found.upsell.updatedAt = now;
+  found.project.updatedAt = now;
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "payment",
+    title: `Upsell paid · ${found.project.orderId}`,
+    body: `${found.upsell.title} · $${found.upsell.amount} · ${found.project.customerEmail}`,
+    createdAt: now,
+    ownerId: "own_admin",
+    relatedType: "order",
+    relatedId: found.project.id,
+  });
+  saveCrm(state);
+  return state;
+}
+
+export function cancelUpsell(input: {
+  projectId: string;
+  upsellId: string;
+}): CrmState {
+  const state = loadCrm();
+  const project = state.orders.find((o) => o.id === input.projectId);
+  if (!project) return state;
+  const list = Array.isArray(project.upsells) ? project.upsells : [];
+  const u = list.find((x) => x.id === input.upsellId);
+  if (!u || u.status === "paid") return state;
+  const now = new Date().toISOString();
+  u.status = "cancelled";
+  u.updatedAt = now;
+  project.updatedAt = now;
+  saveCrm(state);
+  return state;
+}
+
+/** All open (invoiced/draft) upsells for a customer email — portal hydrate. */
+export function listUpsellsForEmail(email: string): Array<{
+  project: CrmOrder;
+  upsell: CrmUpsell;
+}> {
+  const e = email.toLowerCase().trim();
+  if (!e) return [];
+  const state = loadCrm();
+  const out: Array<{ project: CrmOrder; upsell: CrmUpsell }> = [];
+  for (const o of state.orders) {
+    if ((o.customerEmail || "").toLowerCase() !== e) continue;
+    for (const u of o.upsells || []) {
+      if (u.status === "cancelled") continue;
+      out.push({ project: o, upsell: u });
+    }
+  }
+  return out.sort(
+    (a, b) =>
+      +new Date(b.upsell.createdAt) - +new Date(a.upsell.createdAt),
+  );
 }
 
 export function relativeDay(iso: string) {

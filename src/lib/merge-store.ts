@@ -184,6 +184,7 @@ function mergeOrderRow(a: Dict, b: Dict): Dict {
         ...asArray<string>(b.assignedDesignerIds),
       ]),
     ),
+    upsells: mergeUpsellRows(a.upsells, b.upsells),
     createdAt:
       ts(a.createdAt) && ts(b.createdAt)
         ? ts(a.createdAt) <= ts(b.createdAt)
@@ -191,6 +192,36 @@ function mergeOrderRow(a: Dict, b: Dict): Dict {
           : b.createdAt
         : newer.createdAt || older.createdAt,
   };
+}
+
+function mergeUpsellRows(a: unknown, b: unknown): Dict[] {
+  const map = new Map<string, Dict>();
+  for (const u of [...asArray<Dict>(a), ...asArray<Dict>(b)]) {
+    const id = String(u.id || "").trim();
+    if (!id) continue;
+    const prev = map.get(id);
+    if (!prev) {
+      map.set(id, { ...u });
+      continue;
+    }
+    const newer = pickNewer(prev, u, [
+      "updatedAt",
+      "paidAt",
+      "invoicedAt",
+      "createdAt",
+    ]);
+    const paid =
+      String(prev.status || "") === "paid" ||
+      String(u.status || "") === "paid";
+    map.set(id, {
+      ...newer,
+      status: paid ? "paid" : newer.status || prev.status,
+      paidAt: prev.paidAt || u.paidAt || newer.paidAt,
+      payToken: newer.payToken || prev.payToken || u.payToken,
+      invoicedAt: prev.invoicedAt || u.invoicedAt || newer.invoicedAt,
+    });
+  }
+  return Array.from(map.values());
 }
 
 function dealKey(d: Dict) {

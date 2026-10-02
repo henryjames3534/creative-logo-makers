@@ -7,12 +7,18 @@ import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/Ad
 import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   addProjectRevision,
+  cancelUpsell,
+  createProjectUpsell,
   deleteOrder,
+  hydrateCrmFromServer,
   isPaidProject,
   loadCrm,
+  markUpsellPaid,
   money,
   onInboxUpdated,
+  projectFinancials,
   relativeDay,
+  saveCrm,
   updateProjectRevision,
   upsertTask,
   type CrmOrder,
@@ -36,7 +42,7 @@ export function AdminProjects() {
   const [state, setState] = useHydratedCrm();
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"tasks" | "revisions">("revisions");
+  const [tab, setTab] = useState<"tasks" | "revisions" | "upsells">("revisions");
 
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskDraft, setTaskDraft] = useState({
@@ -49,6 +55,14 @@ export function AdminProjects() {
 
   const [revOpen, setRevOpen] = useState(false);
   const [revDraft, setRevDraft] = useState({ title: "", note: "" });
+
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const [upsellBusy, setUpsellBusy] = useState(false);
+  const [upsellDraft, setUpsellDraft] = useState({
+    title: "",
+    details: "",
+    amount: "",
+  });
 
   useEffect(() => {
     return onInboxUpdated(() => setState(loadCrm()));
@@ -79,6 +93,11 @@ export function AdminProjects() {
     if (o && !isPaidProject(o)) return null;
     return o;
   }, [state, selectedId]);
+
+  const finance = useMemo(
+    () => (project ? projectFinancials(project) : null),
+    [project],
+  );
 
   const projectTasks: CrmTask[] = useMemo(() => {
     if (!state || !project) return [];
@@ -144,6 +163,133 @@ export function AdminProjects() {
     refresh();
   }
 
+  async function onAddUpsell(e: FormEvent) {
+    e.preventDefault();
+    if (!project || upsellBusy) return;
+    const title = upsellDraft.title.trim();
+    const details = upsellDraft.details.trim();
+    const amount = Number(upsellDraft.amount);
+    if (!title || !(amount > 0)) {
+      window.alert("Title and amount (> 0) required.");
+      return;
+    }
+    setUpsellBusy(true);
+    try {
+      const res = await fetch("/api/crm/upsell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          orderId: project.orderId,
+          title,
+          details,
+          amount,
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        emailed?: boolean;
+        emailError?: string;
+        upsell?: {
+          id: string;
+          title: string;
+          details: string;
+          amount: number;
+          currency: string;
+          status: "draft" | "invoiced" | "paid" | "cancelled";
+          invoicedAt?: string;
+          createdAt: string;
+          updatedAt: string;
+          payToken?: string;
+          createdBy?: string;
+        };
+      };
+      if (res.ok && json.ok && json.upsell) {
+        // Patch local CRM with the exact server upsell (same id/token)
+        const live = loadCrm();
+        const i = live.orders.findIndex((o) => o.id === project.id);
+        if (i >= 0) {
+          const existing = live.orders[i].upsells || [];
+          if (!existing.some((u) => u.id === json.upsell!.id)) {
+            live.orders[i] = {
+              ...live.orders[i],
+              upsells: [json.upsell, ...existing],
+              updatedAt: new Date().toISOString(),
+            };
+            saveCrm(live);
+          }
+        }
+        await hydrateCrmFromServer().catch(() => null);
+        const mailNote = json.emailed
+          ? "Invoice emailed to customer."
+          : json.emailError
+            ? `Saved — email not sent: ${json.emailError}`
+            : "Saved. Customer will see it on portal if signed up.";
+        window.alert(mailNote);
+      } else {
+        createProjectUpsell({
+          projectId: project.id,
+          title,
+          details,
+          amount,
+        });
+        window.alert(
+          `Saved locally. Server sync failed: ${json.error || res.status}${
+            json.emailError ? `\nEmail: ${json.emailError}` : ""
+          }`,
+        );
+      }
+      setUpsellOpen(false);
+      setUpsellDraft({ title: "", details: "", amount: "" });
+      refresh();
+    } catch (err) {
+      createProjectUpsell({
+        projectId: project.id,
+        title,
+        details,
+        amount,
+      });
+      window.alert(
+        `Saved locally. Network error: ${
+          err instanceof Error ? err.message : "unknown"
+        }`,
+      );
+      setUpsellOpen(false);
+      setUpsellDraft({ title: "", details: "", amount: "" });
+      refresh();
+    } finally {
+      setUpsellBusy(false);
+    }
+  }
+
+  async function onMarkUpsellPaid(upsellId: string, payToken?: string) {
+    if (!project) return;
+    try {
+      await fetch("/api/crm/upsell/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          upsellId,
+          token: payToken,
+        }),
+      });
+    } catch {
+      /* local mark below */
+    }
+    markUpsellPaid({ projectId: project.id, upsellId, payToken });
+    await hydrateCrmFromServer().catch(() => null);
+    refresh();
+  }
+
+  function onCancelUpsell(upsellId: string) {
+    if (!project) return;
+    if (!window.confirm("Cancel this upsell invoice?")) return;
+    cancelUpsell({ projectId: project.id, upsellId });
+    refresh();
+  }
+
   if (!state) return <p className="text-[color:var(--a-muted)]">Loading…</p>;
 
   return (
@@ -151,8 +297,8 @@ export function AdminProjects() {
       <div>
         <h1 className="text-2xl font-semibold text-[var(--a-text)]">Projects</h1>
         <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-          Sirf paid orders yahan aate hain — tasks, revisions, designer assign.
-          Unpaid briefs Orders + Leads mein rehte hain.
+          Paid projects — tasks, revisions, upsells. Unpaid briefs stay in Orders
+          + Leads.
         </p>
       </div>
 
@@ -179,6 +325,8 @@ export function AdminProjects() {
               const openRevs = (o.revisions || []).filter(
                 (r) => r.status === "pending" || r.status === "in_progress",
               ).length;
+              const fin = projectFinancials(o);
+              const openUpsells = fin.openUpsells.length;
               return (
                 <li key={o.id}>
                   <button
@@ -199,13 +347,17 @@ export function AdminProjects() {
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <Badge tone="gold">{o.packageName}</Badge>
+                      <Badge tone="green">{money(fin.projectTotal)}</Badge>
                       <Badge tone="blue">
                         {o.revisionsUsed}/{o.revisionLimit} revs
                       </Badge>
                       <Badge tone={openRevs ? "coral" : "neutral"}>
                         {openRevs} open
                       </Badge>
-                      <Badge tone="green">{tasksN} tasks</Badge>
+                      {openUpsells ? (
+                        <Badge tone="coral">{openUpsells} upsell</Badge>
+                      ) : null}
+                      <Badge tone="neutral">{tasksN} tasks</Badge>
                     </div>
                   </button>
                 </li>
@@ -235,7 +387,13 @@ export function AdminProjects() {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-[#5ee0bf]">
-                    {money(project.amount)}
+                    {money(finance?.projectTotal ?? project.amount)}
+                  </p>
+                  <p className="text-xs text-[color:var(--a-faint)]">
+                    Base {money(project.amount)}
+                    {(finance?.paidUpsellsTotal || 0) > 0
+                      ? ` + upsells ${money(finance!.paidUpsellsTotal)}`
+                      : ""}
                   </p>
                   <p className="text-xs capitalize text-[color:var(--a-faint)]">
                     {project.status.replace(/_/g, " ")}
@@ -257,6 +415,13 @@ export function AdminProjects() {
                 <span>
                   {(project.assignedDesignerIds || []).length} assigned
                   designers
+                </span>
+                <span>·</span>
+                <span>
+                  {(project.upsells || []).length} upsells
+                  {(finance?.openUpsellsTotal || 0) > 0
+                    ? ` · open ${money(finance!.openUpsellsTotal)}`
+                    : ""}
                 </span>
               </div>
               {(project.assignedDesignerIds || []).length > 0 ? (
@@ -288,6 +453,7 @@ export function AdminProjects() {
                 [
                   ["revisions", "Revisions"],
                   ["tasks", "Tasks"],
+                  ["upsells", "Upsells"],
                 ] as const
               ).map(([id, label]) => (
                 <button
@@ -314,7 +480,7 @@ export function AdminProjects() {
                 >
                   + Add revision round
                 </button>
-              ) : (
+              ) : tab === "tasks" ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -329,6 +495,14 @@ export function AdminProjects() {
                   className="ml-auto rounded-full bg-[#00a581] px-3 py-1.5 text-xs font-semibold text-white"
                 >
                   + Project task
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setUpsellOpen(true)}
+                  className="ml-auto rounded-full bg-[#00a581] px-3 py-1.5 text-xs font-semibold text-white"
+                >
+                  + Create upsell
                 </button>
               )}
             </div>
@@ -366,7 +540,7 @@ export function AdminProjects() {
                             <p className="mt-2 font-medium text-[var(--a-text)]">
                               {r.title}
                             </p>
-                            <p className="mt-1 text-sm text-[color:var(--a-muted)] whitespace-pre-wrap">
+                            <p className="mt-1 whitespace-pre-wrap text-sm text-[color:var(--a-muted)]">
                               {r.note}
                             </p>
                             {r.adminReply ? (
@@ -420,7 +594,7 @@ export function AdminProjects() {
                     ))
                 )}
               </div>
-            ) : (
+            ) : tab === "tasks" ? (
               <div className="space-y-2">
                 {projectTasks.length === 0 ? (
                   <AdminCard className="p-6 text-center text-sm text-[color:var(--a-faint)]">
@@ -464,9 +638,7 @@ export function AdminProjects() {
                           ) : null}
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             <Badge
-                              tone={
-                                t.priority === "high" ? "coral" : "blue"
-                              }
+                              tone={t.priority === "high" ? "coral" : "blue"}
                             >
                               {t.priority}
                             </Badge>
@@ -494,6 +666,118 @@ export function AdminProjects() {
                       </div>
                     </AdminCard>
                   ))
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {finance ? (
+                  <AdminCard className="p-4">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+                          Base package
+                        </p>
+                        <p className="mt-1 text-lg font-bold text-[var(--a-text)]">
+                          {money(finance.base)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+                          Paid upsells
+                        </p>
+                        <p className="mt-1 text-lg font-bold text-[#5ee0bf]">
+                          {money(finance.paidUpsellsTotal)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+                          Project total
+                        </p>
+                        <p className="mt-1 text-lg font-bold text-[#00a581]">
+                          {money(finance.projectTotal)}
+                        </p>
+                      </div>
+                    </div>
+                    {(finance.openUpsellsTotal || 0) > 0 ? (
+                      <p className="mt-3 text-xs text-[#f0b27a]">
+                        Open invoices: {money(finance.openUpsellsTotal)} (not
+                        in project total until paid)
+                      </p>
+                    ) : null}
+                  </AdminCard>
+                ) : null}
+
+                {(project.upsells || []).length === 0 ? (
+                  <AdminCard className="p-6 text-center text-sm text-[color:var(--a-faint)]">
+                    No upsells yet. Create an invoice — customer gets email +
+                    portal entry (if signed up). Paid upsells nest under this
+                    project.
+                  </AdminCard>
+                ) : (
+                  [...(project.upsells || [])]
+                    .sort(
+                      (a, b) =>
+                        +new Date(b.createdAt) - +new Date(a.createdAt),
+                    )
+                    .map((u) => (
+                      <AdminCard key={u.id} className="p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge
+                                tone={
+                                  u.status === "paid"
+                                    ? "green"
+                                    : u.status === "cancelled"
+                                      ? "neutral"
+                                      : "coral"
+                                }
+                              >
+                                {u.status}
+                              </Badge>
+                              <Badge tone="gold">{money(u.amount)}</Badge>
+                            </div>
+                            <p className="mt-2 font-medium text-[var(--a-text)]">
+                              {u.title}
+                            </p>
+                            {u.details ? (
+                              <p className="mt-1 whitespace-pre-wrap text-sm text-[color:var(--a-muted)]">
+                                {u.details}
+                              </p>
+                            ) : null}
+                            {u.payToken && u.status !== "paid" ? (
+                              <p className="mt-2 text-[11px] text-[#7ec4f0]">
+                                Pay link: /pay/upsell?token={u.payToken}
+                              </p>
+                            ) : null}
+                          </div>
+                          <p className="text-[11px] text-[color:var(--a-faint)]">
+                            {relativeDay(u.createdAt)}
+                            {u.paidAt ? ` · paid ${relativeDay(u.paidAt)}` : ""}
+                          </p>
+                        </div>
+                        {u.status === "invoiced" || u.status === "draft" ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onMarkUpsellPaid(u.id, u.payToken)
+                              }
+                              className="rounded-full bg-[#00a581] px-3 py-1.5 text-xs font-semibold text-white"
+                            >
+                              Mark paid
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onCancelUpsell(u.id)}
+                              className="rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : null}
+                      </AdminCard>
+                    ))
                 )}
               </div>
             )}
@@ -557,21 +841,21 @@ export function AdminProjects() {
                 onChange={(e) =>
                   setTaskDraft((d) => ({ ...d, notes: e.target.value }))
                 }
-                rows={2}
+                rows={3}
                 className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setTaskOpen(false)}
-                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
+                className="rounded-full px-3 py-1.5 text-xs text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-full bg-[#00a581] px-4 py-2 text-sm font-semibold text-white"
+                className="rounded-full bg-[#00a581] px-3 py-1.5 text-xs font-semibold text-white"
               >
                 Save task
               </button>
@@ -590,8 +874,7 @@ export function AdminProjects() {
               title={`Revision R${(project.revisions?.length || 0) + 1}`}
             />
             <p className="mb-3 text-xs text-[color:var(--a-faint)]">
-              Limit {project.revisionLimit} rounds · used{" "}
-              {project.revisionsUsed}
+              Limit {project.revisionLimit} rounds · used {project.revisionsUsed}
             </p>
             <label className="block text-xs text-[color:var(--a-muted)]">
               Title
@@ -600,12 +883,11 @@ export function AdminProjects() {
                 onChange={(e) =>
                   setRevDraft((d) => ({ ...d, title: e.target.value }))
                 }
-                placeholder="e.g. Logo spacing"
                 className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
             <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
-              Notes / brief
+              Note
               <textarea
                 required
                 value={revDraft.note}
@@ -616,19 +898,88 @@ export function AdminProjects() {
                 className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setRevOpen(false)}
-                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
+                className="rounded-full px-3 py-1.5 text-xs text-[color:var(--a-muted)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-full bg-[#00a581] px-4 py-2 text-sm font-semibold text-white"
+                className="rounded-full bg-[#00a581] px-3 py-1.5 text-xs font-semibold text-white"
               >
-                Create round
+                Add round
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {upsellOpen && project ? (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4">
+          <form
+            onSubmit={onAddUpsell}
+            className="w-full max-w-md rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] p-6"
+          >
+            <SectionTitle title={`Upsell · ${project.orderId}`} />
+            <p className="mb-3 text-xs text-[color:var(--a-faint)]">
+              Invoice goes to {project.customerEmail} + portal (if signed up).
+            </p>
+            <label className="block text-xs text-[color:var(--a-muted)]">
+              Title
+              <input
+                required
+                value={upsellDraft.title}
+                onChange={(e) =>
+                  setUpsellDraft((d) => ({ ...d, title: e.target.value }))
+                }
+                placeholder="Extra revision pack / stationery / rush fee"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
+              />
+            </label>
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
+              Details
+              <textarea
+                value={upsellDraft.details}
+                onChange={(e) =>
+                  setUpsellDraft((d) => ({ ...d, details: e.target.value }))
+                }
+                rows={4}
+                placeholder="What is included, delivery notes…"
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
+              />
+            </label>
+            <label className="mt-3 block text-xs text-[color:var(--a-muted)]">
+              Amount (USD)
+              <input
+                required
+                type="number"
+                min="1"
+                step="1"
+                value={upsellDraft.amount}
+                onChange={(e) =>
+                  setUpsellDraft((d) => ({ ...d, amount: e.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
+              />
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setUpsellOpen(false)}
+                disabled={upsellBusy}
+                className="rounded-full px-3 py-1.5 text-xs text-[color:var(--a-muted)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={upsellBusy}
+                className="rounded-full bg-[#00a581] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {upsellBusy ? "Sending…" : "Invoice & email"}
               </button>
             </div>
           </form>
