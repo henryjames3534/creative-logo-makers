@@ -79,11 +79,12 @@ function sourceLabel(form: LeadFormType) {
 function parsePackageMeta(payload: LeadFormPayload) {
   const message = payload.message || "";
   const topic = payload.topic || "";
-  const packageLine = message.match(/Package:\s*([^(]+?)(?:\s*\(([^)]*)\))?/i);
+  const packageLine = message.match(/Package:\s*([^(]+?)(?=\s*\(|$)/i);
+  const priceLine = message.match(/Package:\s*[^(]+\(([^)]*)\)/i);
   const categoryLine = message.match(/Category:\s*(.+)/i);
   const packageName =
     (packageLine?.[1] || topic.split("·")[1] || "Package").trim() || "Package";
-  const packagePriceRaw = (packageLine?.[2] || "").trim();
+  const packagePriceRaw = (priceLine?.[1] || "").trim();
   const amount = Number(String(packagePriceRaw).replace(/[^0-9.]/g, "")) || 0;
   const categoryName =
     (categoryLine?.[1] || topic.split("·")[0] || payload.form).trim() ||
