@@ -131,13 +131,16 @@ function buildFeed(state: CrmState, cleared: Set<string>): NotifItem[] {
     });
   }
   for (const o of (state.orders || []).slice(0, 8)) {
+    const paid = (o.paymentStatus || "").toLowerCase() === "paid";
     extras.push({
       id: `or-${o.id}`,
-      title: o.paymentStatus === "paid" ? "Payment / project" : "Project",
+      title: paid ? "Payment / project" : "New order",
       body: `${o.orderId} · ${o.customerName} · ${o.packageName} · $${o.amount}`,
       createdAt: o.createdAt || o.updatedAt,
-      href: detailHref("order", o.id),
-      tone: o.paymentStatus === "paid" ? "green" : "amber",
+      href: paid
+        ? detailHref("order", o.id)
+        : `/admin/orders?id=${encodeURIComponent(o.id)}`,
+      tone: paid ? "green" : "amber",
     });
   }
 

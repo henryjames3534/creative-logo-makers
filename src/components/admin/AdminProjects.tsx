@@ -8,6 +8,7 @@ import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   addProjectRevision,
   deleteOrder,
+  isPaidProject,
   loadCrm,
   money,
   onInboxUpdated,
@@ -58,12 +59,14 @@ export function AdminProjects() {
       setSelectedId(focusId);
       return;
     }
-    if (!selectedId && state?.orders[0]) setSelectedId(state.orders[0].id);
+    const paid = (state?.orders || []).filter(isPaidProject);
+    if (!selectedId && paid[0]) setSelectedId(paid[0].id);
   }, [state, selectedId, focusId]);
 
   const projects = useMemo(() => {
     if (!state) return [];
     return state.orders.filter((o) => {
+      if (!isPaidProject(o)) return false;
       const hay =
         `${o.orderId} ${o.title ?? ""} ${o.customerName} ${o.customerEmail} ${o.categoryName}`.toLowerCase();
       return !q.trim() || hay.includes(q.trim().toLowerCase());
@@ -72,7 +75,9 @@ export function AdminProjects() {
 
   const project: CrmOrder | null = useMemo(() => {
     if (!state || !selectedId) return null;
-    return state.orders.find((o) => o.id === selectedId) || null;
+    const o = state.orders.find((x) => x.id === selectedId) || null;
+    if (o && !isPaidProject(o)) return null;
+    return o;
   }, [state, selectedId]);
 
   const projectTasks: CrmTask[] = useMemo(() => {
@@ -146,8 +151,8 @@ export function AdminProjects() {
       <div>
         <h1 className="text-2xl font-semibold text-[var(--a-text)]">Projects</h1>
         <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-          Har project ke apne tasks aur multiple revision rounds — yahan manage
-          hote hain.
+          Sirf paid orders yahan aate hain — tasks, revisions, designer assign.
+          Unpaid briefs Orders + Leads mein rehte hain.
         </p>
       </div>
 
@@ -161,6 +166,13 @@ export function AdminProjects() {
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.3fr]">
         <AdminCard className="overflow-hidden">
           <ul className="divide-y divide-white/5">
+            {projects.length === 0 ? (
+              <li className="px-4 py-8 text-center text-sm text-[color:var(--a-faint)]">
+                Abhi koi paid project nahi. Orders mein payment{" "}
+                <span className="text-[color:var(--a-muted)]">paid</span> mark
+                karo — yahan aa jayega.
+              </li>
+            ) : null}
             {projects.map((o) => {
               const tasksN = state.tasks.filter((t) => t.projectId === o.id)
                 .length;

@@ -42,10 +42,15 @@ function Row({ label, value }: { label: string; value?: ReactNode }) {
   );
 }
 
-function listHref(kind: NotifKind, id: string) {
+function listHref(kind: NotifKind, id: string, paymentStatus?: string) {
   if (kind === "lead") return `/admin/leads?id=${encodeURIComponent(id)}`;
   if (kind === "visitor") return `/admin/visitors?id=${encodeURIComponent(id)}`;
-  if (kind === "order") return `/admin/projects?id=${encodeURIComponent(id)}`;
+  if (kind === "order") {
+    const paid = String(paymentStatus || "").toLowerCase() === "paid";
+    return paid
+      ? `/admin/projects?id=${encodeURIComponent(id)}`
+      : `/admin/orders?id=${encodeURIComponent(id)}`;
+  }
   if (kind === "contact") return `/admin/contacts?id=${encodeURIComponent(id)}`;
   if (kind === "deal") return `/admin/pipeline?id=${encodeURIComponent(id)}`;
   if (kind === "company") return `/admin/companies?id=${encodeURIComponent(id)}`;
@@ -454,10 +459,10 @@ export function AdminNotificationDetail({ kind, id }: Props) {
       const order = state.orders.find((o) => o.id === id || o.orderId === id);
       return order
         ? {
-            title: `Project · ${order.orderId}`,
+            title: `${String(order.paymentStatus || "").toLowerCase() === "paid" ? "Project" : "Order"} · ${order.orderId}`,
             subtitle: `${order.customerName} · ${order.packageName}`,
             node: <OrderDetail order={order} />,
-            list: listHref("order", order.id),
+            list: listHref("order", order.id, order.paymentStatus),
           }
         : null;
     }
@@ -535,10 +540,10 @@ export function AdminNotificationDetail({ kind, id }: Props) {
     const order = state.orders.find((o) => o.id === id);
     if (order) {
       return {
-        title: `Project · ${order.orderId}`,
+        title: `${String(order.paymentStatus || "").toLowerCase() === "paid" ? "Project" : "Order"} · ${order.orderId}`,
         subtitle: order.customerName,
         node: <OrderDetail order={order} />,
-        list: listHref("order", id),
+        list: listHref("order", id, order.paymentStatus),
       };
     }
     return null;

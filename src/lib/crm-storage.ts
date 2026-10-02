@@ -181,6 +181,15 @@ export type CrmOrder = {
   assignedDesignerIds: string[];
 };
 
+/** Paid → Projects. Unpaid/pending → Orders (+ Lead stays). */
+export function isPaidProject(o: { paymentStatus?: string }) {
+  return String(o.paymentStatus || "").toLowerCase() === "paid";
+}
+
+export function isOpenOrder(o: { paymentStatus?: string }) {
+  return !isPaidProject(o);
+}
+
 export type CrmActivity = {
   id: string;
   type: ActivityType;

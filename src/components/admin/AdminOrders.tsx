@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import {
   deleteOrder,
+  isOpenOrder,
   loadCrm,
   money,
   relativeDay,
@@ -38,8 +39,8 @@ export function AdminOrders() {
     packageName: "Gold",
     amount: "499",
     status: "in_progress",
-    paymentStatus: "paid",
-    designerCount: "5",
+    paymentStatus: "pending",
+    designerCount: "0",
   });
 
   useEffect(() => {
@@ -73,6 +74,11 @@ export function AdminOrders() {
       (o) => o.id === focusId || o.orderId === focusId,
     );
     if (!order) return;
+    // Paid orders belong in Projects
+    if (!isOpenOrder(order)) {
+      window.location.href = `/admin/projects?id=${encodeURIComponent(order.id)}`;
+      return;
+    }
     setEditing(order);
     setDraft({
       customerName: order.customerName,
@@ -89,7 +95,9 @@ export function AdminOrders() {
 
   const rows = useMemo(() => {
     if (!state) return [];
+    // Unpaid / pending only — paid moves to Projects
     return state.orders.filter((o) => {
+      if (!isOpenOrder(o)) return false;
       if (status !== "all" && o.status !== status) return false;
       const hay = `${o.orderId} ${o.customerName} ${o.customerEmail} ${o.categoryName}`.toLowerCase();
       return !q.trim() || hay.includes(q.trim().toLowerCase());
@@ -128,6 +136,7 @@ export function AdminOrders() {
 
   function onSave(e: FormEvent) {
     e.preventDefault();
+    const becamePaid = draft.paymentStatus === "paid";
     const next = upsertOrder({
       id: editing?.id,
       orderId: editing?.orderId,
@@ -136,12 +145,21 @@ export function AdminOrders() {
       categoryName: draft.categoryName,
       packageName: draft.packageName,
       amount: Number(draft.amount) || 0,
-      status: draft.status,
+      status: becamePaid
+        ? draft.status === "brief_submitted"
+          ? "designs_incoming"
+          : draft.status
+        : draft.status,
       paymentStatus: draft.paymentStatus,
       designerCount: Number(draft.designerCount) || 0,
     });
     setState({ ...next });
     setFormOpen(false);
+    if (becamePaid) {
+      window.alert(
+        "Payment marked paid — ye ab Projects mein move ho gaya. Lead pehle ki tarah Leads mein rahegi.",
+      );
+    }
   }
 
   function onDelete(id: string, e?: React.MouseEvent) {
@@ -159,7 +177,9 @@ export function AdminOrders() {
         <div>
           <h1 className="text-2xl font-semibold text-[var(--a-text)]">Orders</h1>
           <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-            Contests &amp; projects from the marketplace.
+            Pending / unpaid briefs — yahan + Leads mein rehte hain. Payment{" "}
+            <span className="text-[color:var(--a-muted)]">paid</span> mark hote
+            hi Projects mein chale jate hain.
           </p>
         </div>
         <button
