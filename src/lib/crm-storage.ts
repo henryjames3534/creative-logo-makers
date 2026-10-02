@@ -235,6 +235,134 @@ export function projectFinancials(o: CrmOrder) {
   };
 }
 
+/** One payment / invoice line under a project (base package or upsell). */
+export type CrmPaymentLine = {
+  id: string;
+  kind: "package" | "upsell";
+  projectId: string;
+  orderCode: string;
+  customerName: string;
+  customerEmail: string;
+  projectTitle: string;
+  packageName: string;
+  label: string;
+  amount: number;
+  status: string;
+  paidAt?: string;
+  createdAt: string;
+  upsellId?: string;
+};
+
+/** Project bucket with all payment lines + totals. */
+export type ProjectPaymentGroup = {
+  projectId: string;
+  orderCode: string;
+  customerName: string;
+  customerEmail: string;
+  projectTitle: string;
+  packageName: string;
+  categoryName: string;
+  paymentStatus: string;
+  lines: CrmPaymentLine[];
+  paidTotal: number;
+  openTotal: number;
+  /** Collected so far (paid package + paid upsells) */
+  projectTotal: number;
+  /** If base unpaid, still show expected base */
+  expectedTotal: number;
+  lastPaidAt?: string;
+};
+
+/** Flatten CRM orders → project-wise payment ledger. */
+export function listProjectPaymentGroups(
+  orders: CrmOrder[],
+): ProjectPaymentGroup[] {
+  const groups: ProjectPaymentGroup[] = [];
+
+  for (const o of orders || []) {
+    const fin = projectFinancials(o);
+    const paidBase = isPaidProject(o);
+    const lines: CrmPaymentLine[] = [];
+
+    lines.push({
+      id: `pkg_${o.id}`,
+      kind: "package",
+      projectId: o.id,
+      orderCode: o.orderId,
+      customerName: o.customerName,
+      customerEmail: o.customerEmail,
+      projectTitle: o.title || `${o.categoryName} — ${o.customerName}`,
+      packageName: o.packageName,
+      label: `${o.packageName || "Package"} · base`,
+      amount: fin.base,
+      status: String(o.paymentStatus || "pending").toLowerCase(),
+      paidAt: paidBase ? o.updatedAt || o.createdAt : undefined,
+      createdAt: o.createdAt,
+    });
+
+    for (const u of fin.allUpsells) {
+      lines.push({
+        id: u.id,
+        kind: "upsell",
+        projectId: o.id,
+        orderCode: o.orderId,
+        customerName: o.customerName,
+        customerEmail: o.customerEmail,
+        projectTitle: o.title || `${o.categoryName} — ${o.customerName}`,
+        packageName: o.packageName,
+        label: u.title || "Upsell",
+        amount: Number(u.amount) || 0,
+        status: u.status,
+        paidAt: u.paidAt,
+        createdAt: u.createdAt || u.invoicedAt || o.createdAt,
+        upsellId: u.id,
+      });
+    }
+
+    // Newest payment activity first within the project
+    lines.sort(
+      (a, b) =>
+        Date.parse(b.paidAt || b.createdAt || "") -
+        Date.parse(a.paidAt || a.createdAt || ""),
+    );
+
+    const paidTotal =
+      (paidBase ? fin.base : 0) + fin.paidUpsellsTotal;
+    const openTotal =
+      (paidBase ? 0 : fin.base) + fin.openUpsellsTotal;
+
+    const lastPaidAt = lines
+      .filter((l) => String(l.status).toLowerCase() === "paid")
+      .map((l) => l.paidAt || l.createdAt)
+      .sort((a, b) => Date.parse(b || "") - Date.parse(a || ""))[0];
+
+    groups.push({
+      projectId: o.id,
+      orderCode: o.orderId,
+      customerName: o.customerName,
+      customerEmail: o.customerEmail,
+      projectTitle: o.title || `${o.categoryName} — ${o.customerName}`,
+      packageName: o.packageName,
+      categoryName: o.categoryName,
+      paymentStatus: String(o.paymentStatus || "pending").toLowerCase(),
+      lines,
+      paidTotal,
+      openTotal,
+      projectTotal: paidTotal,
+      expectedTotal: fin.pipelineTotal,
+      lastPaidAt,
+    });
+  }
+
+  groups.sort((a, b) => {
+    const ta = Date.parse(a.lastPaidAt || a.lines[0]?.createdAt || "") || 0;
+    const tb = Date.parse(b.lastPaidAt || b.lines[0]?.createdAt || "") || 0;
+    return tb - ta;
+  });
+
+  return groups;
+}
+
 export type CrmActivity = {
   id: string;
   type: ActivityType;
