@@ -225,6 +225,10 @@ function mergeUpsellRows(a: unknown, b: unknown): Dict[] {
 }
 
 function dealKey(d: Dict) {
+  const email = String(d.customerEmail || "")
+    .toLowerCase()
+    .trim();
+  if (email) return `em:${email}`;
   const orderCode = String(d.orderCode || "").trim();
   if (orderCode) return `ord:${orderCode}`;
   const orderId = String(d.orderId || "").trim();

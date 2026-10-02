@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clmApiFetch } from "@/lib/clm-api";
 import {
+  dedupeOrdersAndDeals,
   ensurePipelineLinks,
   type CrmState,
 } from "@/lib/crm-storage";
@@ -24,7 +25,10 @@ function repairCrmPipeline(payload: unknown): { payload: unknown; dirty: boolean
   if (!state.deleted || typeof state.deleted !== "object") {
     state.deleted = {};
   }
-  const dirty = ensurePipelineLinks(state);
+  let dirty = false;
+  if (dedupeOrdersAndDeals(state)) dirty = true;
+  if (ensurePipelineLinks(state)) dirty = true;
+  if (dedupeOrdersAndDeals(state)) dirty = true;
   return { payload: state, dirty };
 }
 

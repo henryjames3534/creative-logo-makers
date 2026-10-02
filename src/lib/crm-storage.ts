@@ -93,6 +93,8 @@ export type CrmDeal = {
   contactId?: string;
   companyId?: string;
   leadId?: string;
+  /** Customer email — used to collapse duplicate pipeline cards */
+  customerEmail?: string;
   /** Internal CRM order/project id — cascade-deleted with the project */
   orderId?: string;
   /** Public ORD-… code */
@@ -435,35 +437,97 @@ export function leadStatusToDealStage(status?: string): DealStage {
  */
 function ensurePipelineDealForLead(state: CrmState, lead: CrmLead): boolean {
   if (!lead?.id) return false;
+  const email = (lead.email || "").toLowerCase();
+  const order =
+    (email &&
+      (state.orders || []).find(
+        (o) => (o.customerEmail || "").toLowerCase() === email,
+      )) ||
+    null;
+
   const existing = (state.deals || []).find((d) => d.leadId === lead.id);
-  if (existing) return false;
+  if (existing) {
+    // Attach order if we have one and deal is missing it
+    if (order && !existing.orderId && !existing.orderCode) {
+      existing.orderId = order.id;
+      existing.orderCode = order.orderId;
+      existing.packageName = existing.packageName || order.packageName;
+      if (order.paymentStatus === "paid") {
+        existing.stage = "won";
+        existing.probability = 100;
+        existing.value = Number(order.amount) || existing.value;
+      }
+      existing.updatedAt = new Date().toISOString();
+      return true;
+    }
+    return false;
+  }
+
+  // Reuse deal already tied to this customer's order / email
+  const reusable =
+    (order &&
+      (state.deals || []).find(
+        (d) =>
+          d.orderId === order.id ||
+          (order.orderId && d.orderCode === order.orderId),
+      )) ||
+    (email &&
+      (state.deals || []).find((d) => {
+        if (!d.leadId) return false;
+        const other = state.leads.find((l) => l.id === d.leadId);
+        return !!other && (other.email || "").toLowerCase() === email;
+      })) ||
+    (email &&
+      (state.deals || []).find((d) => {
+        // Orphan deal whose lead was merged away — same order email
+        if (!d.leadId) return false;
+        const leadAlive = state.leads.some((l) => l.id === d.leadId);
+        if (leadAlive) return false;
+        if (!order) return false;
+        return (
+          d.orderId === order.id ||
+          (order.orderId && d.orderCode === order.orderId)
+        );
+      })) ||
+    null;
+
+  if (reusable) {
+    reusable.leadId = lead.id;
+    if (email) reusable.customerEmail = email;
+    if (order) {
+      reusable.orderId = reusable.orderId || order.id;
+      reusable.orderCode = reusable.orderCode || order.orderId;
+      reusable.packageName = reusable.packageName || order.packageName;
+      if (order.paymentStatus === "paid") {
+        reusable.stage = "won";
+        reusable.probability = 100;
+        reusable.value = Number(order.amount) || reusable.value;
+      }
+    }
+    reusable.updatedAt = new Date().toISOString();
+    return true;
+  }
 
   const now = new Date().toISOString();
   const stage = leadStatusToDealStage(lead.status);
-  // Prefer linking an order for this customer if one exists
-  const email = (lead.email || "").toLowerCase();
-  const order =
-    (state.orders || []).find(
-      (o) => (o.customerEmail || "").toLowerCase() === email,
-    ) || null;
-
+  const paid = order?.paymentStatus === "paid";
   const dealId = uid("dl");
   state.deals = state.deals || [];
   state.deals.unshift({
     id: dealId,
     title: `${lead.interest || "Lead"} — ${lead.name}`,
-    stage: order?.paymentStatus === "paid" ? "won" : stage,
-    value: Number(lead.valueEstimate) || Number(order?.amount) || 299,
+    stage: paid ? "won" : stage,
+    value: Number(order?.amount) || Number(lead.valueEstimate) || 299,
     currency: "USD",
-    probability:
-      order?.paymentStatus === "paid"
+    probability: paid
+      ? 100
+      : stage === "won"
         ? 100
-        : stage === "won"
-          ? 100
-          : stage === "lost"
-            ? 0
-            : Math.min(90, Math.max(15, lead.score || 20)),
+        : stage === "lost"
+          ? 0
+          : Math.min(90, Math.max(15, lead.score || 20)),
     leadId: lead.id,
+    customerEmail: email || undefined,
     orderId: order?.id,
     orderCode: order?.orderId,
     ownerId: lead.ownerId || "own_admin",
@@ -529,6 +593,7 @@ function ensurePipelineDealForOrder(state: CrmState, order: CrmOrder): boolean {
     value: Number(order.amount) || 0,
     currency: "USD",
     probability: paid ? 100 : 45,
+    customerEmail: email || undefined,
     orderId: order.id,
     orderCode: order.orderId,
     ownerId: "own_admin",
@@ -778,6 +843,9 @@ export async function hydrateCrmFromServer(): Promise<CrmState> {
   if (ensurePipelineLinks(state)) {
     saveCrm(state);
   }
+  if (dedupeOrdersAndDeals(state)) {
+    saveCrm(state);
+  }
   emitCrm(CRM_HYDRATED_EVENT, state);
   return state;
 }
@@ -857,7 +925,7 @@ function purgeJunkLeads(state: CrmState): boolean {
 }
 
 /** Collapse duplicate projects/deals from client+server dual writes. */
-function dedupeOrdersAndDeals(state: CrmState): boolean {
+export function dedupeOrdersAndDeals(state: CrmState): boolean {
   let dirty = false;
 
   const orderMap = new Map<string, CrmOrder>();
@@ -910,35 +978,107 @@ function dedupeOrdersAndDeals(state: CrmState): boolean {
   if (dirty) state.orders = [...orderMap.values()];
 
   const dealMap = new Map<string, CrmDeal>();
+  const dealEmail = (d: CrmDeal) => {
+    const direct = (d.customerEmail || "").toLowerCase();
+    if (direct) return direct;
+    if (d.leadId) {
+      const lead = (state.leads || []).find((l) => l.id === d.leadId);
+      const em = (lead?.email || "").toLowerCase();
+      if (em) return em;
+    }
+    if (d.orderId || d.orderCode) {
+      const order = (state.orders || []).find(
+        (o) =>
+          o.id === d.orderId ||
+          (d.orderCode && o.orderId === d.orderCode),
+      );
+      const em = (order?.customerEmail || "").toLowerCase();
+      if (em) return em;
+    }
+    return "";
+  };
+  const droppedDealIds: string[] = [];
   for (const d of state.deals || []) {
+    const email = dealEmail(d);
     const title = (d.title || "").toLowerCase();
     const pkg = (d.packageName || "").toLowerCase();
-    const key = d.orderCode
-      ? `ord:${d.orderCode}`
-      : d.orderId
-        ? `ordid:${d.orderId}`
-        : title && pkg
-          ? `t:${title}:${pkg}`
-          : `id:${d.id}`;
+    // One pipeline card per customer email (stops lead+order dual cards)
+    const key = email
+      ? `em:${email}`
+      : d.orderCode
+        ? `ord:${d.orderCode}`
+        : d.orderId
+          ? `ordid:${d.orderId}`
+          : title && pkg
+            ? `t:${title}:${pkg}`
+            : `id:${d.id}`;
     const prev = dealMap.get(key);
     if (!prev) {
       dealMap.set(key, d);
       continue;
     }
     dirty = true;
-    const preferNewer =
-      Date.parse(d.updatedAt || "") >= Date.parse(prev.updatedAt || "");
+    // Prefer the deal that is linked to an order / has higher certainty
+    const score = (x: CrmDeal) =>
+      (x.orderCode || x.orderId ? 40 : 0) +
+      (x.leadId && (state.leads || []).some((l) => l.id === x.leadId)
+        ? 20
+        : 0) +
+      (x.stage === "won" ? 10 : 0) +
+      (Date.parse(x.updatedAt || "") || 0) / 1e13;
+    const keep = score(d) >= score(prev) ? d : prev;
+    const drop = keep === d ? prev : d;
+    droppedDealIds.push(drop.id);
     dealMap.set(key, {
-      ...(preferNewer ? prev : d),
-      ...(preferNewer ? d : prev),
-      id: prev.id,
+      ...drop,
+      ...keep,
+      id: keep.id,
+      leadId: keep.leadId || drop.leadId,
+      orderId: keep.orderId || drop.orderId,
+      orderCode: keep.orderCode || drop.orderCode,
+      packageName: keep.packageName || drop.packageName,
       probability: Math.max(prev.probability || 0, d.probability || 0),
-      value: Math.max(prev.value || 0, d.value || 0),
+      value:
+        Number(keep.orderCode || keep.orderId ? keep.value : 0) ||
+        Math.max(prev.value || 0, d.value || 0),
+      stage:
+        keep.stage === "won" || drop.stage === "won"
+          ? "won"
+          : keep.stage || drop.stage,
     });
   }
   if (dealMap.size !== (state.deals || []).length) {
     dirty = true;
     state.deals = [...dealMap.values()];
+    if (droppedDealIds.length) {
+      if (!state.deleted) state.deleted = {};
+      state.deleted.deals = Array.from(
+        new Set([...(state.deleted.deals || []), ...droppedDealIds]),
+      ).slice(-500);
+    }
+  }
+
+  // Drop orphan deals with no live lead and no order link
+  const beforeOrphans = state.deals.length;
+  state.deals = state.deals.filter((d) => {
+    const hasLead =
+      !!d.leadId && (state.leads || []).some((l) => l.id === d.leadId);
+    const hasOrder =
+      !!d.orderId ||
+      !!d.orderCode ||
+      (state.orders || []).some(
+        (o) => o.id === d.orderId || o.orderId === d.orderCode,
+      );
+    if (hasLead || hasOrder) return true;
+    droppedDealIds.push(d.id);
+    return false;
+  });
+  if (state.deals.length !== beforeOrphans) {
+    dirty = true;
+    if (!state.deleted) state.deleted = {};
+    state.deleted.deals = Array.from(
+      new Set([...(state.deleted.deals || []), ...droppedDealIds]),
+    ).slice(-500);
   }
 
   return dirty;
