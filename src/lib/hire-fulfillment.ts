@@ -6,6 +6,7 @@ import {
   assignTaskToDesigner,
   loadCrm,
   saveCrm,
+  upsertLead,
   type CrmOrder,
 } from "@/lib/crm-storage";
 
@@ -37,6 +38,31 @@ export function fulfillDirectHireAfterPayment(input: {
   let project =
     state.orders.find((o) => o.serviceId === input.serviceId) ||
     state.orders.find((o) => o.orderId === input.orderId);
+
+  // Always surface package purchase as a lead in admin Leads.
+  try {
+    upsertLead({
+      name: input.customerName,
+      email: input.customerEmail.toLowerCase(),
+      source: "Package brief",
+      interest: `${brief.categoryName} · ${brief.packageName}`,
+      notes: [
+        `Package: ${brief.packageName} (${brief.packagePrice})`,
+        `Mode: ${isDirect ? "direct hire" : "contest"}`,
+        brief.designerName
+          ? `Designer: ${brief.designerName}${brief.designerHandle ? ` (@${brief.designerHandle})` : ""}`
+          : "",
+        `Order: ${input.orderId}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      score: 85,
+      status: "new",
+      valueEstimate: amount || 699,
+    });
+  } catch {
+    /* ignore */
+  }
 
   if (!project) {
     const revisionLimit = brief.packageName.toLowerCase().includes("platinum")

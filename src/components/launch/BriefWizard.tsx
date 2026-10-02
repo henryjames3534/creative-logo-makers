@@ -18,9 +18,16 @@ import {
 import type { DesignerProfile } from "@/data/designers-types";
 import type { PackageTier } from "@/data/packages";
 import { categoryDetailsHref } from "@/data/serviceRoutes";
+import { captureFormLead } from "@/lib/capture-form-lead";
 import { savePendingBrief, type PendingBrief } from "@/lib/auth-storage";
+import { submitLeadForm } from "@/lib/submit-lead-form";
 
 type Answers = Record<string, string | string[]>;
+
+function answerText(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ");
+  return String(value || "").trim();
+}
 
 export function BriefWizard({
   category,
@@ -40,6 +47,7 @@ export function BriefWizard({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const isDirectHire = Boolean(hireDesigner);
 
   const step = steps[stepIndex];
@@ -99,7 +107,64 @@ export function BriefWizard({
     return true;
   }
 
-  function submitBrief() {
+  async function persistPackageLead() {
+    const email = answerText(answers.email).toLowerCase();
+    const brandName = answerText(answers.brandName);
+    const name =
+      brandName ||
+      user?.name ||
+      (email ? email.split("@")[0] : "") ||
+      "Package lead";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    const answerLines = Object.entries(answers)
+      .filter(([key]) => key !== "email")
+      .map(([key, value]) => `${key}: ${answerText(value)}`)
+      .filter((line) => !line.endsWith(": "))
+      .slice(0, 40);
+
+    const topic = `${category.productName} · ${pkg.name}`;
+    const message = [
+      `Package: ${pkg.name} (${pkg.price})`,
+      `Category: ${category.productName}`,
+      `Mode: ${isDirectHire ? "direct hire" : "contest"}`,
+      hireDesigner
+        ? `Designer: ${hireDesigner.name} (@${hireDesigner.handle})`
+        : "",
+      "",
+      ...answerLines,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const payload = {
+      form: "package" as const,
+      name: name.slice(0, 120),
+      email,
+      topic,
+      message,
+      page:
+        typeof window !== "undefined"
+          ? window.location.pathname + window.location.search
+          : `/launch/${category.slug}`,
+    };
+
+    // Local CRM first so admin hydrate still sees it if network fails later.
+    captureFormLead(payload);
+    await submitLeadForm(payload);
+  }
+
+  async function submitBrief() {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await persistPackageLead();
+    } catch {
+      /* still continue — brief UX should not block on CRM */
+    }
+
     const brief: PendingBrief = {
       categorySlug: category.slug,
       categoryName: category.productName,
@@ -119,18 +184,20 @@ export function BriefWizard({
       attachBrief(brief);
       setNeedsAuth(false);
       setDone(true);
+      setSubmitting(false);
       return;
     }
 
     savePendingBrief(brief);
     setNeedsAuth(true);
     setDone(true);
+    setSubmitting(false);
   }
 
-  function next() {
+  async function next() {
     if (!validate(step)) return;
     if (isLast) {
-      submitBrief();
+      await submitBrief();
       return;
     }
     setStepIndex((i) => i + 1);
@@ -378,10 +445,15 @@ export function BriefWizard({
               </button>
               <button
                 type="button"
-                onClick={next}
-                className="rounded-full bg-cta px-7 py-3 text-sm font-semibold !text-white hover:bg-cta-hover"
+                onClick={() => void next()}
+                disabled={submitting}
+                className="rounded-full bg-cta px-7 py-3 text-sm font-semibold !text-white hover:bg-cta-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isLast ? "Submit brief" : "Continue"}
+                {submitting
+                  ? "Submitting…"
+                  : isLast
+                    ? "Submit brief"
+                    : "Continue"}
               </button>
             </div>
           </div>

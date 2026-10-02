@@ -8,7 +8,7 @@ export const FORM_FROM_EMAIL = (
   "Creative Logo Makers <reply@creativelogomakers.com>"
 ).trim();
 
-export type LeadFormType = "contact" | "studio" | "signup";
+export type LeadFormType = "contact" | "studio" | "signup" | "package";
 
 export type LeadFormPayload = {
   form: LeadFormType;
@@ -25,6 +25,9 @@ export function thankYouSubject(form: LeadFormType) {
   }
   if (form === "signup") {
     return "Welcome to Creative Logo Makers";
+  }
+  if (form === "package") {
+    return "Thanks — we received your package brief | Creative Logo Makers";
   }
   return "Thanks — we received your message | Creative Logo Makers";
 }
@@ -52,6 +55,19 @@ export function thankYouText(payload: LeadFormPayload) {
       "You can launch contests, hire designers, and track updates from your account dashboard.",
       "",
       "Questions? Reply to this email or contact reply@creativelogomakers.com.",
+      "",
+      "— Creative Logo Makers",
+      "https://www.creativelogomakers.com",
+    ].join("\n");
+  }
+  if (payload.form === "package") {
+    return [
+      `Hi ${first},`,
+      "",
+      "Thanks — we received your package brief at Creative Logo Makers.",
+      "Our team will follow up shortly. You can track contest updates from your account after you sign in.",
+      "",
+      "Questions? Reply to this email or write to reply@creativelogomakers.com.",
       "",
       "— Creative Logo Makers",
       "https://www.creativelogomakers.com",
@@ -176,6 +192,19 @@ export function thankYouHtml(payload: LeadFormPayload) {
       <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#4b4a48">
         Welcome to Creative Logo Makers — your account is ready.
         Launch contests, hire designers, and track project updates from your dashboard.
+      </p>
+      <p style="margin:0;font-size:15px;line-height:1.6;color:#4b4a48">
+        Questions? Reply to this email anytime.
+      </p>`;
+    ctaLabel = "Open your account";
+    ctaHref = "https://www.creativelogomakers.com/account";
+  } else if (payload.form === "package") {
+    title = "Package brief received";
+    bodyHtml = `
+      <p style="margin:0 0 14px;font-size:16px;line-height:1.6">Hi ${first},</p>
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#4b4a48">
+        Thanks — we received your package brief. Our team will follow up shortly.
+        Sign in anytime to track contest updates from your account.
       </p>
       <p style="margin:0;font-size:15px;line-height:1.6;color:#4b4a48">
         Questions? Reply to this email anytime.

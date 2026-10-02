@@ -18,7 +18,7 @@ import { isSmtpConfigured, sendSmtpMail } from "@/lib/smtp-mail";
 
 export const runtime = "nodejs";
 
-const ALLOWED: LeadFormType[] = ["contact", "studio", "signup"];
+const ALLOWED: LeadFormType[] = ["contact", "studio", "signup", "package"];
 
 const DEFAULT_EMAIL_RELAY =
   "https://creative-logo-makers-lovat.vercel.app/api/forms/email";
@@ -72,6 +72,7 @@ function normalize(body: unknown): LeadFormPayload | null {
 function sourceLabel(form: LeadFormType) {
   if (form === "contact") return "Contact form";
   if (form === "studio") return "Studio form";
+  if (form === "package") return "Package brief";
   return "Signup";
 }
 
@@ -85,9 +86,10 @@ function buildLeadPatch(payload: LeadFormPayload) {
     email: payload.email,
     source,
     status: "new",
-    score: payload.form === "studio" ? 70 : 55,
+    score: payload.form === "studio" ? 70 : payload.form === "package" ? 80 : 55,
     interest: payload.topic || payload.form,
-    valueEstimate: payload.form === "studio" ? 999 : 499,
+    valueEstimate:
+      payload.form === "studio" ? 999 : payload.form === "package" ? 699 : 499,
     ownerId: "own_admin",
     notes: [payload.message || "", payload.page ? `Page: ${payload.page}` : ""]
       .filter(Boolean)

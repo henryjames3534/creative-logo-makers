@@ -14,7 +14,7 @@ import { isSmtpConfigured, sendSmtpMail } from "@/lib/smtp-mail";
 
 export const runtime = "nodejs";
 
-const ALLOWED: LeadFormType[] = ["contact", "studio", "signup"];
+const ALLOWED: LeadFormType[] = ["contact", "studio", "signup", "package"];
 
 function normalize(body: unknown): LeadFormPayload | null {
   if (!body || typeof body !== "object") return null;

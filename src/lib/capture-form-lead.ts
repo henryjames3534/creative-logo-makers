@@ -23,7 +23,9 @@ export function captureFormLead(payload: LeadFormPayload) {
           ? "Contact form"
           : payload.form === "studio"
             ? "Studio form"
-            : "Signup",
+            : payload.form === "package"
+              ? "Package brief"
+              : "Signup",
       interest: payload.topic || payload.form,
       notes: [
         payload.message?.trim() || "",
@@ -31,9 +33,15 @@ export function captureFormLead(payload: LeadFormPayload) {
       ]
         .filter(Boolean)
         .join("\n"),
-      score: payload.form === "studio" ? 70 : 55,
+      score:
+        payload.form === "studio" ? 70 : payload.form === "package" ? 80 : 55,
       status: "new",
-      valueEstimate: payload.form === "studio" ? 999 : 499,
+      valueEstimate:
+        payload.form === "studio"
+          ? 999
+          : payload.form === "package"
+            ? 699
+            : 499,
     });
   } catch {
     /* ignore */

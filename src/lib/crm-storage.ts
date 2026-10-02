@@ -368,7 +368,10 @@ export function isContactFormLead(lead: { source?: string }) {
 export function isWebsiteFormLead(lead: { source?: string }) {
   const s = String(lead.source || "").trim().toLowerCase();
   return (
-    s === "contact form" || s === "studio form" || s === "signup"
+    s === "contact form" ||
+    s === "studio form" ||
+    s === "signup" ||
+    s === "package brief"
   );
 }
 
