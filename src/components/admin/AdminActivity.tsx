@@ -1,13 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   addActivity,
-  loadCrm,
   relativeDay,
   type ActivityType,
-  type CrmState,
 } from "@/lib/crm-storage";
 
 const TYPES: ActivityType[] = [
@@ -22,7 +21,7 @@ const TYPES: ActivityType[] = [
 ];
 
 export function AdminActivity() {
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
   const [type, setType] = useState<ActivityType | "all">("all");
   const [formOpen, setFormOpen] = useState(false);
   const [draft, setDraft] = useState({
@@ -30,10 +29,6 @@ export function AdminActivity() {
     title: "",
     body: "",
   });
-
-  useEffect(() => {
-    setState(loadCrm());
-  }, []);
 
   const ownerMap = useMemo(() => {
     const m = new Map<string, string>();

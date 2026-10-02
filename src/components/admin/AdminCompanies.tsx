@@ -1,17 +1,16 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
-  loadCrm,
   relativeDay,
   upsertCompany,
   type CrmCompany,
-  type CrmState,
 } from "@/lib/crm-storage";
 
 export function AdminCompanies() {
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
   const [q, setQ] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CrmCompany | null>(null);
@@ -23,10 +22,6 @@ export function AdminCompanies() {
     country: "United States",
     notes: "",
   });
-
-  useEffect(() => {
-    setState(loadCrm());
-  }, []);
 
   const contactCounts = useMemo(() => {
     const m = new Map<string, number>();

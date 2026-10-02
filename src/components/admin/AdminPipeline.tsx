@@ -2,20 +2,19 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   DEAL_STAGES,
-  loadCrm,
   money,
   relativeDay,
   updateDealStage,
   upsertDeal,
   type CrmDeal,
-  type CrmState,
   type DealStage,
 } from "@/lib/crm-storage";
 
 export function AdminPipeline() {
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
   const [dragging, setDragging] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [draft, setDraft] = useState({
@@ -25,10 +24,6 @@ export function AdminPipeline() {
     packageName: "Gold",
     probability: "20",
   });
-
-  useEffect(() => {
-    setState(loadCrm());
-  }, []);
 
   const byStage = useMemo(() => {
     const map: Record<DealStage, CrmDeal[]> = {

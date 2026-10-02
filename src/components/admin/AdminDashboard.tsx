@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   AdminCard,
   Badge,
   SectionTitle,
   StatCard,
 } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   crmStats,
   DEAL_STAGES,
@@ -15,16 +16,14 @@ import {
   money,
   onVisitorTracked,
   relativeDay,
-  type CrmState,
 } from "@/lib/crm-storage";
 
 export function AdminDashboard() {
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
 
   useEffect(() => {
-    setState(loadCrm());
     return onVisitorTracked(() => setState(loadCrm()));
-  }, []);
+  }, [setState]);
 
   const stats = useMemo(
     () => (state ? crmStats(state) : null),

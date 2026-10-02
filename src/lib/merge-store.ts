@@ -172,14 +172,99 @@ function userKey(u: Dict) {
 
 /** Prefer non-demo seed rows when merging conflicting demo IDs. */
 function looksLikeSeedEmail(email: string) {
+  const e = email.trim().toLowerCase();
   return (
-    email.endsWith(".example") ||
-    email === "dbsync@example.com" ||
-    email.includes("@northwind.") ||
-    email.includes("@pulsehealth.") ||
-    email.includes("@orbitapps.") ||
-    email.includes("@vistaretail.")
+    e.endsWith(".example") ||
+    e === "dbsync@example.com" ||
+    e.includes("@northwind.") ||
+    e.includes("@pulsehealth.") ||
+    e.includes("@orbitapps.") ||
+    e.includes("@vistaretail.") ||
+    e.includes("@indiecafe.") ||
+    e.includes("chris@ indiecafe")
   );
+}
+
+const SEED_DEAL_IDS = new Set([
+  "dl_1",
+  "dl_2",
+  "dl_3",
+  "dl_4",
+  "dl_5",
+  "dl_6",
+]);
+const SEED_COMPANY_IDS = new Set(["co_1", "co_2", "co_3", "co_4"]);
+const SEED_CONTACT_IDS = new Set(["ct_1", "ct_2", "ct_3", "ct_4", "ct_5"]);
+const SEED_LEAD_IDS = new Set([
+  "ld_1",
+  "ld_2",
+  "ld_3",
+  "ld_4",
+  "ld_5",
+  "ld_6",
+]);
+const SEED_ORDER_IDS = new Set(["or_1", "or_2", "or_3"]);
+const SEED_TASK_IDS = new Set([
+  "tk_1",
+  "tk_2",
+  "tk_3",
+  "tk_5",
+  "tk_p1",
+  "tk_p2",
+  "tk_p3",
+  "tk_p4",
+]);
+const SEED_ACTIVITY_IDS = new Set([
+  "ac_1",
+  "ac_2",
+  "ac_3",
+  "ac_4",
+  "ac_5",
+]);
+const SEED_COMPANY_NAMES = new Set([
+  "northwind foods",
+  "pulse health",
+  "orbit apps",
+  "vista retail co",
+  "indie cafe",
+]);
+
+function isSeedDeal(d: Dict) {
+  const id = String(d.id || "");
+  if (SEED_DEAL_IDS.has(id)) return true;
+  const title = String(d.title || "").toLowerCase();
+  return (
+    title.includes("northwind") ||
+    title.includes("pulse health") ||
+    title.includes("orbit launch") ||
+    title.includes("indie cafe") ||
+    title.includes("vista seasonal") ||
+    title.includes("abdul brand starter")
+  );
+}
+
+function isSeedCompany(c: Dict) {
+  const id = String(c.id || "");
+  if (SEED_COMPANY_IDS.has(id)) return true;
+  const name = String(c.name || "").toLowerCase();
+  if (SEED_COMPANY_NAMES.has(name)) return true;
+  const website = String(c.website || "").toLowerCase();
+  return website.endsWith(".example");
+}
+
+function isSeedContact(c: Dict) {
+  if (SEED_CONTACT_IDS.has(String(c.id || ""))) return true;
+  return looksLikeSeedEmail(String(c.email || ""));
+}
+
+function isSeedLead(l: Dict) {
+  if (SEED_LEAD_IDS.has(String(l.id || ""))) return true;
+  return looksLikeSeedEmail(String(l.email || ""));
+}
+
+function isSeedOrder(o: Dict) {
+  if (SEED_ORDER_IDS.has(String(o.id || ""))) return true;
+  return looksLikeSeedEmail(String(o.customerEmail || ""));
 }
 
 export function mergeCrmDocuments(
@@ -209,49 +294,51 @@ export function mergeCrmDocuments(
     incomingLeads,
     leadKey,
     ["updatedAt", "createdAt"],
-  ).filter((l) => !looksLikeSeedEmail(String(l.email || "")));
+  ).filter((l) => !isSeedLead(l));
 
   const orders = mergeByKeys(
     asArray<Dict>(r.orders),
     asArray<Dict>(i.orders),
     orderKey,
     ["updatedAt", "createdAt"],
-  ).filter((o) => !looksLikeSeedEmail(String(o.customerEmail || "")));
+  ).filter((o) => !isSeedOrder(o));
 
   const contacts = mergeByKeys(
     asArray<Dict>(r.contacts),
     asArray<Dict>(i.contacts),
     contactKey,
     ["updatedAt", "createdAt"],
-  );
+  ).filter((c) => !isSeedContact(c));
 
   const activities = mergeByKeys(
     asArray<Dict>(r.activities),
     asArray<Dict>(i.activities),
     activityKey,
     ["createdAt"],
-  ).slice(0, 400);
+  )
+    .filter((a) => !SEED_ACTIVITY_IDS.has(String(a.id || "")))
+    .slice(0, 400);
 
   const deals = mergeByKeys(
     asArray<Dict>(r.deals),
     asArray<Dict>(i.deals),
     (d) => String(d.id || ""),
     ["updatedAt", "createdAt"],
-  );
+  ).filter((d) => !isSeedDeal(d));
 
   const tasks = mergeByKeys(
     asArray<Dict>(r.tasks),
     asArray<Dict>(i.tasks),
     (t) => String(t.id || ""),
     ["updatedAt", "createdAt", "dueAt"],
-  );
+  ).filter((t) => !SEED_TASK_IDS.has(String(t.id || "")));
 
   const companies = mergeByKeys(
     asArray<Dict>(r.companies),
     asArray<Dict>(i.companies),
     (c) => String(c.id || c.name || ""),
     ["updatedAt", "createdAt"],
-  );
+  ).filter((c) => !isSeedCompany(c));
 
   const inbox = mergeByKeys(
     asArray<Dict>(r.inbox),
@@ -265,7 +352,7 @@ export function mergeCrmDocuments(
     asArray<Dict>(i.reviews),
     (x) => String(x.id || ""),
     ["updatedAt", "createdAt"],
-  );
+  ).filter((x) => !looksLikeSeedEmail(String(x.customerEmail || "")) && String(x.id || "") !== "rv_seed_1");
 
   // Incoming leads (e.g. contact form) clear their tombstones so a deleted
   // email can submit again and still appear in the admin dashboard.

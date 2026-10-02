@@ -1,4 +1,4 @@
-/** After client pays for a direct designer hire → CRM project + designer portal */
+/** After client pays for a package / direct hire → local CRM + server CRM */
 
 import type { PendingBrief } from "@/lib/auth-storage";
 import {
@@ -6,7 +6,10 @@ import {
   assignTaskToDesigner,
   loadCrm,
   saveCrm,
+  upsertContact,
+  upsertDeal,
   upsertLead,
+  upsertOrder,
   type CrmOrder,
 } from "@/lib/crm-storage";
 
@@ -17,6 +20,36 @@ function parseAmount(raw: string) {
 
 function uid(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
+}
+
+function pushFulfillToServer(input: {
+  customerEmail: string;
+  customerName: string;
+  brief: PendingBrief;
+  serviceId: string;
+  orderId: string;
+  amount: number;
+}) {
+  const brief = input.brief;
+  void fetch("/api/crm/fulfill", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      customerEmail: input.customerEmail,
+      customerName: input.customerName,
+      categoryName: brief.categoryName,
+      packageName: brief.packageName,
+      packagePrice: brief.packagePrice,
+      amount: input.amount,
+      orderId: input.orderId,
+      serviceId: input.serviceId,
+      hireMode: brief.hireMode || "contest",
+      designerId: brief.designerId,
+      designerName: brief.designerName,
+      designerHandle: brief.designerHandle,
+      paymentStatus: "paid",
+    }),
+  }).catch(() => null);
 }
 
 export function fulfillDirectHireAfterPayment(input: {
@@ -33,17 +66,23 @@ export function fulfillDirectHireAfterPayment(input: {
   const now = new Date().toISOString();
   const amount = input.amount || parseAmount(brief.packagePrice);
   const isDirect = brief.hireMode === "direct" && brief.designerId;
+  const email = input.customerEmail.toLowerCase();
 
-  // Upsert CRM project linked to customer service
-  let project =
-    state.orders.find((o) => o.serviceId === input.serviceId) ||
-    state.orders.find((o) => o.orderId === input.orderId);
+  try {
+    upsertContact({
+      name: input.customerName,
+      email,
+      title: "Customer",
+      tags: ["package", isDirect ? "direct-hire" : "contest", "paid"],
+    });
+  } catch {
+    /* ignore */
+  }
 
-  // Always surface package purchase as a lead in admin Leads.
   try {
     upsertLead({
       name: input.customerName,
-      email: input.customerEmail.toLowerCase(),
+      email,
       source: "Package brief",
       interest: `${brief.categoryName} · ${brief.packageName}`,
       notes: [
@@ -56,13 +95,33 @@ export function fulfillDirectHireAfterPayment(input: {
       ]
         .filter(Boolean)
         .join("\n"),
-      score: 85,
-      status: "new",
+      score: 90,
+      status: "qualified",
       valueEstimate: amount || 699,
     });
   } catch {
     /* ignore */
   }
+
+  try {
+    upsertDeal({
+      title: `${brief.categoryName} — ${input.customerName}`,
+      value: amount || 699,
+      stage: "won",
+      packageName: brief.packageName,
+      probability: 100,
+      ownerId: "own_admin",
+      category: brief.categoryName,
+      closeDate: now,
+    });
+  } catch {
+    /* ignore */
+  }
+
+  // Upsert CRM project linked to customer service
+  let project =
+    state.orders.find((o) => o.serviceId === input.serviceId) ||
+    state.orders.find((o) => o.orderId === input.orderId);
 
   if (!project) {
     const revisionLimit = brief.packageName.toLowerCase().includes("platinum")
@@ -77,7 +136,7 @@ export function fulfillDirectHireAfterPayment(input: {
         ? `${brief.categoryName} — ${brief.designerName || "1-to-1"}`
         : `${brief.categoryName} — ${input.customerName}`,
       customerName: input.customerName,
-      customerEmail: input.customerEmail.toLowerCase(),
+      customerEmail: email,
       categoryName: brief.categoryName,
       packageName: brief.packageName,
       amount,
@@ -96,12 +155,12 @@ export function fulfillDirectHireAfterPayment(input: {
     state.orders.unshift(project);
     state.activities.unshift({
       id: uid("ac"),
-      type: "deal",
+      type: "payment",
       title: isDirect ? "Direct hire paid" : "Contest paid",
       body: `${input.customerEmail} · ${brief.packageName} · ${brief.packagePrice}`,
       createdAt: now,
       ownerId: "own_admin",
-      relatedType: "project",
+      relatedType: "order",
       relatedId: project.id,
     });
     saveCrm(state);
@@ -111,6 +170,29 @@ export function fulfillDirectHireAfterPayment(input: {
     project.updatedAt = now;
     saveCrm(state);
   }
+
+  try {
+    upsertOrder({
+      id: project.id,
+      orderId: project.orderId,
+      customerName: project.customerName,
+      customerEmail: project.customerEmail,
+      categoryName: project.categoryName,
+      packageName: project.packageName,
+      amount: project.amount,
+      status: project.status,
+      paymentStatus: "paid",
+      serviceId: project.serviceId,
+      designerCount: project.designerCount,
+      revisionLimit: project.revisionLimit,
+      title: project.title,
+    });
+  } catch {
+    /* ignore */
+  }
+
+  // Server source of truth for admin on any device
+  pushFulfillToServer(input);
 
   if (!isDirect || !brief.designerId || !brief.designerName) return;
 

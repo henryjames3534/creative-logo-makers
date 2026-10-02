@@ -1,19 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
-  loadCrm,
   relativeDay,
   upsertTask,
-  type CrmState,
   type CrmTask,
   type TaskPriority,
   type TaskStatus,
 } from "@/lib/crm-storage";
 
 export function AdminTasks() {
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
   const [status, setStatus] = useState<TaskStatus | "all">("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CrmTask | null>(null);
@@ -23,10 +22,6 @@ export function AdminTasks() {
     priority: "medium" as TaskPriority,
     dueAt: "",
   });
-
-  useEffect(() => {
-    setState(loadCrm());
-  }, []);
 
   const rows = useMemo(() => {
     if (!state) return [];

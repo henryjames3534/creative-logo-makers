@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import { adminReplyToCustomer } from "@/lib/auth-storage";
 import {
   deleteInboxItem,
@@ -11,11 +12,10 @@ import {
   relativeDay,
   updateInboxItem,
   type CrmInboxItem,
-  type CrmState,
 } from "@/lib/crm-storage";
 
 export function AdminSupport() {
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
   const [filter, setFilter] = useState<"open" | "all" | "revision" | "message">(
     "open",
   );
@@ -23,9 +23,8 @@ export function AdminSupport() {
   const [reply, setReply] = useState("");
 
   useEffect(() => {
-    setState(loadCrm());
     return onInboxUpdated(() => setState(loadCrm()));
-  }, []);
+  }, [setState]);
 
   const rows = useMemo(() => {
     if (!state?.inbox) return [];

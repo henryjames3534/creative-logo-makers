@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   addProjectRevision,
   deleteOrder,
@@ -14,7 +15,6 @@ import {
   updateProjectRevision,
   upsertTask,
   type CrmOrder,
-  type CrmState,
   type CrmTask,
   type ProjectRevisionStatus,
   type TaskPriority,
@@ -32,7 +32,7 @@ const REV_STATUSES: ProjectRevisionStatus[] = [
 export function AdminProjects() {
   const searchParams = useSearchParams();
   const focusId = searchParams.get("id");
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<"tasks" | "revisions">("revisions");
@@ -50,9 +50,8 @@ export function AdminProjects() {
   const [revDraft, setRevDraft] = useState({ title: "", note: "" });
 
   useEffect(() => {
-    setState(loadCrm());
     return onInboxUpdated(() => setState(loadCrm()));
-  }, []);
+  }, [setState]);
 
   useEffect(() => {
     if (focusId) {

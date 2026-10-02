@@ -76,26 +76,71 @@ function sourceLabel(form: LeadFormType) {
   return "Signup";
 }
 
+function parsePackageMeta(payload: LeadFormPayload) {
+  const message = payload.message || "";
+  const topic = payload.topic || "";
+  const packageLine = message.match(/Package:\s*([^(]+?)(?:\s*\(([^)]*)\))?/i);
+  const categoryLine = message.match(/Category:\s*(.+)/i);
+  const packageName =
+    (packageLine?.[1] || topic.split("·")[1] || "Package").trim() || "Package";
+  const packagePriceRaw = (packageLine?.[2] || "").trim();
+  const amount = Number(String(packagePriceRaw).replace(/[^0-9.]/g, "")) || 0;
+  const categoryName =
+    (categoryLine?.[1] || topic.split("·")[0] || payload.form).trim() ||
+    "Design";
+  return { packageName, packagePriceRaw, amount, categoryName };
+}
+
 function buildLeadPatch(payload: LeadFormPayload) {
   const now = new Date().toISOString();
   const source = sourceLabel(payload.form);
+  const meta =
+    payload.form === "package" ? parsePackageMeta(payload) : null;
+
+  const valueEstimate =
+    payload.form === "studio"
+      ? 999
+      : payload.form === "package"
+        ? meta?.amount || 699
+        : 499;
+
+  const contactId = uid("ct");
+  const leadId = uid("ld");
+  const dealId = uid("dl");
+  const orderIdInternal = uid("or");
+  const orderCode = `ORD-${orderIdInternal.slice(-8).toUpperCase()}`;
+
+  const contact = {
+    id: contactId,
+    name: payload.name,
+    email: payload.email,
+    title: payload.form === "package" ? "Customer" : undefined,
+    ownerId: "own_admin",
+    tags: [
+      payload.form,
+      payload.form === "package" ? "package-brief" : "website-form",
+    ],
+    createdAt: now,
+    lastTouchAt: now,
+  };
 
   const lead = {
-    id: uid("ld"),
+    id: leadId,
     name: payload.name,
     email: payload.email,
     source,
-    status: "new",
-    score: payload.form === "studio" ? 70 : payload.form === "package" ? 80 : 55,
+    status: "new" as const,
+    score:
+      payload.form === "studio" ? 70 : payload.form === "package" ? 80 : 55,
     interest: payload.topic || payload.form,
-    valueEstimate:
-      payload.form === "studio" ? 999 : payload.form === "package" ? 699 : 499,
+    valueEstimate,
     ownerId: "own_admin",
     notes: [payload.message || "", payload.page ? `Page: ${payload.page}` : ""]
       .filter(Boolean)
       .join("\n"),
     createdAt: now,
     updatedAt: now,
+    contactId,
   };
 
   const visitor = {
@@ -137,12 +182,110 @@ function buildLeadPatch(payload: LeadFormPayload) {
     relatedId: lead.id,
   };
 
-  return { now, source, lead, visitor, activity, leadNote };
+  const deals =
+    payload.form === "package" || payload.form === "studio"
+      ? [
+          {
+            id: dealId,
+            title:
+              payload.form === "package"
+                ? `${meta?.categoryName || "Design"} — ${payload.name}`
+                : `Studio — ${payload.name}`,
+            stage: payload.form === "package" ? ("brief" as const) : ("qualified" as const),
+            value: valueEstimate,
+            currency: "USD",
+            probability: payload.form === "package" ? 45 : 35,
+            contactId,
+            leadId,
+            ownerId: "own_admin",
+            category: meta?.categoryName,
+            packageName:
+              payload.form === "package" ? meta?.packageName : "Studio",
+            closeDate: new Date(
+              Date.now() + (payload.form === "package" ? 14 : 30) * 86400000,
+            ).toISOString(),
+            createdAt: now,
+            updatedAt: now,
+          },
+        ]
+      : [];
+
+  const orders =
+    payload.form === "package"
+      ? [
+          {
+            id: orderIdInternal,
+            orderId: orderCode,
+            title: `${meta?.categoryName || "Design"} — ${payload.name}`,
+            customerName: payload.name,
+            customerEmail: payload.email,
+            categoryName: meta?.categoryName || "Design",
+            packageName: meta?.packageName || "Package",
+            amount: meta?.amount || valueEstimate,
+            status: "brief_submitted",
+            paymentStatus: "pending",
+            createdAt: now,
+            updatedAt: now,
+            designerCount: 0,
+            revisionLimit:
+              String(meta?.packageName || "")
+                .toLowerCase()
+                .includes("platinum")
+                ? 5
+                : String(meta?.packageName || "")
+                      .toLowerCase()
+                      .includes("gold")
+                  ? 4
+                  : 3,
+            revisionsUsed: 0,
+            revisions: [],
+            messages: [],
+            assignedDesignerIds: [],
+          },
+        ]
+      : [];
+
+  if (orders.length) {
+    leadNote.body += ` · Order ${orderCode}`;
+  }
+
+  return {
+    now,
+    source,
+    lead,
+    contact,
+    visitor,
+    activity,
+    leadNote,
+    deals,
+    orders,
+  };
+}
+
+function formCrmPatch(payload: LeadFormPayload) {
+  const {
+    lead,
+    contact,
+    visitor,
+    activity,
+    leadNote,
+    deals,
+    orders,
+  } = buildLeadPatch(payload);
+  return {
+    version: 1,
+    leads: [lead],
+    contacts: [contact],
+    visitors: [visitor],
+    activities: [activity, leadNote],
+    deals,
+    orders,
+  };
 }
 
 /** Persist via sibling host that already has INTERNAL_API_KEY (www). */
 async function persistLeadViaCrmProxy(payload: LeadFormPayload) {
-  const { now, lead, visitor, activity, leadNote } = buildLeadPatch(payload);
+  const { now } = buildLeadPatch(payload);
   const url = crmProxyUrl();
   if (!url) throw new Error("CRM proxy URL is not configured.");
 
@@ -157,12 +300,7 @@ async function persistLeadViaCrmProxy(payload: LeadFormPayload) {
       ? (current.payload as Record<string, unknown>)
       : { version: 1 };
 
-  const merged = mergeCrmDocuments(base, {
-    version: 1,
-    leads: [lead],
-    visitors: [visitor],
-    activities: [activity, leadNote],
-  });
+  const merged = mergeCrmDocuments(base, formCrmPatch(payload));
 
   const putRes = await fetch(url, {
     method: "PUT",
@@ -179,9 +317,9 @@ async function persistLeadViaCrmProxy(payload: LeadFormPayload) {
   }
 }
 
-/** Write lead + visitor into the CRM blob admin dashboard reads. */
+/** Write lead + contact + deal/order into the CRM blob admin dashboard reads. */
 async function persistLeadToCrm(payload: LeadFormPayload) {
-  const { now, source, lead, visitor, activity, leadNote } = buildLeadPatch(payload);
+  const { now, source, lead } = buildLeadPatch(payload);
 
   try {
     await clmCreateLead({
@@ -218,12 +356,7 @@ async function persistLeadToCrm(payload: LeadFormPayload) {
       ? (current.payload as Record<string, unknown>)
       : { version: 1 };
 
-  const merged = mergeCrmDocuments(base, {
-    version: 1,
-    leads: [lead],
-    visitors: [visitor],
-    activities: [activity, leadNote],
-  });
+  const merged = mergeCrmDocuments(base, formCrmPatch(payload));
 
   const saved = await clmApiFetch("/crm", {
     method: "PUT",

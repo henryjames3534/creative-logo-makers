@@ -3,19 +3,18 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
+import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
   deleteContact,
-  loadCrm,
   relativeDay,
   upsertContact,
   type CrmContact,
-  type CrmState,
 } from "@/lib/crm-storage";
 
 export function AdminContacts() {
   const searchParams = useSearchParams();
   const focusId = searchParams.get("id");
-  const [state, setState] = useState<CrmState | null>(null);
+  const [state, setState] = useHydratedCrm();
   const [q, setQ] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CrmContact | null>(null);
@@ -27,10 +26,6 @@ export function AdminContacts() {
     companyId: "",
     tags: "",
   });
-
-  useEffect(() => {
-    setState(loadCrm());
-  }, []);
 
   useEffect(() => {
     if (!state || !focusId) return;
