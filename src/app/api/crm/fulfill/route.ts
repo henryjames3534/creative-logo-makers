@@ -270,7 +270,7 @@ export async function POST(req: Request) {
         String(o.serviceId || "") === String(body.serviceId || "")),
   );
 
-  let ordersPatch = [order];
+  let ordersPatch: Record<string, unknown>[] = [order];
   if (match) {
     ordersPatch = [
       {
@@ -280,7 +280,7 @@ export async function POST(req: Request) {
         orderId: String(match.orderId || order.orderId),
         paymentStatus,
         updatedAt: now,
-        serviceId: body.serviceId || match.serviceId,
+        serviceId: body.serviceId || String(match.serviceId || "") || undefined,
       },
     ];
   }
