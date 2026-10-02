@@ -3,33 +3,35 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale } from "@/components/locale/LocaleProvider";
+import { PACKAGE_DISCOUNT_PERCENT } from "@/data/packages";
 
-const STORAGE_KEY = "clm-promo-dismissed";
+/** Bump when promo copy changes so dismissed users see the new sale */
+const STORAGE_KEY = `clm-promo-dismissed-sale-${PACKAGE_DISCOUNT_PERCENT}`;
 
 const items = [
   {
-    badge: "Almost there",
-    text: "Finish your brief and get custom designs from creative experts",
-    cta: "Continue brief",
+    badge: `${PACKAGE_DISCOUNT_PERCENT}% OFF`,
+    text: `Sitewide package sale — ${PACKAGE_DISCOUNT_PERCENT}% off every contest package`,
+    cta: "Shop packages",
+    href: "/pricing",
+  },
+  {
+    badge: "Limited time",
+    text: `Logo contests from US$75 (was $249) — ${PACKAGE_DISCOUNT_PERCENT}% off list`,
+    cta: "Start a contest",
     href: "/get-started",
   },
   {
-    badge: "Popular",
-    text: "Launch a logo contest — dozens of concepts from US$249",
-    cta: "Start a contest",
-    href: "/contests",
+    badge: "Sale",
+    text: `Bronze → Platinum tiers all ${PACKAGE_DISCOUNT_PERCENT}% off — lock in sale pricing now`,
+    cta: "Browse categories",
+    href: "/categories",
   },
   {
-    badge: "Free",
-    text: "Try the Logo Maker — create a mark in minutes, no card needed",
-    cta: "Make a logo",
-    href: "/logo-maker",
-  },
-  {
-    badge: "Studio",
-    text: "Full-service branding with dedicated Brand Strategists",
-    cta: "Explore Studio",
-    href: "/studio",
+    badge: `${PACKAGE_DISCOUNT_PERCENT}% OFF`,
+    text: "Web, packaging, merch & more — same discount on every package",
+    cta: "Get started",
+    href: "/get-started",
   },
 ];
 
@@ -45,7 +47,7 @@ function PromoItem({
   return (
     <span className="inline-flex shrink-0 items-center gap-3 px-6">
       <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] !text-white">
-        <span className="h-1.5 w-1.5 rounded-full bg-white" />
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
         {badge}
       </span>
       <span className="max-w-[70vw] truncate text-sm font-medium !text-white sm:max-w-none sm:whitespace-nowrap md:text-[15px]">
@@ -63,7 +65,7 @@ function PromoItem({
   );
 }
 
-/** Continuous scrolling promo ticker */
+/** Continuous scrolling promo ticker — 70% package sale */
 export function PromoBar() {
   const [visible, setVisible] = useState(false);
 
