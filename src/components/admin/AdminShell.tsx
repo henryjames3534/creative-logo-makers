@@ -80,6 +80,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
       if (cancelled) return;
       const sess = getAdminSession();
       if (sess?.email) rememberStaffEmail(sess.email);
+      // Register this admin's public IP so it never lands in Visitors
+      if (sess) {
+        void fetch("/api/visitors/exclude-staff", {
+          method: "POST",
+          keepalive: true,
+        }).catch(() => null);
+      }
       setSession(sess);
       setReady(true);
     })();
@@ -135,6 +142,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
     }
     setSession(getAdminSession());
     setError(null);
+    void fetch("/api/visitors/exclude-staff", {
+      method: "POST",
+      keepalive: true,
+    }).catch(() => null);
     router.replace("/admin");
   }
 

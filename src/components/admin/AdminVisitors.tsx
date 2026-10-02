@@ -1,10 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn } from "@/components/admin/AdminUi";
 import {
-  attachVisitorEmail,
   deleteVisitor,
   deleteVisitors,
   formatDuration,
@@ -17,31 +16,19 @@ import {
   rememberStaffEmail,
   type CrmState,
   type CrmVisitor,
-  type VisitorSource,
 } from "@/lib/crm-storage";
 
-const SOURCE_LABEL: Record<VisitorSource, string> = {
-  google_onetap: "Google One Tap",
-  google_button: "Google button",
-  login_form: "Login form",
-  signup_form: "Signup form",
-  remembered: "Remembered",
-  manual: "Manual",
-  page_visit: "Page visit",
-  portal: "Customer portal",
-};
+function locLine(v: CrmVisitor) {
+  return [v.geo?.city, v.geo?.region, v.geo?.country || v.geo?.countryCode]
+    .filter(Boolean)
+    .join(", ");
+}
 
-type Drafts = Record<string, { name: string; email: string }>;
-
-function draftsFromState(state: CrmState): Drafts {
-  const d: Drafts = {};
-  for (const v of state.visitors) {
-    d[v.id] = {
-      name: v.name && v.name !== "Anonymous" ? v.name : "",
-      email: v.email || "",
-    };
-  }
-  return d;
+function latLong(v: CrmVisitor) {
+  const lat = v.geo?.latitude;
+  const lng = v.geo?.longitude;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
 
 export function AdminVisitors() {
@@ -50,23 +37,13 @@ export function AdminVisitors() {
   const [state, setState] = useState<CrmState | null>(null);
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Drafts>({});
-  const [savedId, setSavedId] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
   function reload(msg?: string) {
-    const next = loadCrm();
-    setState(next);
-    setDrafts(draftsFromState(next));
+    setState(loadCrm());
     if (msg) setHint(msg);
-  }
-
-  function pullGoogleEmails() {
-    setHint(
-      "Google emails ab site pe visitor jab Continue kare tabhi aati hain — admin browser ke Gmail visitors mein add nahi hote.",
-    );
   }
 
   useEffect(() => {
@@ -78,37 +55,34 @@ export function AdminVisitors() {
         /* ignore */
       }
       if (cancelled) return;
-      // Mark this browser as staff so public pings stop counting it
       rememberStaffEmail("admin@creativelogomakers.com");
+      // Exclude admin IP + purge junk
+      try {
+        await fetch("/api/visitors/exclude-staff", { method: "POST" });
+        await hydrateCrmFromServer();
+      } catch {
+        /* ignore */
+      }
+      if (cancelled) return;
       const next = loadCrm();
-      // Purge fake "remembered" rows created from admin Google accounts
       const junk = (next.visitors || []).filter((v) => !isWebsiteVisitor(v));
       if (junk.length) {
         deleteVisitors(junk.map((v) => v.id));
       }
       const cleaned = loadCrm();
       setState(cleaned);
-      setDrafts(draftsFromState(cleaned));
       if (junk.length) {
         setHint(
-          `${junk.length} admin/staff fake visitor rows cleaned (Google remembered /admin).`,
+          `${junk.length} non-visitor rows cleaned (admin IP / form / no geo).`,
         );
       }
     })();
 
-    const offHydrated = onCrmHydrated((s) => {
-      setState(s);
-      setDrafts(draftsFromState(s));
-    });
-    const offTracked = onVisitorTracked(() => {
-      const s = loadCrm();
-      setState(s);
-      setDrafts(draftsFromState(s));
-    });
-    // Poll server every 20s so other visitors/forms show up without refresh
+    const offHydrated = onCrmHydrated((s) => setState(s));
+    const offTracked = onVisitorTracked(() => setState(loadCrm()));
     const poll = window.setInterval(() => {
       void hydrateCrmFromServer().catch(() => null);
-    }, 20000);
+    }, 15000);
 
     return () => {
       cancelled = true;
@@ -128,13 +102,12 @@ export function AdminVisitors() {
     return [...state.visitors]
       .filter((v) => isWebsiteVisitor(v))
       .filter((v) => {
-        const d = drafts[v.id];
         const hay =
-          `${v.email ?? ""} ${d?.email ?? ""} ${v.name ?? ""} ${d?.name ?? ""} ${v.geo?.city ?? ""} ${v.geo?.ip ?? ""} ${v.path ?? ""}`.toLowerCase();
+          `${v.geo?.ip ?? ""} ${v.geo?.city ?? ""} ${v.geo?.country ?? ""} ${v.geo?.countryCode ?? ""} ${v.path ?? ""} ${v.geo?.isp ?? ""}`.toLowerCase();
         return !q.trim() || hay.includes(q.trim().toLowerCase());
       })
       .sort((a, b) => +new Date(b.lastSeenAt) - +new Date(a.lastSeenAt));
-  }, [state, q, drafts]);
+  }, [state, q]);
 
   const allChecked = rows.length > 0 && rows.every((v) => checked.has(v.id));
   const checkedCount = rows.filter((v) => checked.has(v.id)).length;
@@ -144,39 +117,10 @@ export function AdminVisitors() {
     return state.visitors.find((v) => v.id === selectedId) || null;
   }, [state, selectedId]);
 
-  function setDraft(id: string, patch: Partial<{ name: string; email: string }>) {
-    setDrafts((prev) => ({
-      ...prev,
-      [id]: {
-        name: patch.name ?? prev[id]?.name ?? "",
-        email: patch.email ?? prev[id]?.email ?? "",
-      },
-    }));
-  }
-
-  function saveVisitorEmail(v: CrmVisitor, e?: FormEvent) {
-    e?.preventDefault();
-    const d = drafts[v.id] || { name: "", email: "" };
-    const email = d.email.trim();
-    if (!email) {
-      setHint("Email field khali hai — Continue Google pe dabao ya email paste karo.");
-      return;
-    }
-    attachVisitorEmail({
-      visitorId: v.id,
-      visitorKey: v.visitorKey,
-      email,
-      name: d.name.trim() || undefined,
-    });
-    reload(`Saved ${email.toLowerCase()}`);
-    setSavedId(v.id);
-    window.setTimeout(() => setSavedId((id) => (id === v.id ? null : id)), 2500);
-  }
-
   function onDeleteVisitor(v: CrmVisitor) {
     if (
       !window.confirm(
-        `Delete visitor ${v.email || v.name || v.geo?.ip || v.id}?`,
+        `Delete visitor ${v.geo?.ip || v.name || v.id}?`,
       )
     ) {
       return;
@@ -213,7 +157,7 @@ export function AdminVisitors() {
     if (!ids.length) return;
     if (
       !window.confirm(
-        `Delete ${ids.length} selected website visitor${ids.length > 1 ? "s" : ""}?`,
+        `Delete ${ids.length} selected visitor${ids.length > 1 ? "s" : ""}?`,
       )
     ) {
       return;
@@ -230,18 +174,25 @@ export function AdminVisitors() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Visitors</h1>
-          <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-            Sirf website visitors — admin/designer dashboard traffic yahan nahi
-            aati. Multi-select se bulk delete bhi kar sakte ho.
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">
+            Website visitors
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-[color:var(--a-muted)]">
+            Har public visit ka IP, country, lat/long, visits aur time-on-site.
+            Admin login IP yahan nahi aati. Emails Leads/Contacts mein alag
+            capture hoti hain — yeh list sirf traffic hai.
           </p>
         </div>
         <button
           type="button"
-          onClick={pullGoogleEmails}
+          onClick={() => {
+            void hydrateCrmFromServer().then(() =>
+              reload("Synced from server"),
+            );
+          }}
           className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm font-medium text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
         >
-          How emails appear
+          Sync now
         </button>
       </div>
 
@@ -251,10 +202,37 @@ export function AdminVisitors() {
         </p>
       ) : null}
 
+      <div className="grid gap-3 sm:grid-cols-3">
+        <AdminCard className="p-4">
+          <p className="text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+            Unique visitors
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-[var(--a-text)]">
+            {rows.length}
+          </p>
+        </AdminCard>
+        <AdminCard className="p-4">
+          <p className="text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+            Total visits
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-[var(--a-text)]">
+            {rows.reduce((n, v) => n + (v.visitCount || 0), 0)}
+          </p>
+        </AdminCard>
+        <AdminCard className="p-4">
+          <p className="text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+            With geo / IP
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-[var(--a-text)]">
+            {rows.filter((v) => v.geo?.ip && v.geo?.country).length}
+          </p>
+        </AdminCard>
+      </div>
+
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search website visitors…"
+        placeholder="Search IP, city, country, path…"
         className="w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
       />
 
@@ -273,7 +251,11 @@ export function AdminVisitors() {
             {checkedCount} selected
           </span>
           <DeleteBtn
-            label={checkedCount ? `Delete selected (${checkedCount})` : "Delete selected"}
+            label={
+              checkedCount
+                ? `Delete selected (${checkedCount})`
+                : "Delete selected"
+            }
             className={checkedCount ? "" : "pointer-events-none opacity-40"}
             onClick={() => {
               if (!checkedCount) return;
@@ -283,15 +265,15 @@ export function AdminVisitors() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.9fr]">
-        <div className="space-y-3">
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
+        <div className="space-y-2">
           {rows.length === 0 ? (
             <AdminCard className="p-8 text-center text-sm text-[color:var(--a-faint)]">
-              Koi website visitor nahi. Pehle public site kholo (admin nahi).
+              Abhi koi public visitor nahi. Incognito / dusra network se site
+              kholo — IP yahan dikhega. (Admin browser count nahi hota.)
             </AdminCard>
           ) : (
             rows.map((v) => {
-              const d = drafts[v.id] || { name: "", email: "" };
               const active = selectedId === v.id;
               const isChecked = checked.has(v.id);
               return (
@@ -301,99 +283,66 @@ export function AdminVisitors() {
                     active ? "border-[#00a581]/50" : ""
                   } ${isChecked ? "ring-1 ring-[#fe5f50]/40" : ""}`}
                 >
-                  <div className="mb-3 flex items-start gap-3">
+                  <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => toggleCheck(v.id)}
                       className="mt-1 h-4 w-4 shrink-0 rounded border-[color:var(--a-border)] accent-[#00a581]"
-                      aria-label={`Select visitor ${v.geo?.ip || v.id}`}
+                      aria-label={`Select ${v.geo?.ip || v.id}`}
                     />
                     <button
                       type="button"
                       className="min-w-0 flex-1 text-left"
                       onClick={() => setSelectedId(v.id)}
                     >
-                      <div className="space-y-1.5">
-                        <div className="flex flex-wrap gap-1.5">
-                          <Badge tone={d.email || v.email ? "green" : "coral"}>
-                            {d.email || v.email ? "email ready" : "email missing"}
-                          </Badge>
-                          <Badge tone="blue">
-                            {SOURCE_LABEL[v.source] || v.source}
-                          </Badge>
-                          <span className="text-[11px] text-[color:var(--a-faint)]">
-                            {relativeDay(v.lastSeenAt)}
-                          </span>
-                        </div>
-                        <p className="font-mono text-sm font-semibold text-[var(--a-text)]">
-                          {v.geo?.ip || "IP not captured"}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-mono text-base font-semibold text-[var(--a-text)]">
+                          {v.geo?.ip || "IP pending…"}
                         </p>
-                        <p className="text-[11px] text-[color:var(--a-muted)]">
-                          {[v.geo?.city, v.geo?.country || v.geo?.countryCode]
-                            .filter(Boolean)
-                            .join(", ") || "Location unknown"}
-                          {v.path ? ` · ${v.path}` : ""}
-                          {v.geoHistory && v.geoHistory.length
-                            ? ` · +${v.geoHistory.length} older IP`
-                            : ""}
-                        </p>
+                        {v.geo?.countryCode ? (
+                          <Badge tone="blue">{v.geo.countryCode}</Badge>
+                        ) : (
+                          <Badge tone="coral">no country</Badge>
+                        )}
+                        <span className="text-[11px] text-[color:var(--a-faint)]">
+                          {relativeDay(v.lastSeenAt)}
+                        </span>
                       </div>
-                    </button>
-                  </div>
-
-                  <form
-                    onSubmit={(e) => saveVisitorEmail(v, e)}
-                    className="flex flex-wrap items-end gap-2"
-                  >
-                    <label className="min-w-0 flex-1 basis-full text-xs text-[color:var(--a-muted)] sm:min-w-[140px] sm:basis-auto">
-                      Name
-                      <input
-                        value={d.name}
-                        onChange={(e) =>
-                          setDraft(v.id, { name: e.target.value })
-                        }
-                        onFocus={() => setSelectedId(v.id)}
-                        placeholder="Henry James"
-                        className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
-                      />
-                    </label>
-                    <label className="min-w-0 flex-[1.4] basis-full text-xs text-[color:var(--a-muted)] sm:min-w-[200px] sm:basis-auto">
-                      Email
-                      <input
-                        type="email"
-                        value={d.email}
-                        onChange={(e) =>
-                          setDraft(v.id, { email: e.target.value })
-                        }
-                        onFocus={() => setSelectedId(v.id)}
-                        placeholder="Continue Google → auto fill"
-                        className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)] outline-none focus:border-[#00a581]"
-                      />
-                    </label>
-                    <button
-                      type="submit"
-                      className="rounded-full bg-[#00a581] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#008f70]"
-                    >
-                      Save email
+                      <p className="mt-1 text-xs text-[color:var(--a-muted)]">
+                        {locLine(v) || "Location unknown"}
+                        {latLong(v) ? ` · ${latLong(v)}` : ""}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[color:var(--a-muted)]">
+                        <span>
+                          <span className="text-[color:var(--a-faint)]">
+                            Visits
+                          </span>{" "}
+                          {v.visitCount || 1}
+                        </span>
+                        <span>
+                          <span className="text-[color:var(--a-faint)]">
+                            Stay
+                          </span>{" "}
+                          {formatDuration(v.totalDurationMs || 0)}
+                        </span>
+                        <span>
+                          <span className="text-[color:var(--a-faint)]">
+                            Hits
+                          </span>{" "}
+                          {v.hits || 1}
+                        </span>
+                        {v.path ? (
+                          <span className="truncate font-mono">{v.path}</span>
+                        ) : null}
+                      </div>
                     </button>
                     <DeleteBtn
                       label="Delete"
-                      className="px-4 py-2.5 text-sm"
+                      className="shrink-0 px-3 py-1.5 text-xs"
                       onClick={() => onDeleteVisitor(v)}
                     />
-                  </form>
-                  {savedId === v.id ? (
-                    <p className="mt-2 text-xs text-[#5ee0bf]">
-                      Saved {d.email}
-                    </p>
-                  ) : !d.email ? (
-                    <p className="mt-2 text-[11px] text-[color:var(--a-faint)]">
-                      Email empty = Google Continue abhi nahi hua. Site pe
-                      popup → <span className="text-[color:var(--a-muted)]">Continue as…</span>{" "}
-                      dabao, ya upar <span className="text-[color:var(--a-muted)]">Fetch Google emails</span>.
-                    </p>
-                  ) : null}
+                  </div>
                 </AdminCard>
               );
             })
@@ -408,34 +357,35 @@ export function AdminVisitors() {
           ) : (
             <div className="space-y-4">
               <div>
-                <p className="text-lg font-semibold text-[var(--a-text)] break-all">
-                  {selected.email ||
-                    drafts[selected.id]?.email ||
-                    "Anonymous visitor"}
+                <p className="font-mono text-lg font-semibold text-[var(--a-text)] break-all">
+                  {selected.geo?.ip || "IP not captured"}
                 </p>
                 <p className="text-xs text-[color:var(--a-faint)]">
+                  First seen {relativeDay(selected.firstSeenAt)} · Last{" "}
                   {relativeDay(selected.lastSeenAt)}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void hydrateCrmFromServer().then(() => reload("Synced from server"));
-                }}
-                className="rounded-full border border-[color:var(--a-border)] px-3 py-1.5 text-xs font-semibold text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
-              >
-                Sync from server
-              </button>
-              {geoMsg ? (
-                <p className="text-[11px] text-[color:var(--a-faint)]">{geoMsg}</p>
-              ) : null}
-              <div className="space-y-1 rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] p-3 text-xs text-[color:var(--a-muted)]">
-                <p>
-                  <span className="text-[color:var(--a-faint)]">IP</span>{" "}
-                  <span className="font-mono text-sm font-semibold text-[var(--a-text)]">
-                    {selected.geo?.ip || "Not captured"}
-                  </span>
-                </p>
+
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] p-3">
+                  <p className="text-[10px] uppercase text-[color:var(--a-faint)]">
+                    Visits
+                  </p>
+                  <p className="text-xl font-semibold text-[var(--a-text)]">
+                    {selected.visitCount || 1}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] p-3">
+                  <p className="text-[10px] uppercase text-[color:var(--a-faint)]">
+                    Time on site
+                  </p>
+                  <p className="text-xl font-semibold text-[var(--a-text)]">
+                    {formatDuration(selected.totalDurationMs || 0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 rounded-xl border border-[color:var(--a-border)] bg-[var(--a-bg)] p-3 text-xs text-[color:var(--a-muted)]">
                 <p>
                   <span className="text-[color:var(--a-faint)]">Country</span>{" "}
                   {selected.geo?.country
@@ -446,7 +396,7 @@ export function AdminVisitors() {
                     : selected.geo?.countryCode || "—"}
                 </p>
                 <p>
-                  <span className="text-[color:var(--a-faint)]">State / Region</span>{" "}
+                  <span className="text-[color:var(--a-faint)]">Region</span>{" "}
                   {selected.geo?.region || "—"}
                 </p>
                 <p>
@@ -474,9 +424,12 @@ export function AdminVisitors() {
                   {selected.geo?.isp || "—"}
                 </p>
                 <p>
-                  <span className="text-[color:var(--a-faint)]">Visits</span>{" "}
-                  {selected.visitCount} ·{" "}
-                  {formatDuration(selected.totalDurationMs)}
+                  <span className="text-[color:var(--a-faint)]">Hits</span>{" "}
+                  {selected.hits || 1}
+                </p>
+                <p>
+                  <span className="text-[color:var(--a-faint)]">Last path</span>{" "}
+                  <span className="font-mono">{selected.path || "—"}</span>
                 </p>
                 {selected.geo?.ip ? (
                   <button
@@ -505,31 +458,37 @@ export function AdminVisitors() {
                           const { updateVisitorGeo } = await import(
                             "@/lib/crm-storage"
                           );
-                          updateVisitorGeo(
-                            selected.visitorKey,
-                            {
-                              ...geo,
-                              fetchedAt: new Date().toISOString(),
-                            },
-                            selected.email,
-                          );
+                          updateVisitorGeo(selected.visitorKey, {
+                            ...geo,
+                            fetchedAt: new Date().toISOString(),
+                          });
                           reload("Geo enriched");
-                          setGeoMsg("Geo updated from IP lookup");
+                          setGeoMsg("Geo updated");
                         } catch {
-                          setGeoMsg("Could not enrich geo for this IP");
+                          setGeoMsg("Could not enrich geo");
                         }
                       })();
                     }}
                   >
-                    Enrich geo (lat/long/ISP)
+                    Re-fetch geo (lat/long/ISP)
                   </button>
+                ) : null}
+                {geoMsg ? (
+                  <p className="text-[11px] text-[color:var(--a-faint)]">
+                    {geoMsg}
+                  </p>
                 ) : null}
                 {selected.geoHistory && selected.geoHistory.length ? (
                   <div className="mt-2 border-t border-[color:var(--a-border)] pt-2">
-                    <p className="mb-1 text-[color:var(--a-faint)]">Previous IPs</p>
+                    <p className="mb-1 text-[color:var(--a-faint)]">
+                      Previous IPs
+                    </p>
                     <ul className="space-y-1">
                       {selected.geoHistory.map((h) => (
-                        <li key={`${h.ip}-${h.at}`} className="font-mono text-[11px]">
+                        <li
+                          key={`${h.ip}-${h.at}`}
+                          className="font-mono text-[11px]"
+                        >
                           {h.ip}
                           {h.city || h.country || h.region
                             ? ` · ${[h.city, h.region, h.country].filter(Boolean).join(", ")}`
@@ -539,20 +498,55 @@ export function AdminVisitors() {
                     </ul>
                   </div>
                 ) : null}
-                {!selected.geo?.ip ? (
-                  <p className="mt-2 text-[11px] text-amber-200/80">
-                    Ye visitor tracking se pehle aaya — us waqt IP save nahi hui.
-                    Dobara site visit pe IP capture ho jayegi.
-                  </p>
-                ) : null}
               </div>
-              <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-[color:var(--a-muted)]">
-                {(selected.pageViews || []).slice(0, 15).map((p) => (
-                  <li key={p.id}>
-                    {p.path} · {formatDuration(p.durationMs)}
-                  </li>
-                ))}
-              </ul>
+
+              <div>
+                <p className="mb-2 text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+                  Pages viewed
+                </p>
+                <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-[color:var(--a-muted)]">
+                  {(selected.pageViews || []).length === 0 ? (
+                    <li className="text-[color:var(--a-faint)]">No pages yet</li>
+                  ) : (
+                    (selected.pageViews || []).slice(0, 25).map((p) => (
+                      <li key={p.id} className="flex justify-between gap-2">
+                        <span className="truncate font-mono">{p.path}</span>
+                        <span className="shrink-0 text-[color:var(--a-faint)]">
+                          {formatDuration(p.durationMs || 0)}
+                        </span>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+
+              <div>
+                <p className="mb-2 text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
+                  Sessions
+                </p>
+                <ul className="max-h-32 space-y-1 overflow-y-auto text-xs text-[color:var(--a-muted)]">
+                  {(selected.sessions || []).length === 0 ? (
+                    <li className="text-[color:var(--a-faint)]">
+                      No sessions yet
+                    </li>
+                  ) : (
+                    (selected.sessions || []).slice(0, 10).map((s) => (
+                      <li key={s.id} className="flex justify-between gap-2">
+                        <span>{relativeDay(s.startedAt)}</span>
+                        <span>
+                          {formatDuration(s.durationMs || 0)} · {s.pageCount}{" "}
+                          pages
+                        </span>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+
+              <p className="text-[11px] text-[color:var(--a-faint)]">
+                Email chahiye ho to Leads / Contacts dekho — visitor list sirf
+                anonymous traffic track karti hai.
+              </p>
             </div>
           )}
         </AdminCard>

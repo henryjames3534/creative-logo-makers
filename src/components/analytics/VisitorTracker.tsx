@@ -2,11 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { captureVisitorEmail } from "@/lib/capture-visitor";
 import {
   endVisitorPage,
   heartbeatVisitorPage,
+  isStaffBrowser,
   startVisitorSession,
   updateVisitorGeo,
   type CrmGeo,
@@ -14,6 +13,7 @@ import {
 
 const VID_KEY = "clm_visitor_key";
 const GEO_KEY = "clm_visitor_geo_v2";
+const SESSION_START_KEY = "clm_visitor_session_started";
 
 function getVisitorKey() {
   try {
@@ -46,12 +46,25 @@ async function fetchGeo(): Promise<CrmGeo | null> {
   }
 }
 
-/** Authoritative server write — IP comes from request headers. */
+function sessionStartedAt() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_START_KEY);
+    if (raw) return Number(raw) || Date.now();
+    const now = Date.now();
+    sessionStorage.setItem(SESSION_START_KEY, String(now));
+    return now;
+  } catch {
+    return Date.now();
+  }
+}
+
+/** Anonymous traffic ping — IP/geo from server headers. No email. */
 async function pingServer(input: {
   visitorKey: string;
   path: string;
-  email?: string;
-  name?: string;
+  durationMs?: number;
+  pageDurationMs?: number;
+  isNewSession?: boolean;
 }) {
   try {
     await fetch("/api/visitors/ping", {
@@ -60,26 +73,31 @@ async function pingServer(input: {
       body: JSON.stringify({
         visitorKey: input.visitorKey,
         path: input.path,
-        email: input.email,
-        name: input.name,
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
-        language: typeof navigator !== "undefined" ? navigator.language : undefined,
+        durationMs: input.durationMs,
+        pageDurationMs: input.pageDurationMs,
+        isNewSession: input.isNewSession,
+        userAgent:
+          typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+        language:
+          typeof navigator !== "undefined" ? navigator.language : undefined,
       }),
       keepalive: true,
     });
   } catch {
-    /* ignore — local CRM still updated */
+    /* ignore */
   }
 }
 
 /**
- * Site-wide analytics → CRM Visitors (local + server IP ping).
+ * Site-wide anonymous visitor tracking → CRM Visitors (IP + geo + duration).
+ * Emails are captured separately via captureVisitorEmail → Leads/Contacts.
  */
 export function VisitorTracker() {
   const pathname = usePathname();
-  const { user, ready } = useAuth();
   const lastPath = useRef<string | null>(null);
   const geoDone = useRef(false);
+  const pageEnteredAt = useRef<number>(Date.now());
+  const sessionNew = useRef(true);
 
   const skip =
     pathname.startsWith("/admin") ||
@@ -87,6 +105,7 @@ export function VisitorTracker() {
     (typeof window !== "undefined" &&
       (() => {
         try {
+          if (isStaffBrowser()) return true;
           return (
             !!sessionStorage.getItem("clm_admin_session_v1") ||
             localStorage.getItem("clm_staff_browser_v1") === "1"
@@ -96,70 +115,54 @@ export function VisitorTracker() {
         }
       })());
 
-  // Local session + immediate server ping (with IP)
   useEffect(() => {
-    if (!ready || skip) return;
+    if (skip) return;
     const visitorKey = getVisitorKey();
-    const email = user?.email;
-
-    // Never treat admin/staff Google as a website visitor
-    if (email?.toLowerCase().endsWith("@creativelogomakers.com")) return;
-
-    if (email) {
-      captureVisitorEmail({
-        email,
-        name: user.name,
-        picture: user.picture,
-        source: "portal",
-        signedIn: true,
-        silent: true,
-      });
-    }
-    // Do NOT auto-import remembered Google accounts — that was injecting
-    // the admin's own Gmail into Visitors whenever CRM was opened.
+    pageEnteredAt.current = Date.now();
+    sessionStartedAt();
 
     if (lastPath.current && lastPath.current !== pathname) {
-      endVisitorPage({ visitorKey, email, path: lastPath.current });
+      endVisitorPage({ visitorKey, path: lastPath.current });
     }
 
     startVisitorSession({
       visitorKey,
-      email,
       path: pathname,
       userAgent: navigator.userAgent,
       language: navigator.language,
     });
     lastPath.current = pathname;
 
-    // Server-side CRM write with real IP — don't wait for idle
+    const isNew = sessionNew.current;
+    sessionNew.current = false;
+
     void pingServer({
       visitorKey,
       path: pathname,
-      email,
-      name: user?.name,
+      durationMs: Math.max(0, Date.now() - sessionStartedAt()),
+      pageDurationMs: 0,
+      isNewSession: isNew,
     });
 
     const beat = window.setInterval(() => {
-      heartbeatVisitorPage({ visitorKey, email, path: pathname });
-    }, 20000);
-
-    // Re-ping every 60s while tab is open so "live" visitors stay fresh
-    const livePing = window.setInterval(() => {
+      heartbeatVisitorPage({ visitorKey, path: pathname });
       void pingServer({
         visitorKey,
         path: pathname,
-        email,
-        name: user?.name,
+        durationMs: Math.max(0, Date.now() - sessionStartedAt()),
+        pageDurationMs: Math.max(0, Date.now() - pageEnteredAt.current),
+        isNewSession: false,
       });
-    }, 60000);
+    }, 15000);
 
     const onHide = () => {
-      endVisitorPage({ visitorKey, email, path: pathname });
+      endVisitorPage({ visitorKey, path: pathname });
       void pingServer({
         visitorKey,
         path: pathname,
-        email,
-        name: user?.name,
+        durationMs: Math.max(0, Date.now() - sessionStartedAt()),
+        pageDurationMs: Math.max(0, Date.now() - pageEnteredAt.current),
+        isNewSession: false,
       });
     };
     const onVis = () => {
@@ -170,15 +173,14 @@ export function VisitorTracker() {
 
     return () => {
       window.clearInterval(beat);
-      window.clearInterval(livePing);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("pagehide", onHide);
     };
-  }, [pathname, ready, skip, user?.email, user?.name, user?.picture]);
+  }, [pathname, skip]);
 
-  // Local geo cache (optional enrichment)
+  // Local geo cache (mirrors server enrichment for faster UI)
   useEffect(() => {
-    if (!ready || skip || geoDone.current) return;
+    if (skip || geoDone.current) return;
     const visitorKey = getVisitorKey();
     let cancelled = false;
 
@@ -204,7 +206,7 @@ export function VisitorTracker() {
 
         if (isUsefulGeo(geo)) {
           sessionStorage.setItem(GEO_KEY, JSON.stringify(geo));
-          updateVisitorGeo(visitorKey, geo, user?.email);
+          updateVisitorGeo(visitorKey, geo);
           geoDone.current = true;
         }
       } catch {
@@ -212,12 +214,12 @@ export function VisitorTracker() {
       }
     };
 
-    const t = window.setTimeout(() => void runGeo(), 1200);
+    const t = window.setTimeout(() => void runGeo(), 400);
     return () => {
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [ready, skip, user?.email, pathname]);
+  }, [skip, pathname]);
 
   return null;
 }

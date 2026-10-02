@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enrichGeo, isPrivateIp } from "@/lib/ip-geo";
-import { upsertVisitorOnServer } from "@/lib/server-visitor";
+import {
+  getExcludedVisitorIps,
+  upsertVisitorOnServer,
+} from "@/lib/server-visitor";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -43,14 +46,12 @@ async function resolveGeo(req: NextRequest) {
         }
       : { ip: ip || undefined, city, region };
 
-  // Always enrich — edge alone has no lat/long/ISP/full country name
   return enrichGeo({ ip, edge });
 }
 
 /**
  * POST /api/visitors/ping
- * Body: { visitorKey, path?, email?, name?, userAgent?, language? }
- * Server captures real IP/geo and writes into CRM visitors.
+ * Anonymous traffic only — IP/geo/duration from server. No email.
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -70,25 +71,30 @@ export async function POST(req: NextRequest) {
 
   const path = String(body.path ?? "/").trim().slice(0, 500);
   if (path.startsWith("/admin") || path.startsWith("/designer")) {
-    return NextResponse.json({ ok: true, skipped: true });
+    return NextResponse.json({ ok: true, skipped: true, reason: "internal_path" });
   }
 
-  const email = String(body.email ?? "").trim().toLowerCase();
-  if (
-    email.endsWith("@creativelogomakers.com") ||
-    email === "admin@creativelogomakers.com"
-  ) {
-    return NextResponse.json({ ok: true, skipped: true, reason: "staff" });
+  const ip = clientIp(req).trim().toLowerCase();
+  if (ip) {
+    const blocked = await getExcludedVisitorIps();
+    if (blocked.includes(ip)) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: "staff_ip",
+      });
+    }
   }
 
   const geo = await resolveGeo(req);
   const result = await upsertVisitorOnServer({
     visitorKey,
     path,
-    email: email || undefined,
-    name: String(body.name ?? "").trim() || undefined,
     userAgent: String(body.userAgent ?? "").trim().slice(0, 400) || undefined,
     language: String(body.language ?? "").trim().slice(0, 40) || undefined,
+    durationMs: Number(body.durationMs) || 0,
+    pageDurationMs: Number(body.pageDurationMs) || 0,
+    isNewSession: Boolean(body.isNewSession),
     geo,
   });
 

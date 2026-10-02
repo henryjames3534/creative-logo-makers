@@ -483,6 +483,19 @@ export function mergeCrmDocuments(
     reviews,
     owners: asArray(i.owners).length ? i.owners : r.owners,
     deleted,
+    // Admin/staff IPs never count as public visitors
+    excludedVisitorIps: Array.from(
+      new Set([
+        ...asArray<string>(r.excludedVisitorIps).map((x) =>
+          String(x).trim().toLowerCase(),
+        ),
+        ...asArray<string>(i.excludedVisitorIps).map((x) =>
+          String(x).trim().toLowerCase(),
+        ),
+      ]),
+    )
+      .filter(Boolean)
+      .slice(-200),
     // Prefer newer geo-block settings object
     geoBlock: (() => {
       const a = r.geoBlock && typeof r.geoBlock === "object" ? (r.geoBlock as Dict) : null;

@@ -144,23 +144,6 @@ function buildLeadPatch(payload: LeadFormPayload) {
     contactId,
   };
 
-  const visitor = {
-    id: uid("vis"),
-    visitorKey: uid("vk"),
-    email: payload.email,
-    name: payload.name,
-    source: payload.form === "signup" ? "signup_form" : "manual",
-    signedIn: payload.form === "signup",
-    firstSeenAt: now,
-    lastSeenAt: now,
-    path: payload.page || "/",
-    hits: 1,
-    visitCount: 1,
-    totalDurationMs: 0,
-    pageViews: [],
-    sessions: [],
-  };
-
   const activity = {
     id: uid("ac"),
     type: "email",
@@ -255,7 +238,6 @@ function buildLeadPatch(payload: LeadFormPayload) {
     source,
     lead,
     contact,
-    visitor,
     activity,
     leadNote,
     deals,
@@ -264,20 +246,12 @@ function buildLeadPatch(payload: LeadFormPayload) {
 }
 
 function formCrmPatch(payload: LeadFormPayload) {
-  const {
-    lead,
-    contact,
-    visitor,
-    activity,
-    leadNote,
-    deals,
-    orders,
-  } = buildLeadPatch(payload);
+  const { lead, contact, activity, leadNote, deals, orders } =
+    buildLeadPatch(payload);
   return {
     version: 1,
     leads: [lead],
     contacts: [contact],
-    visitors: [visitor],
     activities: [activity, leadNote],
     deals,
     orders,

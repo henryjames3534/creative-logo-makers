@@ -323,6 +323,8 @@ export type CrmState = {
   visitors: CrmVisitor[];
   inbox: CrmInboxItem[];
   reviews: CrmReview[];
+  /** Public IPs of admin/staff — never shown as website visitors */
+  excludedVisitorIps?: string[];
   /** Soft-delete tombstones so merge doesn't resurrect removed rows */
   deleted?: {
     visitors?: string[];
@@ -428,6 +430,7 @@ function seed(): CrmState {
     visitors: [],
     inbox: [],
     reviews: [],
+    excludedVisitorIps: [],
   };
 }
 
@@ -465,6 +468,10 @@ export function loadCrm(): CrmState {
     }
     if (!Array.isArray(existing.reviews)) {
       existing.reviews = [];
+      dirty = true;
+    }
+    if (!Array.isArray(existing.excludedVisitorIps)) {
+      existing.excludedVisitorIps = [];
       dirty = true;
     }
     existing.visitors = existing.visitors.map(normalizeVisitor);
@@ -632,6 +639,14 @@ export function isStaffEmail(email?: string | null): boolean {
   if (!e) return false;
   if (e === "admin@creativelogomakers.com") return true;
   if (e.endsWith("@creativelogomakers.com")) return true;
+  // Owner / operator Google accounts — never website visitors
+  if (
+    e === "abdulwahibshera@gmail.com" ||
+    e === "henry.jamesaws@gmail.com" ||
+    e === "henryjames3534@gmail.com"
+  ) {
+    return true;
+  }
   try {
     const owners = stateOwnerEmails();
     if (owners.includes(e)) return true;
@@ -1453,19 +1468,22 @@ export function deleteVisitors(ids: string[]) {
 export function isWebsiteVisitor(v: CrmVisitor): boolean {
   if (isStaffEmail(v.email)) return false;
 
-  // Admin Google "remembered" injects with no real site hit
-  if (
-    v.source === "remembered" &&
-    !v.geo?.ip &&
-    !(v.pageViews || []).some(
-      (p) =>
-        p.path &&
-        !p.path.startsWith("/admin") &&
-        !p.path.startsWith("/designer"),
-    )
-  ) {
-    return false;
+  const ip = (v.geo?.ip || "").trim().toLowerCase();
+
+  // Staff IP registered via /api/visitors/exclude-staff
+  if (ip) {
+    try {
+      const banned = loadCrm().excludedVisitorIps || [];
+      if (banned.some((x) => x.toLowerCase() === ip)) return false;
+    } catch {
+      /* ignore */
+    }
   }
+
+  // Must have a real client IP — form/email rows without geo are not visitors
+  if (!ip) return false;
+
+  if (v.source === "remembered" || v.source === "manual") return false;
 
   const paths = [
     v.path || "",
@@ -1476,10 +1494,7 @@ export function isWebsiteVisitor(v: CrmVisitor): boolean {
     p.startsWith("/admin") || p.startsWith("/designer");
 
   const meaningful = paths.filter(Boolean);
-  if (meaningful.length === 0) {
-    // No path yet — only keep if we have a real public IP (server ping)
-    return Boolean(v.geo?.ip);
-  }
+  if (meaningful.length === 0) return true; // IP-only ping still counts
   if (meaningful.every(isInternal)) return false;
   return meaningful.some((p) => !isInternal(p));
 }

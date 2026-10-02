@@ -1,32 +1,17 @@
 "use client";
 
 /**
- * Capture visitor emails into CRM (admin /visitors + leads)
- * as soon as Google JWT or a typed email is available —
- * does not require completing sign-in.
+ * Capture emails into Leads/Contacts only — never into Visitors.
+ * Visitors are anonymous IP/session traffic from VisitorTracker.
  */
 import { notifyVisitorCaptured } from "@/components/analytics/VisitorCaptureToast";
 import {
   isStaffBrowser,
   isStaffEmail,
-  trackVisitor,
-  type VisitorSource,
+  upsertContact,
+  upsertLead,
 } from "@/lib/crm-storage";
-
-const VID_KEY = "clm_visitor_key";
-
-function visitorKey() {
-  try {
-    let k = localStorage.getItem(VID_KEY);
-    if (!k) {
-      k = `vk_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
-      localStorage.setItem(VID_KEY, k);
-    }
-    return k;
-  } catch {
-    return undefined;
-  }
-}
+import type { VisitorSource } from "@/lib/crm-storage";
 
 export function captureVisitorEmail(input: {
   email: string;
@@ -37,28 +22,51 @@ export function captureVisitorEmail(input: {
   silent?: boolean;
 }) {
   if (typeof window === "undefined") return;
-  const email = input.email?.trim();
+  const email = input.email?.trim().toLowerCase();
   if (!email) return;
   if (isStaffBrowser() || isStaffEmail(email)) return;
   const path = window.location.pathname;
   if (path.startsWith("/admin") || path.startsWith("/designer")) return;
+
+  const name =
+    input.name?.trim() || email.split("@")[0] || "Website visitor";
+
   try {
-    trackVisitor({
+    upsertContact({
+      name,
       email,
-      visitorKey: visitorKey(),
-      name: input.name,
-      picture: input.picture,
-      source: input.source,
-      signedIn: input.signedIn,
-      path,
-      createLead: true,
-      userAgent: navigator.userAgent,
-      language: navigator.language,
+      title: input.signedIn ? "Signed-in customer" : "Email captured",
+      tags: ["email-capture", input.source],
     });
-    if (!input.silent) notifyVisitorCaptured(email.toLowerCase(), input.name);
   } catch {
-    /* ignore storage errors */
+    /* ignore */
   }
+
+  try {
+    upsertLead({
+      name,
+      email,
+      source:
+        input.source === "google_onetap" || input.source === "google_button"
+          ? "Google"
+          : input.source === "login_form"
+            ? "Login form"
+            : input.source === "signup_form"
+              ? "Signup form"
+              : input.source === "portal"
+                ? "Customer portal"
+                : "Visitor email",
+      interest: "Email captured on site",
+      notes: `Captured via ${input.source.replace(/_/g, " ")}${path ? ` · ${path}` : ""}`,
+      score: input.source.startsWith("google") ? 70 : 50,
+      status: "new",
+      valueEstimate: 299,
+    });
+  } catch {
+    /* ignore */
+  }
+
+  if (!input.silent) notifyVisitorCaptured(email, input.name);
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
