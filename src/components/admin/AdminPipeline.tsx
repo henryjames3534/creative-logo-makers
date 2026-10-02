@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/AdminUi";
 import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
@@ -14,8 +15,20 @@ import {
   type DealStage,
 } from "@/lib/crm-storage";
 
+const VALID_STAGES = new Set<DealStage>(
+  DEAL_STAGES.map((s) => s.id),
+);
+
+function normalizeStage(stage: string | undefined): DealStage {
+  if (stage && VALID_STAGES.has(stage as DealStage)) return stage as DealStage;
+  return "lead";
+}
+
 export function AdminPipeline() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("id");
   const [state, setState] = useHydratedCrm();
+  const draggingRef = useRef<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [draft, setDraft] = useState({
@@ -25,6 +38,12 @@ export function AdminPipeline() {
     packageName: "Gold",
     probability: "20",
   });
+
+  useEffect(() => {
+    if (!focusId || !state) return;
+    const el = document.getElementById(`deal-${focusId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusId, state]);
 
   const byStage = useMemo(() => {
     const map: Record<DealStage, CrmDeal[]> = {
@@ -36,14 +55,20 @@ export function AdminPipeline() {
       won: [],
       lost: [],
     };
-    state?.deals.forEach((d) => map[d.stage].push(d));
+    state?.deals.forEach((d) => {
+      map[normalizeStage(d.stage)].push(d);
+    });
     return map;
   }, [state]);
 
+  const totalDeals = state?.deals.length ?? 0;
+
   function onDrop(stage: DealStage) {
-    if (!dragging) return;
-    const next = updateDealStage(dragging, stage);
+    const id = draggingRef.current;
+    if (!id) return;
+    const next = updateDealStage(id, stage);
     setState({ ...next });
+    draggingRef.current = null;
     setDragging(null);
   }
 
@@ -87,10 +112,12 @@ export function AdminPipeline() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--a-text)]">Sales pipeline</h1>
+          <h1 className="text-2xl font-semibold text-[var(--a-text)]">
+            Sales pipeline
+          </h1>
           <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-            Drag deals across stages. Project delete also removes its pipeline
-            deal automatically.
+            Drag deals across stages. Forms + paid orders sync here. Project
+            delete also removes its pipeline deal.
           </p>
         </div>
         <button
@@ -101,6 +128,15 @@ export function AdminPipeline() {
           + New deal
         </button>
       </div>
+
+      {totalDeals === 0 ? (
+        <AdminCard className="p-8 text-center">
+          <p className="text-sm text-[color:var(--a-muted)]">
+            Pipeline empty. Package / contact forms create deals automatically,
+            or click <span className="text-[var(--a-text)]">+ New deal</span>.
+          </p>
+        </AdminCard>
+      ) : null}
 
       <div className="flex gap-3 overflow-x-auto pb-2">
         {DEAL_STAGES.map((stage) => {
@@ -127,16 +163,40 @@ export function AdminPipeline() {
                   {deals.length} · {money(total)}
                 </p>
               </div>
-              <div className="min-h-[420px] space-y-2 rounded-2xl border border-dashed border-[color:var(--a-border)] bg-[var(--a-panel)] p-2">
+              <div
+                className={`min-h-[420px] space-y-2 rounded-2xl border border-dashed p-2 ${
+                  dragging
+                    ? "border-[#00a581]/50 bg-[#00a581]/5"
+                    : "border-[color:var(--a-border)] bg-[var(--a-panel)]"
+                }`}
+              >
                 {deals.map((d) => (
                   <AdminCard
                     key={d.id}
-                    className="cursor-grab p-3 active:cursor-grabbing"
+                    id={`deal-${d.id}`}
+                    className={`cursor-grab p-3 active:cursor-grabbing ${
+                      focusId === d.id
+                        ? "ring-2 ring-[#00a581]"
+                        : dragging === d.id
+                          ? "opacity-60"
+                          : ""
+                    }`}
                   >
                     <div
                       draggable
-                      onDragStart={() => setDragging(d.id)}
-                      onDragEnd={() => setDragging(null)}
+                      onDragStart={() => {
+                        draggingRef.current = d.id;
+                        setDragging(d.id);
+                      }}
+                      onDragEnd={() => {
+                        // Drop usually fires before dragend; keep ref until drop.
+                        window.setTimeout(() => {
+                          if (draggingRef.current === d.id) {
+                            draggingRef.current = null;
+                            setDragging(null);
+                          }
+                        }, 50);
+                      }}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold text-[var(--a-text)]">

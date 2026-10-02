@@ -89,7 +89,14 @@ function countCrmRows(payload: unknown) {
   if (!payload || typeof payload !== "object") return 0;
   const p = payload as Record<string, unknown>;
   let n = 0;
-  for (const key of ["leads", "visitors", "orders", "contacts", "activities"]) {
+  for (const key of [
+    "leads",
+    "visitors",
+    "orders",
+    "contacts",
+    "activities",
+    "deals",
+  ]) {
     if (Array.isArray(p[key])) n += (p[key] as unknown[]).length;
   }
   return n;
@@ -98,6 +105,7 @@ function countCrmRows(payload: unknown) {
 /**
  * Pull server doc into localStorage when newer; otherwise push local up.
  * Never push an empty/thin local CRM over a richer server document.
+ * CRM: always merge local↔remote so pipeline stage moves aren't wiped.
  */
 export async function hydrateStoreKey(opts: {
   key: StoreKey;
@@ -120,6 +128,27 @@ export async function hydrateStoreKey(opts: {
     } catch {
       localPayload = null;
     }
+  }
+
+  // CRM: merge both sides so drag-stage / local edits survive poll hydrate.
+  if (opts.key === "crm" && hasRemote && localPayload) {
+    const { mergeCrmDocuments } = await import("@/lib/merge-store");
+    const merged = mergeCrmDocuments(remote.payload, localPayload);
+    const mergedAt =
+      localAt > remoteAt
+        ? opts.localUpdatedAt || new Date().toISOString()
+        : remote.updatedAt || new Date().toISOString();
+    opts.writeLocal(JSON.stringify(merged), mergedAt);
+    // If local had newer edits, push merged back so other browsers see stages.
+    if (localAt > remoteAt) {
+      try {
+        await putStoreDocument("crm", merged, mergedAt);
+        return "pushed";
+      } catch {
+        return "server";
+      }
+    }
+    return "server";
   }
 
   // Prefer server whenever it has more CRM rows (guards against stale local wipe).

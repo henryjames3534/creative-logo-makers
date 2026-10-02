@@ -5,12 +5,15 @@ import type { MouseEvent, ReactNode } from "react";
 export function AdminCard({
   children,
   className = "",
+  id,
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={`rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)] ${className}`}
     >
       {children}

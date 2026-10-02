@@ -167,34 +167,62 @@ function buildLeadPatch(payload: LeadFormPayload) {
   };
 
   const deals =
-    payload.form === "package" || payload.form === "studio"
+    payload.form === "package"
       ? [
           {
             id: dealId,
-            title:
-              payload.form === "package"
-                ? `${meta?.categoryName || "Design"} — ${payload.name}`
-                : `Studio — ${payload.name}`,
-            stage: payload.form === "package" ? ("brief" as const) : ("qualified" as const),
+            title: `${meta?.categoryName || "Design"} — ${payload.name}`,
+            stage: "brief" as const,
             value: valueEstimate,
             currency: "USD",
-            probability: payload.form === "package" ? 45 : 35,
+            probability: 45,
             contactId,
             leadId,
-            orderId: payload.form === "package" ? orderIdInternal : undefined,
-            orderCode: payload.form === "package" ? orderCode : undefined,
+            orderId: orderIdInternal,
+            orderCode,
             ownerId: "own_admin",
             category: meta?.categoryName,
-            packageName:
-              payload.form === "package" ? meta?.packageName : "Studio",
-            closeDate: new Date(
-              Date.now() + (payload.form === "package" ? 14 : 30) * 86400000,
-            ).toISOString(),
+            packageName: meta?.packageName,
+            closeDate: new Date(Date.now() + 14 * 86400000).toISOString(),
             createdAt: now,
             updatedAt: now,
           },
         ]
-      : [];
+      : payload.form === "studio"
+        ? [
+            {
+              id: dealId,
+              title: `Studio — ${payload.name}`,
+              stage: "qualified" as const,
+              value: valueEstimate,
+              currency: "USD",
+              probability: 35,
+              contactId,
+              leadId,
+              ownerId: "own_admin",
+              packageName: "Studio",
+              closeDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+              createdAt: now,
+              updatedAt: now,
+            },
+          ]
+        : [
+            {
+              id: dealId,
+              title: `${payload.topic || source} — ${payload.name}`,
+              stage: "lead" as const,
+              value: valueEstimate,
+              currency: "USD",
+              probability: 15,
+              contactId,
+              leadId,
+              ownerId: "own_admin",
+              packageName: payload.form === "signup" ? "Signup" : "Contact",
+              closeDate: new Date(Date.now() + 45 * 86400000).toISOString(),
+              createdAt: now,
+              updatedAt: now,
+            },
+          ];
 
   const orders =
     payload.form === "package"

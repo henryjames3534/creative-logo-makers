@@ -599,6 +599,7 @@ export function saveCrm(state: CrmState) {
   const updatedAt = new Date().toISOString();
   localStorage.setItem(CRM_KEY, JSON.stringify(state));
   localStorage.setItem(CRM_UPDATED_KEY, updatedAt);
+  emitCrm(CRM_CHANGED_EVENT, state);
   // Lazy-import to avoid circular deps at module init
   void import("@/lib/db-sync").then(({ scheduleStorePush }) => {
     scheduleStorePush("crm", state);
@@ -2417,6 +2418,26 @@ export function upsertOrder(
   const now = new Date().toISOString();
   const email = input.customerEmail.toLowerCase();
 
+  function markLinkedDealsWon(order: CrmOrder) {
+    if (String(order.paymentStatus || "").toLowerCase() !== "paid") return;
+    for (const d of dealsLinkedToOrder(state, order)) {
+      if (d.stage === "won" || d.stage === "lost") continue;
+      d.stage = "won";
+      d.probability = 100;
+      d.updatedAt = now;
+      state.activities.unshift({
+        id: uid("ac"),
+        type: "deal",
+        title: `Deal won · ${order.orderId}`,
+        body: `${d.title} → won (order paid)`,
+        createdAt: now,
+        ownerId: d.ownerId || "own_admin",
+        relatedType: "deal",
+        relatedId: d.id,
+      });
+    }
+  }
+
   if (input.id) {
     const i = state.orders.findIndex((o) => o.id === input.id);
     if (i >= 0) {
@@ -2426,6 +2447,7 @@ export function upsertOrder(
         customerEmail: email,
         updatedAt: now,
       };
+      markLinkedDealsWon(state.orders[i]);
       saveCrm(state);
       return state;
     }
@@ -2465,6 +2487,7 @@ export function upsertOrder(
       serviceId: input.serviceId || prev.serviceId,
       updatedAt: now,
     };
+    markLinkedDealsWon(state.orders[existingIdx]);
     saveCrm(state);
     return state;
   }
@@ -2513,6 +2536,7 @@ export function upsertOrder(
     relatedType: "order",
     relatedId: order.id,
   });
+  markLinkedDealsWon(order);
   saveCrm(state);
   return state;
 }
