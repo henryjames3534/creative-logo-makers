@@ -1,8 +1,7 @@
 import { Button } from "@/components/Button";
-import { LocalizedPrice } from "@/components/locale/LocalizedPrice";
 import { Container } from "@/components/Section";
 
-/** Free Logomaker + contest — both media panels are videos */
+/** Logo design + branding — both media panels are videos */
 export function LogoPathsSection() {
   return (
     <section className="relative overflow-hidden py-14 md:py-20">
@@ -98,16 +97,16 @@ export function LogoPathsSection() {
               </div>
             </div>
             <h3 className="text-[1.5rem] font-medium text-ink">
-              Run a logo contest
+              Branding & brand development
             </h3>
             <p className="mt-3 text-[15px] leading-relaxed text-ink/75">
-              Take your branding further. Get dozens of professional, custom
-              logo options from our community of freelance designers, and
-              experience next-level creative direction.
+              Go beyond a logo. We build full brand systems — identity, colors,
+              type, guidelines, and launch assets — so your business looks
+              consistent everywhere you show up.
             </p>
             <div className="mt-5">
-              <Button href="/contests" variant="primary">
-                Logos from <LocalizedPrice value="US$249" />
+              <Button href="/brand-identity-pack/details" variant="primary">
+                View branding packages
               </Button>
             </div>
           </div>
