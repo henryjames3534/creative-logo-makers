@@ -3,7 +3,7 @@ import {
   buildLiveChatSystemPrompt,
   matchSiteChatAnswer,
 } from "@/lib/live-chat-site-brain";
-import { generateBotReply } from "@/lib/live-chat";
+import { ensureSalePricingCopy, generateBotReply } from "@/lib/live-chat";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,13 +36,27 @@ function getAiConfig(): {
   return null;
 }
 
+function isPricingQuestion(message: string) {
+  return /\b(price|pricing|cost|rate|rates|how much|discount|sale|offer|promo|70\s*%|package|budget|fee|charges)\b/i.test(
+    message,
+  );
+}
+
 function localEnglishReply(message: string, agentName?: string) {
   const site = matchSiteChatAnswer(message);
   if (site) {
-    return { body: site.answer, agentName, source: "site-brain" as const };
+    return {
+      body: ensureSalePricingCopy(site.answer),
+      agentName,
+      source: "site-brain" as const,
+    };
   }
   const legacy = generateBotReply(message, agentName);
-  return { ...legacy, source: "knowledge" as const };
+  return {
+    body: ensureSalePricingCopy(legacy.body),
+    agentName: legacy.agentName,
+    source: "knowledge" as const,
+  };
 }
 
 async function aiReply(
@@ -97,7 +111,7 @@ async function aiReply(
   const latinRatio =
     (text.match(/[A-Za-z]/g)?.length ?? 0) / Math.max(text.length, 1);
   if (latinRatio < 0.55) return null;
-  return text.slice(0, 1200);
+  return ensureSalePricingCopy(text.slice(0, 1200));
 }
 
 export async function POST(req: NextRequest) {
@@ -133,6 +147,19 @@ export async function POST(req: NextRequest) {
 
   const agentName = body.agentName;
   const history = Array.isArray(body.history) ? body.history : [];
+
+  // Pricing / sale questions: prefer grounded site answers over free-form AI
+  if (isPricingQuestion(message)) {
+    const site = matchSiteChatAnswer(message);
+    if (site && site.score >= 28) {
+      return NextResponse.json({
+        ok: true,
+        body: ensureSalePricingCopy(site.answer),
+        agentName,
+        source: "site-brain",
+      });
+    }
+  }
 
   try {
     const ai = await aiReply(message, history, body.path);

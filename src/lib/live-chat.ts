@@ -143,7 +143,7 @@ export function unreadChatCount(): number {
 }
 
 export const LIVE_CHAT_WELCOME =
-  "Hey — thanks for stopping by Creative Logo Makers. I can help with logos, websites, packaging, pricing, contests, or hiring a designer. What are you working on?";
+  "Hey — thanks for stopping by Creative Logo Makers. Quick heads-up: our package sale is live (70% off — logo contests from about $75, was $249). I can help with logos, websites, packaging, pricing, contests, or hiring a designer. What are you working on?";
 
 /** Support agents shown on replies (human feel) */
 export const LIVE_CHAT_AGENTS = [
@@ -165,6 +165,37 @@ export function pickRandomAgent(): string {
 
 function pickOne<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!;
+}
+
+/** Keep price replies honest about the live 70% package sale. */
+export function ensureSalePricingCopy(body: string): string {
+  let text = body;
+  const mentionsSale =
+    /70\s*%|percent off|package sale|sale is live|offer is live|was \$249|from about \$75/i.test(
+      text,
+    );
+  const quotesOldList =
+    /\$249|\$499|start around \$|start from \$249|from \$249/i.test(text);
+
+  if (quotesOldList && !mentionsSale) {
+    text = text
+      .replace(
+        /contest packages usually start around \$249\s*\([^)]*\)/gi,
+        "contest packages start from about $75 (was $249) with our live 70% off sale",
+      )
+      .replace(
+        /start with a contest from \$249/gi,
+        "start with a contest from about $75 (was $249, 70% off)",
+      )
+      .replace(
+        /from about \$499/gi,
+        "from the 1-to-1 packages listed on the site",
+      );
+    if (!/70\s*%|was \$249|from about \$75/i.test(text)) {
+      text = `${text} Also — package sale is live: 70% off (logo contests from about $75, was $249).`;
+    }
+  }
+  return text;
 }
 
 function normalizeChatText(input: string) {
@@ -235,7 +266,7 @@ export function generateBotReply(
 
   const siteHit = matchSiteChatAnswer(visitorMessage);
   if (siteHit) {
-    return { agentName, body: siteHit.answer };
+    return { agentName, body: ensureSalePricingCopy(siteHit.answer) };
   }
 
   let bestTopic: ChatKnowledgeTopic | null = null;
@@ -250,8 +281,10 @@ export function generateBotReply(
 
   if (bestTopic && bestScore >= 32) {
     // Strip broken encoding leftovers from older generated replies
-    const raw = pickOne(bestTopic.replies).replace(/â€”/g, "—").replace(/â€™/g, "'");
-    return { agentName, body: raw };
+    const raw = pickOne(bestTopic.replies)
+      .replace(/â€”/g, "—")
+      .replace(/â€™/g, "'");
+    return { agentName, body: ensureSalePricingCopy(raw) };
   }
 
   const fallbacks = [

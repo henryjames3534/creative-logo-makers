@@ -32,9 +32,9 @@ function repliesFor(svc, intent) {
   switch (intent) {
     case "price":
       return [
-        `For ${svc}, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?`,
-        `${svc} pricing depends on Bronze–Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.`,
-        `Happy to help on ${svc} cost — most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?`,
+        `Good news — our package sale is live: 70% off. For ${svc}, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?`,
+        `${svc} pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.`,
+        `Happy to help on ${svc} cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?`,
       ];
     case "start":
       return [
@@ -73,8 +73,8 @@ function repliesFor(svc, intent) {
       ];
     case "discount":
       return [
-        `Yes — package sale pricing is live (about 50% off list on many tiers). For ${svc}, locking in sooner helps while the promo runs. Want current starting prices?`,
-        `Discounts are already reflected on package pages for ${svc}. I can help you pick Bronze/Silver/Gold/Platinum based on budget.`,
+        `Yes — we have a live package offer: 70% off list prices sitewide. For ${svc}, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?`,
+        `The 70% off sale is already on every package card for ${svc} (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum.`,
       ];
     default:
       return [

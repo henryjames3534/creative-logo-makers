@@ -1,4 +1,4 @@
-/** Auto-generated live chat knowledge - 4598 question patterns across 111 topics */
+/** Auto-generated live chat knowledge — 4598 question patterns across 111 topics */
 
 export type ChatKnowledgeTopic = {
   id: string;
@@ -29,7 +29,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "you there"
     ],
     "replies": [
-      "Hey! Glad you are here â€” what are you looking to design today: logo, website, packaging, or something else?",
+      "Hey! Glad you are here — what are you looking to design today: logo, website, packaging, or something else?",
       "Hi there! I can help with pricing, contests, or matching a designer. What do you need?",
       "Hello! Tell me your project in a line and I will point you the right way."
     ]
@@ -84,9 +84,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for brand logo"
     ],
     "replies": [
-      "For logo, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "logo pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on logo cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For logo, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "logo pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on logo cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -139,8 +139,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for brand logo"
     ],
     "replies": [
-      "Easy â€” pick logo on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start logo: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick logo on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start logo: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -247,7 +247,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for brand logo"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For logo, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For logo, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. logo packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -409,7 +409,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for brand logo"
     ],
     "replies": [
-      "Final logo delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final logo delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for logo once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -463,7 +463,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for brand logo"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with logo. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -517,8 +517,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for brand logo"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For logo, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for logo. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For logo, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for logo (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -625,9 +625,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for landing page"
     ],
     "replies": [
-      "For website, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "website pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on website cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For website, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "website pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on website cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -680,8 +680,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for landing page"
     ],
     "replies": [
-      "Easy â€” pick website on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start website: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick website on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start website: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -788,7 +788,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for landing page"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For website, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For website, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. website packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -950,7 +950,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for landing page"
     ],
     "replies": [
-      "Final website delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final website delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for website once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -1004,7 +1004,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for landing page"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with website. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -1058,8 +1058,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for landing page"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For website, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for website. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For website, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for website (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -1166,9 +1166,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for product packaging"
     ],
     "replies": [
-      "For packaging, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "packaging pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on packaging cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For packaging, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "packaging pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on packaging cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -1221,8 +1221,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for product packaging"
     ],
     "replies": [
-      "Easy â€” pick packaging on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start packaging: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick packaging on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start packaging: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -1329,7 +1329,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for product packaging"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For packaging, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For packaging, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. packaging packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -1491,7 +1491,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for product packaging"
     ],
     "replies": [
-      "Final packaging delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final packaging delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for packaging once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -1545,7 +1545,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for product packaging"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with packaging. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -1599,8 +1599,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for product packaging"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For packaging, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for packaging. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For packaging, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for packaging (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -1707,9 +1707,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for stationery"
     ],
     "replies": [
-      "For business card, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "business card pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on business card cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For business card, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "business card pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on business card cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -1762,8 +1762,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for stationery"
     ],
     "replies": [
-      "Easy â€” pick business card on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start business card: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick business card on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start business card: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -1870,7 +1870,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for stationery"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For business card, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For business card, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. business card packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -2032,7 +2032,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for stationery"
     ],
     "replies": [
-      "Final business card delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final business card delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for business card once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -2086,7 +2086,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for stationery"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with business card. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -2140,8 +2140,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for stationery"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For business card, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for business card. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For business card, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for business card (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -2248,9 +2248,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for apparel"
     ],
     "replies": [
-      "For t-shirt, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "t-shirt pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on t-shirt cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For t-shirt, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "t-shirt pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on t-shirt cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -2303,8 +2303,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for apparel"
     ],
     "replies": [
-      "Easy â€” pick t-shirt on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start t-shirt: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick t-shirt on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start t-shirt: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -2411,7 +2411,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for apparel"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For t-shirt, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For t-shirt, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. t-shirt packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -2573,7 +2573,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for apparel"
     ],
     "replies": [
-      "Final t-shirt delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final t-shirt delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for t-shirt once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -2627,7 +2627,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for apparel"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with t-shirt. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -2681,8 +2681,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for apparel"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For t-shirt, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for t-shirt. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For t-shirt, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for t-shirt (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -2789,9 +2789,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for magazine cover"
     ],
     "replies": [
-      "For book cover, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "book cover pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on book cover cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For book cover, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "book cover pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on book cover cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -2844,8 +2844,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for magazine cover"
     ],
     "replies": [
-      "Easy â€” pick book cover on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start book cover: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick book cover on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start book cover: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -2952,7 +2952,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for magazine cover"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For book cover, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For book cover, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. book cover packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -3114,7 +3114,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for magazine cover"
     ],
     "replies": [
-      "Final book cover delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final book cover delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for book cover once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -3168,7 +3168,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for magazine cover"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with book cover. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -3222,8 +3222,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for magazine cover"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For book cover, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for book cover. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For book cover, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for book cover (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -3330,9 +3330,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for facebook cover"
     ],
     "replies": [
-      "For social media, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "social media pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on social media cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For social media, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "social media pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on social media cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -3385,8 +3385,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for facebook cover"
     ],
     "replies": [
-      "Easy â€” pick social media on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start social media: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick social media on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start social media: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -3493,7 +3493,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for facebook cover"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For social media, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For social media, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. social media packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -3655,7 +3655,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for facebook cover"
     ],
     "replies": [
-      "Final social media delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final social media delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for social media once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -3709,7 +3709,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for facebook cover"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with social media. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -3763,8 +3763,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for facebook cover"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For social media, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for social media. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For social media, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for social media (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -3871,9 +3871,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for character design"
     ],
     "replies": [
-      "For illustration, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "illustration pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on illustration cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For illustration, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "illustration pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on illustration cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -3926,8 +3926,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for character design"
     ],
     "replies": [
-      "Easy â€” pick illustration on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start illustration: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick illustration on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start illustration: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -4034,7 +4034,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for character design"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For illustration, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For illustration, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. illustration packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -4196,7 +4196,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for character design"
     ],
     "replies": [
-      "Final illustration delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final illustration delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for illustration once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -4250,7 +4250,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for character design"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with illustration. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -4304,8 +4304,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for character design"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For illustration, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for illustration. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For illustration, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for illustration (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -4412,9 +4412,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for brand kit"
     ],
     "replies": [
-      "For branding, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "branding pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on branding cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For branding, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "branding pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on branding cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -4467,8 +4467,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for brand kit"
     ],
     "replies": [
-      "Easy â€” pick branding on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start branding: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick branding on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start branding: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -4575,7 +4575,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for brand kit"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For branding, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For branding, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. branding packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -4737,7 +4737,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for brand kit"
     ],
     "replies": [
-      "Final branding delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final branding delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for branding once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -4791,7 +4791,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for brand kit"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with branding. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -4845,8 +4845,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for brand kit"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For branding, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for branding. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For branding, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for branding (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -4953,9 +4953,9 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the price for brochure"
     ],
     "replies": [
-      "For flyer, contest packages usually start around $249 (sale pricing is live), and 1-to-1 projects from about $499. Want contest variety or a dedicated designer?",
-      "flyer pricing depends on Bronzeâ€“Platinum contest tiers or a 1-to-1 project. Share your budget range and I will recommend a package.",
-      "Happy to help on flyer cost â€” most clients start with a contest from $249 or hire 1-to-1 from $499. Which feels better for you?"
+      "Good news — our package sale is live: 70% off. For flyer, contest packages start from about $75 (was $249). 1-to-1 projects are listed separately on the package pages. Want contest variety or a dedicated designer?",
+      "flyer pricing uses Bronze–Platinum contest tiers with our live 70% off sale (sale price shown next to the old list price). Share your budget and I will recommend a package.",
+      "Happy to help on flyer cost — right now the 70% off offer is running, so logo-style contest packages start around $75 (was $249). Prefer a contest or 1-to-1?"
     ]
   },
   {
@@ -5008,8 +5008,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the start for brochure"
     ],
     "replies": [
-      "Easy â€” pick flyer on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
-      "To start flyer: go to Services â†’ choose the category â†’ Start a contest or browse designers. I can also guide you step by step here."
+      "Easy — pick flyer on the site, choose Contest or Hire a designer, fill a short brief, and creatives start working. Want me to walk you through it?",
+      "To start flyer: go to Services → choose the category → Start a contest or browse designers. I can also guide you step by step here."
     ]
   },
   {
@@ -5116,7 +5116,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the revision for brochure"
     ],
     "replies": [
-      "Yes â€” revisions are included based on your package (higher tiers get more rounds). For flyer, tell me which package you are considering and I will confirm revision limits.",
+      "Yes — revisions are included based on your package (higher tiers get more rounds). For flyer, tell me which package you are considering and I will confirm revision limits.",
       "You can request changes after you shortlist concepts. flyer packages include structured revision rounds so you can polish the winner."
     ]
   },
@@ -5278,7 +5278,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the files for brochure"
     ],
     "replies": [
-      "Final flyer delivery includes web-ready and print-ready files (and vectors where relevant â€” SVG/AI/EPS depending on the work). Source files come with project completion.",
+      "Final flyer delivery includes web-ready and print-ready files (and vectors where relevant — SVG/AI/EPS depending on the work). Source files come with project completion.",
       "You get usable production files for flyer once you select a winner / complete milestones. Need a specific format like SVG or PNG?"
     ]
   },
@@ -5332,7 +5332,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the money back for brochure"
     ],
     "replies": [
-      "Contest packages include a clear guarantee when no suitable concepts arrive â€” details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
+      "Contest packages include a clear guarantee when no suitable concepts arrive — details are on the package page. Studio/custom scopes follow the agreement. What package are you looking at?",
       "We want you happy with flyer. Guarantees differ for contests vs Studio. Tell me contest or 1-to-1 and I will explain the policy simply."
     ]
   },
@@ -5386,8 +5386,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "what is the discount for brochure"
     ],
     "replies": [
-      "Yes â€” package sale pricing is live (about 70% off list on many tiers). For flyer, locking in sooner helps while the promo runs. Want current starting prices?",
-      "Discounts are already reflected on package pages for flyer. I can help you pick Bronze/Silver/Gold/Platinum based on budget."
+      "Yes — we have a live package offer: 70% off list prices sitewide. For flyer, Bronze-style contests start around $75 (was $249) while the sale runs. Want me to point you to the right package?",
+      "The 70% off sale is already on every package card for flyer (sale price + struck-through list price). I can help you pick Bronze, Silver, Gold, or Platinum."
     ]
   },
   {
@@ -5495,7 +5495,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "australia"
     ],
     "replies": [
-      "Yes â€” we work with clients worldwide. Pricing can show in your local currency where possible. What do you need designed?"
+      "Yes — we work with clients worldwide. Pricing can show in your local currency where possible. What do you need designed?"
     ]
   },
   {
@@ -5527,7 +5527,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "dashboard"
     ],
     "replies": [
-      "You can sign up or log in from the Login page â€” Google One Tap works in Chrome too. After login, your projects and messages live in Account."
+      "You can sign up or log in from the Login page — Google One Tap works in Chrome too. After login, your projects and messages live in Account."
     ]
   },
   {
@@ -5541,7 +5541,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "messaging workshop"
     ],
     "replies": [
-      "Studio is our full-service track for deeper branding â€” messaging, naming, and brand systems from roughly $1,999â€“$4,499+. Is this for a launch or a rebrand?"
+      "Studio is our full-service track for deeper branding — messaging, naming, and brand systems from roughly $1,999–$4,499+. Is this for a launch or a rebrand?"
     ]
   },
   {
@@ -5557,7 +5557,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
     ],
     "replies": [
       "You are welcome! If you want, I can help you pick a package next.",
-      "Glad that helped â€” ready to start a brief whenever you are."
+      "Glad that helped — ready to start a brief whenever you are."
     ]
   },
   {
@@ -5573,7 +5573,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "speak to someone"
     ],
     "replies": [
-      "I am here on the support team â€” if you need a specialist, tell me your topic and I will stay with you or bring someone in. What do you need help with most?"
+      "I am here on the support team — if you need a specialist, tell me your topic and I will stay with you or bring someone in. What do you need help with most?"
     ]
   },
   {
@@ -5589,7 +5589,7 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "upgrade package"
     ],
     "replies": [
-      "Bronze â†’ Platinum mainly differs by concepts, designers, and revision rounds. Gold/Platinum suit bigger launches. What is your budget range?",
+      "Bronze → Platinum mainly differs by concepts, designers, and revision rounds. Gold/Platinum suit bigger launches. What is your budget range?",
       "If you want more options and revisions, go Gold or Platinum. Tighter budget? Bronze or Silver still works well for logos. What are you designing?"
     ]
   },
@@ -5604,8 +5604,8 @@ export const LIVE_CHAT_KNOWLEDGE: ChatKnowledgeTopic[] = [
       "references"
     ],
     "replies": [
-      "A strong brief covers audience, style likes/dislikes, competitors, and must-have text. You can start with a rough note â€” we will refine it together.",
-      "Share 2â€“3 brands you like, colors to avoid, and your tagline if any. That is enough to open a solid brief."
+      "A strong brief covers audience, style likes/dislikes, competitors, and must-have text. You can start with a rough note — we will refine it together.",
+      "Share 2–3 brands you like, colors to avoid, and your tagline if any. That is enough to open a solid brief."
     ]
   }
 ] as const;

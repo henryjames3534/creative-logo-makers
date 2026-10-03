@@ -32,7 +32,8 @@ SITE FACTS:
 - What we sell: custom logo design, web/UI design, packaging, branding, merch, book covers, social graphics, and more via design contests or 1-to-1 hire. Studio offers brand strategy and full identity.
 - How it works: (1) Share a brief (2) Choose contest (many designers) or 1-to-1 (3) Review & revise (4) Download final files with commercial use.
 - Contests: multiple designers submit concepts; client picks a winner. Packages usually Bronze / Silver / Gold / Platinum.
-- Sitewide package sale: about ${PACKAGE_DISCOUNT_PERCENT}% off list prices (sale price shown next to struck-through list price on package cards). Logo design Bronze list is $249 before sale math.
+- LIVE OFFER (must mention on any price question): sitewide package sale is ON — ${PACKAGE_DISCOUNT_PERCENT}% off list prices. Logo contest Bronze starts about $75 (was $249). Always state both the sale % and the sale starting price; never quote only the old $249 as if it were the current price.
+- Sale prices appear next to struck-through list prices on package cards (/logo-design/details, /pricing, category details pages).
 - Logo design starts from contest packages (see /logo-design/details). Web and app design have higher tiers (see /web-design/details, /mobile-app-design/details).
 - Ownership: completed winning work is delivered for commercial business use (confirm package terms on the order page).
 - USA SEO/help pages live under /usa and /us. Blog at /blog. Case studies at /case-studies. Contact at /contact.
@@ -68,8 +69,34 @@ export const SITE_CHAT_QA: SiteChatQa[] = [
       "logo design cost",
       "cheap logo",
       "affordable logo",
+      "logo rate",
+      "logo rates",
+      "price logo",
+      "cost logo",
+      "how much logo",
+      "logo kitna",
+      "rates for logo",
+      "logo package price",
+      "starting price logo",
     ],
-    answer: `Logo design contests start from our Bronze package (list $249, with the current ~${PACKAGE_DISCOUNT_PERCENT}% sitewide sale applied on package cards). Higher tiers add more concepts and designer participation. See /logo-design/details or start at /get-started.`,
+    answer: `Yes — our package sale is live right now: ${PACKAGE_DISCOUNT_PERCENT}% off. Logo design contest packages start from about $75 (was $249). Higher tiers add more concepts and designers. See /logo-design/details or start at /get-started.`,
+  },
+  {
+    id: "general_price",
+    questions: [
+      "price",
+      "pricing",
+      "how much",
+      "cost",
+      "rates",
+      "rate",
+      "package price",
+      "packages price",
+      "what are your rates",
+      "what is the price",
+      "starting price",
+    ],
+    answer: `We have a live package offer: ${PACKAGE_DISCOUNT_PERCENT}% off list prices. Contest packages for logo-style work start from about $75 (was $249) — sale price shows on each package card. Tell me logo, website, packaging, or branding and I will point you to the right page.`,
   },
   {
     id: "logo_services",
@@ -94,7 +121,7 @@ export const SITE_CHAT_QA: SiteChatQa[] = [
       "website design pricing",
       "landing page cost",
     ],
-    answer: `Website and landing-page design packages are listed on /web-design/details and /landing-page-design/details. Contest tiers apply, and the sitewide ~${PACKAGE_DISCOUNT_PERCENT}% sale shows on package cards. Tell me if you need a full site or a single landing page.`,
+    answer: `Website and landing-page packages are on sale too — ${PACKAGE_DISCOUNT_PERCENT}% off list prices (sale price shown on each card). See /web-design/details or /landing-page-design/details. Tell me if you need a full site or a single landing page.`,
   },
   {
     id: "contest_vs_project",
@@ -179,7 +206,7 @@ export const SITE_CHAT_QA: SiteChatQa[] = [
       "promo",
       "coupon",
     ],
-    answer: `We currently run a sitewide package sale of about ${PACKAGE_DISCOUNT_PERCENT}% off list prices. You will see the sale price next to the struck-through list price on each package card.`,
+    answer: `Yes — the offer is live: ${PACKAGE_DISCOUNT_PERCENT}% off package list prices sitewide. Logo contest packages start from about $75 (was $249). You will see the sale price next to the struck-through list price on every package card.`,
   },
   {
     id: "contact",
