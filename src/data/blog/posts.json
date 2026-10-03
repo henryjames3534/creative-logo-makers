@@ -950,8 +950,8 @@
       "US small business branding",
       "branding"
     ],
-    "serviceSlug": "brand-identity-pack",
-    "servicePath": "/brand-identity-pack/details",
+    "serviceSlug": "brand-launch-pack",
+    "servicePath": "/brand-launch-pack/details",
     "usaPath": "/usa/branding-agency-usa",
     "tags": [
       "branding"
@@ -969,7 +969,7 @@
         "paragraphs": [
           "A logo alone is not a brand. US small businesses scale cleaner when colors, type, and rules ship as one identity package before the website and ads go live.",
           "At Creative Logo Makers, teams across the United States use contests and 1-to-1 projects to move from brief to finished files with clear ownership. The goal is not more decoration \u2014 it is a mark and system that supports sales, hiring, and packaging decisions.",
-          "Before you buy, decide where the work will appear in the next 12 months: website header, Google Business profile, Amazon listing, vehicle wrap, or uniforms. That single list changes the right package and the right brand identity pack scope."
+          "Before you buy, decide where the work will appear in the next 12 months: website header, Google Business profile, Amazon listing, vehicle wrap, or uniforms. That single list changes the right package and the right brand launch pack scope."
         ],
         "bullets": []
       },
@@ -1004,7 +1004,7 @@
           "Choose contest vs 1-to-1 based on how many concepts you want up front",
           "Approve a direction, then refine typography, spacing, and color systems",
           "Export a file kit: SVG/PDF vector, PNG, and usage notes for vendors",
-          "Roll the asset into your site or ads \u2014 start at /brand-identity-pack/details when you are ready to brief designers"
+          "Roll the asset into your site or ads \u2014 start at /brand-launch-pack/details when you are ready to brief designers"
         ]
       },
       {
@@ -1036,7 +1036,7 @@
       {
         "heading": "How Creative Logo Makers helps",
         "paragraphs": [
-          "You can explore related USA intent pages like /usa/branding-agency-usa and brief a designer for brand identity pack when you are ready. Contests give you volume of concepts; projects give you a dedicated collaborator.",
+          "You can explore related USA intent pages like /usa/branding-agency-usa and brief a designer for brand launch pack when you are ready. Contests give you volume of concepts; projects give you a dedicated collaborator.",
           "Either path ends with commercial-use files and a clear next step into web, packaging, or a fuller brand system \u2014 so marketing does not stall after the logo applause moment."
         ],
         "bullets": []
@@ -1045,7 +1045,7 @@
     "faqs": [
       {
         "question": "How much does brand identity package usually cost in the USA?",
-        "answer": "Budgets vary by scope. Many US small businesses start with a focused package for brand identity pack, then expand into brand guides or web. Get a current starting point on /brand-identity-pack/details."
+        "answer": "Budgets vary by scope. Many US small businesses start with a focused package for brand identity pack, then expand into brand guides or web. Get a current starting point on /brand-launch-pack/details."
       },
       {
         "question": "Do I own the final design?",
@@ -1063,7 +1063,7 @@
     "cta": {
       "title": "Ready to act on brand identity package?",
       "body": "Brief Creative Logo Makers designers for brand identity pack or explore USA-focused options next.",
-      "primaryHref": "/brand-identity-pack/details",
+      "primaryHref": "/brand-launch-pack/details",
       "primaryLabel": "View service packages",
       "secondaryHref": "/usa/branding-agency-usa",
       "secondaryLabel": "USA keyword page"
