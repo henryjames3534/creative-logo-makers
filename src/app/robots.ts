@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
+    // Full SEO sitemap (robots disallow /api/, so keep discovery here)
     sitemap: `${SITE_URL}/sitemap.xml`,
     // Host must be bare hostname (no protocol) for crawlers that still read it
     host: "www.creativelogomakers.com",

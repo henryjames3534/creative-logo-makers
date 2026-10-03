@@ -118,6 +118,8 @@ function isExemptPath(pathname: string) {
     pathname === "/sitemap.xml" ||
     pathname === "/robots.txt" ||
     pathname === "/manifest.webmanifest" ||
+    pathname.startsWith("/sitemap/") ||
+    pathname.startsWith("/api/sitemap") ||
     pathname.endsWith(".txt") // IndexNow key file /{key}.txt
   ) {
     return true;

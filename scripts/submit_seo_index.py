@@ -108,7 +108,28 @@ def ping_sitemaps() -> None:
 
 def main() -> None:
     print("Collecting sitemap URLs…")
-    urls = collect_urls_from_sitemap(f"{SITE}/sitemap.xml")
+    urls: list[str] = []
+    for candidate in (
+        f"{SITE}/sitemap.xml",
+        f"{SITE}/api/sitemap-index",
+    ):
+        try:
+            urls = collect_urls_from_sitemap(candidate)
+            if urls:
+                print(f"Loaded from {candidate}")
+                break
+        except SystemExit as e:
+            print(f"Skip {candidate}: {e}")
+    if not urls:
+        # Fallback: chunked API sitemaps
+        for i in range(0, 20):
+            try:
+                part = collect_urls_from_sitemap(f"{SITE}/api/sitemap/{i}")
+            except SystemExit:
+                break
+            if not part:
+                break
+            urls.extend(part)
     # de-dupe preserve order
     seen = set()
     unique = []
@@ -118,14 +139,21 @@ def main() -> None:
         seen.add(u)
         unique.append(u)
     print(f"URLs: {len(unique)}")
+    if not unique:
+        raise SystemExit("No sitemap URLs found")
     # Prefer USA + discount pages first
-    priority = [u for u in unique if "/usa/" in u or u.rstrip("/").endswith("/usa")]
+    priority = [
+        u for u in unique if "/usa/" in u or u.rstrip("/").endswith("/usa")
+    ]
     rest = [u for u in unique if u not in set(priority)]
     ordered = priority + rest
     print(f"Priority (/usa*): {len(priority)}")
     submit_indexnow(ordered)
     ping_sitemaps()
-    print("Done. Google still needs Search Console sitemap confirmation for full indexing.")
+    print(
+        "Done. In Google Search Console → Sitemaps, resubmit "
+        f"{SITE}/sitemap.xml (and optionally {SITE}/api/sitemap-index)."
+    )
 
 
 if __name__ == "__main__":
