@@ -19,6 +19,7 @@ import {
   statePath,
   stateServicePath,
 } from "@/data/us-states";
+import { getPublishedBlogPosts } from "@/lib/blog";
 import { SITE_URL } from "@/lib/seo";
 
 export const SITEMAP_CHUNK_SIZE = 2000;
@@ -58,6 +59,7 @@ export function buildAllSeoSitemapEntries(
     entry("/get-started", { priority: 0.95 }, now),
     entry("/logo-maker", { priority: 0.9 }, now),
     entry("/inspiration", { priority: 0.8 }, now),
+    entry("/blog", { changeFrequency: "daily", priority: 0.9 }, now),
     entry("/designers", { priority: 0.8 }, now),
     entry("/designers/search", { priority: 0.85 }, now),
     entry("/studio", { priority: 0.9 }, now),
@@ -159,6 +161,18 @@ export function buildAllSeoSitemapEntries(
       ),
     );
 
+  const blogPages = getPublishedBlogPosts(now).map((p) =>
+    entry(
+      `/blog/${p.slug}`,
+      {
+        changeFrequency: "monthly",
+        priority: 0.86,
+        lastModified: new Date(p.publishAt),
+      },
+      now,
+    ),
+  );
+
   return [
     ...staticPages,
     ...servicePages,
@@ -170,6 +184,7 @@ export function buildAllSeoSitemapEntries(
     ...stateServicePages,
     ...intentPages,
     ...designerPages,
+    ...blogPages,
   ];
 }
 
@@ -193,6 +208,8 @@ export function listPrioritySeoUrls(): string[] {
     `${SITE_URL}/mobile-app-design/details`,
     `${SITE_URL}/product-packaging-design/details`,
     `${SITE_URL}/t-shirt-design/details`,
+    `${SITE_URL}/blog`,
+    ...getPublishedBlogPosts().map((p) => `${SITE_URL}/blog/${p.slug}`),
   ];
   return Array.from(new Set([...core, ...featured]));
 }

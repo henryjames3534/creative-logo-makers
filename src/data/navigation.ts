@@ -149,7 +149,7 @@ export const megaNav: MegaPanel[] = [
       {
         title: "Discover",
         items: [
-          { href: "/inspiration", label: "Design blog" },
+          { href: "/blog", label: "Design blog" },
           { href: "/inspiration", label: "Logo inspiration" },
           { href: "/inspiration", label: "Packaging ideas" },
           { href: "/inspiration", label: "Brand stories" },
@@ -159,7 +159,7 @@ export const megaNav: MegaPanel[] = [
     featured: {
       title: "Tips, trends & inspiration",
       description: "Fresh reads from the Creative Logo Makers blog.",
-      href: "/inspiration",
+      href: "/blog",
       cta: "Take me to the blog",
       image: "/clm/hires/page-how.jpg",
       accent: "#2486cb",

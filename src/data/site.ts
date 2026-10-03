@@ -95,7 +95,7 @@ export const footerColumns = [
     title: "Resources",
     links: [
       { href: "/designers", label: "Become a designer" },
-      { href: "/inspiration", label: "Blog" },
+      { href: "/blog", label: "Blog" },
       { href: "/inspiration", label: "Design without borders" },
       { href: "/inspiration", label: "Awards" },
       { href: "/about", label: "Affiliates" },
