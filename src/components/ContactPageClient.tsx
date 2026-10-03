@@ -116,21 +116,25 @@ export function ContactPageClient() {
                 applications — we&apos;re here.
               </p>
               <div className="mt-6 space-y-3 text-sm">
-                <p>
-                  <span className="text-muted">Phone </span>
-                  <a
-                    href={`tel:${brand.phoneTel}`}
-                    className="font-semibold text-ink hover:text-hero"
-                  >
-                    {brand.phone}
-                  </a>
-                  <span className="text-muted"> · </span>
-                  <a
-                    href={`tel:${brand.phoneAltTel}`}
-                    className="font-semibold text-ink hover:text-hero"
-                  >
-                    {brand.phoneAlt}
-                  </a>
+                <p className="space-y-1">
+                  <span className="block">
+                    <span className="text-muted">Primary </span>
+                    <a
+                      href={`tel:${brand.phoneTel}`}
+                      className="text-base font-bold text-hero hover:opacity-90"
+                    >
+                      {brand.phone}
+                    </a>
+                  </span>
+                  <span className="block">
+                    <span className="text-muted">Secondary </span>
+                    <a
+                      href={`tel:${brand.phoneAltTel}`}
+                      className="font-medium text-ink/70 hover:text-ink"
+                    >
+                      {brand.phoneAlt}
+                    </a>
+                  </span>
                 </p>
                 <p>
                   <span className="text-muted">Email </span>

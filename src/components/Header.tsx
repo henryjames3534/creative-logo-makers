@@ -145,7 +145,8 @@ export function Header() {
             />
             <Link
               href={`tel:${brand.phoneTel}`}
-              className="hidden shrink-0 flex-nowrap items-center gap-1.5 whitespace-nowrap text-[13px] font-medium text-ink/75 hover:text-ink 2xl:inline-flex 2xl:text-[14px]"
+              className="hidden shrink-0 flex-nowrap items-center gap-1.5 whitespace-nowrap rounded-full bg-hero/10 px-2.5 py-1 text-[13px] font-bold text-hero hover:bg-hero/15 lg:inline-flex 2xl:text-[14px]"
+              aria-label={`Call primary number ${brand.phone}`}
             >
               <PhoneIcon />
               <span className="whitespace-nowrap">{brand.phone}</span>
@@ -339,17 +340,17 @@ export function Header() {
               </div>
               <a
                 href={`tel:${brand.phoneTel}`}
-                className="text-[15px] font-medium text-ink"
+                className="text-[15px] font-bold text-hero"
                 onClick={() => setMobileOpen(false)}
               >
-                {brand.phone}
+                Primary · {brand.phone}
               </a>
               <a
                 href={`tel:${brand.phoneAltTel}`}
-                className="text-[15px] font-medium text-ink"
+                className="text-[14px] font-medium text-muted"
                 onClick={() => setMobileOpen(false)}
               >
-                {brand.phoneAlt}
+                Secondary · {brand.phoneAlt}
               </a>
               <a
                 href={`mailto:${brand.email}`}

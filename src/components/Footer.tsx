@@ -89,7 +89,8 @@ export function Footer() {
               <div className="mt-5 space-y-2 text-sm">
                 <Link
                   href={`tel:${brand.phoneTel}`}
-                  className="inline-flex items-center gap-2 font-semibold text-ink transition-colors hover:text-hero"
+                  className="inline-flex items-center gap-2 text-base font-bold text-hero transition-colors hover:opacity-90"
+                  aria-label={`Primary phone ${brand.phone}`}
                 >
                   <PhoneIcon />
                   {brand.phone}
@@ -97,10 +98,11 @@ export function Footer() {
                 <div>
                   <Link
                     href={`tel:${brand.phoneAltTel}`}
-                    className="inline-flex items-center gap-2 font-semibold text-ink transition-colors hover:text-hero"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-[#5c5b59] transition-colors hover:text-ink"
+                    aria-label={`Secondary phone ${brand.phoneAlt}`}
                   >
                     <PhoneIcon />
-                    {brand.phoneAlt}
+                    <span>Alt · {brand.phoneAlt}</span>
                   </Link>
                 </div>
                 <a

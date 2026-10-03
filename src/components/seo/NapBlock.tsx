@@ -34,11 +34,21 @@ export function NapBlock({
       </address>
       <div className="mt-3 space-y-1 text-sm">
         <p>
+          <span className="text-xs text-faint">Primary · </span>
           <Link
             href={`tel:${nap.phoneTel}`}
-            className="font-semibold text-hero hover:underline"
+            className="text-base font-bold text-hero hover:underline"
           >
             {nap.phoneDisplay}
+          </Link>
+        </p>
+        <p>
+          <span className="text-xs text-faint">Secondary · </span>
+          <Link
+            href={`tel:${nap.phoneAltTel}`}
+            className="font-medium text-muted hover:text-ink"
+          >
+            {nap.phoneAltDisplay}
           </Link>
         </p>
         <p>

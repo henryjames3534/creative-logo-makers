@@ -11,11 +11,12 @@ export const nap = {
   postalCode: "19958",
   addressCountry: "US",
   addressCountryName: "USA",
-  /** Primary display phone (US formatting) */
-  phoneDisplay: "+1 (469) 851-5003",
-  phoneTel: "+14698515003",
-  phoneAltDisplay: "+1 (469) 754-1570",
-  phoneAltTel: "+14697541570",
+  /** Primary display phone (US formatting) — highlight everywhere */
+  phoneDisplay: "+1 (469) 754-1570",
+  phoneTel: "+14697541570",
+  /** Secondary line */
+  phoneAltDisplay: "+1 (469) 851-5003",
+  phoneAltTel: "+14698515003",
   email: "info@creativelogomakers.com",
   url: "https://www.creativelogomakers.com",
 } as const;
