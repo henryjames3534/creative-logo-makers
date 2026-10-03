@@ -57,15 +57,17 @@ export function LogoPathsSection() {
                 </video>
               </div>
             </div>
-            <h3 className="text-[1.5rem] font-medium text-ink">Free Logomaker</h3>
+            <h3 className="text-[1.5rem] font-medium text-ink">
+              We design your logo for you
+            </h3>
             <p className="mt-3 text-[15px] leading-relaxed text-ink/75">
-              Create your logo design in minutes. It&apos;s fast, free and
-              oh-so-easy. The perfect way to get started, or use it as
-              inspiration for our designers to level up your branding.
+              You share the brief — our designers create custom logo options
+              built for your brand. No DIY tools. Real concepts, revisions, and
+              final files ready for business.
             </p>
             <div className="mt-5">
-              <Button href="/logo-maker" variant="primary">
-                Create a logo, it&apos;s free
+              <Button href="/logo-design/details" variant="primary">
+                View logo packages
               </Button>
             </div>
           </div>
