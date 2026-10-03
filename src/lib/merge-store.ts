@@ -464,14 +464,12 @@ export function mergeCrmDocuments(
     ["updatedAt", "createdAt"],
   ).filter((x) => !looksLikeSeedEmail(String(x.customerEmail || "")) && String(x.id || "") !== "rv_seed_1");
 
-  // Live leads on either side clear matching tombstones. Without this,
-  // a stale local `e:email` delete can wipe a fresh server Contact form lead
-  // during admin hydrate (mergeCrmDocuments(remote, local)).
+  // Only INCOMING leads clear tombs (form submit / explicit recreate).
+  // Never clear from remote live rows — that undoes admin deletes on hydrate.
   const resurrectLeadKeys = new Set<string>();
-  for (const l of [...remoteLeads, ...incomingLeads]) {
+  for (const l of incomingLeads) {
     const id = String(l.id || "");
     const email = String(l.email || "").trim().toLowerCase();
-    // Never resurrect staff / junk site-visit leads
     if (isStaffLeadEmail(email) || isSeedLead(l)) continue;
     if (id) resurrectLeadKeys.add(id);
     if (email) resurrectLeadKeys.add(`e:${email}`);
@@ -621,6 +619,7 @@ export function mergeCrmDocuments(
       String(d.id || ""),
       d.orderId ? `ordid:${String(d.orderId)}` : "",
       d.orderCode ? `ord:${String(d.orderCode)}` : "",
+      d.leadId ? `lead:${String(d.leadId)}` : "",
     ]),
     tasks,
     companies,

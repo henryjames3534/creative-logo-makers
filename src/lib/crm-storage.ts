@@ -563,8 +563,23 @@ export function leadStatusToDealStage(status?: string): DealStage {
  * Every lead must have a pipeline deal (auto-connect).
  * Returns true if state was mutated.
  */
+function dealAutoCreateBlocked(
+  state: CrmState,
+  opts: { leadId?: string; orderId?: string; orderCode?: string },
+): boolean {
+  const tombs = new Set((state.deleted?.deals || []).map(String));
+  if (opts.leadId && tombs.has(`lead:${opts.leadId}`)) return true;
+  if (opts.orderId && tombs.has(`ordid:${opts.orderId}`)) return true;
+  if (opts.orderCode && tombs.has(`ord:${opts.orderCode}`)) return true;
+  if (opts.leadId && (state.deleted?.leads || []).includes(opts.leadId)) {
+    return true;
+  }
+  return false;
+}
+
 function ensurePipelineDealForLead(state: CrmState, lead: CrmLead): boolean {
   if (!lead?.id) return false;
+  if (dealAutoCreateBlocked(state, { leadId: lead.id })) return false;
   const email = (lead.email || "").toLowerCase();
   const order =
     (email &&
@@ -572,6 +587,16 @@ function ensurePipelineDealForLead(state: CrmState, lead: CrmLead): boolean {
         (o) => (o.customerEmail || "").toLowerCase() === email,
       )) ||
     null;
+  if (
+    order &&
+    dealAutoCreateBlocked(state, {
+      leadId: lead.id,
+      orderId: order.id,
+      orderCode: order.orderId,
+    })
+  ) {
+    return false;
+  }
 
   const existing = (state.deals || []).find((d) => d.leadId === lead.id);
   if (existing) {
@@ -666,24 +691,23 @@ function ensurePipelineDealForLead(state: CrmState, lead: CrmLead): boolean {
     updatedAt: now,
     notes: `Auto-linked from lead ${lead.id}`,
   });
-
-  // Don't let old delete-tombstones block this new deal / order link
-  if (state.deleted?.deals?.length) {
-    const block = new Set(
-      [
-        dealId,
-        order?.id ? `ordid:${order.id}` : "",
-        order?.orderId ? `ord:${order.orderId}` : "",
-      ].filter(Boolean),
-    );
-    state.deleted.deals = state.deleted.deals.filter((t) => !block.has(t));
-  }
   return true;
 }
 
 /** Paid/open orders without a deal also get a pipeline card. */
 function ensurePipelineDealForOrder(state: CrmState, order: CrmOrder): boolean {
   if (!order?.id) return false;
+  if (
+    dealAutoCreateBlocked(state, {
+      orderId: order.id,
+      orderCode: order.orderId,
+    })
+  ) {
+    return false;
+  }
+  if ((state.deleted?.orders || []).some((t) => t === order.id || t === `ord:${order.orderId}`)) {
+    return false;
+  }
   const has =
     (state.deals || []).some(
       (d) =>
@@ -732,16 +756,6 @@ function ensurePipelineDealForOrder(state: CrmState, order: CrmOrder): boolean {
     updatedAt: now,
     notes: `Auto-linked from order ${order.orderId}`,
   });
-  if (state.deleted?.deals?.length) {
-    const block = new Set(
-      [
-        dealId,
-        `ordid:${order.id}`,
-        order.orderId ? `ord:${order.orderId}` : "",
-      ].filter(Boolean),
-    );
-    state.deleted.deals = state.deleted.deals.filter((t) => !block.has(t));
-  }
   return true;
 }
 
@@ -954,6 +968,21 @@ export function saveCrm(state: CrmState) {
   void import("@/lib/db-sync").then(({ scheduleStorePush }) => {
     scheduleStorePush("crm", state);
   });
+}
+
+/** Persist + immediate server PUT (deletes must not wait on debounce). */
+function saveCrmFlush(state: CrmState) {
+  if (typeof window === "undefined") return;
+  const updatedAt = new Date().toISOString();
+  localStorage.setItem(CRM_KEY, JSON.stringify(state));
+  localStorage.setItem(CRM_UPDATED_KEY, updatedAt);
+  emitCrm(CRM_CHANGED_EVENT, state);
+  void import("@/lib/db-sync").then(
+    ({ putStoreDocument, cancelStorePush }) => {
+      cancelStorePush("crm");
+      void putStoreDocument("crm", state, updatedAt);
+    },
+  );
 }
 
 /** Pull CRM from Postgres (or push local if server empty / older). */
@@ -2185,16 +2214,17 @@ export function deleteLead(id: string) {
   state.deals = state.deals.filter((d) => d.leadId !== id);
 
   state.deleted = state.deleted || {};
-  // Id-only tombstones — never ban by email. Same person can submit the
-  // contact form again and must still appear under Leads.
+  // Id-only lead tombs — same email may submit contact form again (new id).
   state.deleted.leads = Array.from(
     new Set([...(state.deleted.leads || []), id]),
   ).slice(-500);
-  if (dealIds.length) {
-    state.deleted.deals = Array.from(
-      new Set([...(state.deleted.deals || []), ...dealIds]),
-    ).slice(-500);
-  }
+  state.deleted.deals = Array.from(
+    new Set([
+      ...(state.deleted.deals || []),
+      ...dealIds,
+      `lead:${id}`,
+    ]),
+  ).slice(-500);
   state.activities.unshift({
     id: uid("ac"),
     type: "note",
@@ -2207,11 +2237,7 @@ export function deleteLead(id: string) {
     relatedType: "lead",
     relatedId: id,
   });
-  saveCrm(state);
-  // Land tombstone on server immediately so the next form submit can resurrect cleanly
-  void import("@/lib/db-sync").then(({ flushStorePush }) => {
-    void flushStorePush("crm");
-  });
+  saveCrmFlush(state);
   return state;
 }
 
@@ -2247,7 +2273,7 @@ export function deleteVisitors(ids: string[]) {
     createdAt: new Date().toISOString(),
     ownerId: "own_admin",
   });
-  saveCrm(state);
+  saveCrmFlush(state);
   emitCrm(VISITOR_EVENT);
   return state;
 }
@@ -2380,8 +2406,12 @@ export function deleteDeal(id: string) {
   const deal = state.deals.find((d) => d.id === id);
   state.deals = state.deals.filter((d) => d.id !== id);
   state.deleted = state.deleted || {};
+  const tombs = [id];
+  if (deal?.leadId) tombs.push(`lead:${deal.leadId}`);
+  if (deal?.orderId) tombs.push(`ordid:${deal.orderId}`);
+  if (deal?.orderCode) tombs.push(`ord:${deal.orderCode}`);
   state.deleted.deals = Array.from(
-    new Set([...(state.deleted.deals || []), id]),
+    new Set([...(state.deleted.deals || []), ...tombs]),
   ).slice(-500);
   state.activities.unshift({
     id: uid("ac"),
@@ -2393,7 +2423,7 @@ export function deleteDeal(id: string) {
     relatedType: "deal",
     relatedId: id,
   });
-  saveCrm(state);
+  saveCrmFlush(state);
   return state;
 }
 
@@ -2402,7 +2432,11 @@ export function deleteOrder(id: string) {
   const o = state.orders.find((x) => x.id === id);
   if (!o) {
     state.orders = state.orders.filter((x) => x.id !== id);
-    saveCrm(state);
+    state.deleted = state.deleted || {};
+    state.deleted.orders = Array.from(
+      new Set([...(state.deleted.orders || []), id]),
+    ).slice(-500);
+    saveCrmFlush(state);
     return state;
   }
 
@@ -2467,6 +2501,12 @@ export function deleteOrder(id: string) {
     state.deleted.leads = Array.from(
       new Set([...(state.deleted.leads || []), ...linkedLeadIds]),
     ).slice(-500);
+    state.deleted.deals = Array.from(
+      new Set([
+        ...(state.deleted.deals || []),
+        ...linkedLeadIds.map((lid) => `lead:${lid}`),
+      ]),
+    ).slice(-500);
   }
 
   state.activities.unshift({
@@ -2479,7 +2519,7 @@ export function deleteOrder(id: string) {
     relatedType: "order",
     relatedId: id,
   });
-  saveCrm(state);
+  saveCrmFlush(state);
   return state;
 }
 
@@ -2503,7 +2543,7 @@ export function deleteContact(id: string) {
     relatedType: "contact",
     relatedId: id,
   });
-  saveCrm(state);
+  saveCrmFlush(state);
   return state;
 }
 
@@ -2525,7 +2565,7 @@ export function deleteInboxItem(id: string) {
     createdAt: new Date().toISOString(),
     ownerId: "own_admin",
   });
-  saveCrm(state);
+  saveCrmFlush(state);
   emitCrm(INBOX_EVENT);
   return state;
 }

@@ -79,6 +79,15 @@ export function flushStorePush(key: StoreKey) {
   return putStoreDocument(key, body);
 }
 
+/** Cancel debounced push without sending (used before an immediate delete PUT). */
+export function cancelStorePush(key: StoreKey) {
+  if (timers[key]) {
+    clearTimeout(timers[key]);
+    delete timers[key];
+  }
+  delete pending[key];
+}
+
 function ts(value: string | null | undefined) {
   if (!value) return 0;
   const n = Date.parse(value);
@@ -102,41 +111,29 @@ function countCrmRows(payload: unknown) {
   return n;
 }
 
-/**
- * Drop local lead tombstones that match a live server lead.
- * Prevents admin localStorage delete-history from erasing new form leads.
- */
-function scrubLocalLeadTombsAgainstRemote(
-  remote: unknown,
-  local: unknown,
-): unknown {
-  if (!local || typeof local !== "object") return local;
-  if (!remote || typeof remote !== "object") return local;
-  const r = remote as Record<string, unknown>;
-  const l = { ...(local as Record<string, unknown>) };
-  const remoteLeads = Array.isArray(r.leads) ? (r.leads as Record<string, unknown>[]) : [];
-  const live = new Set<string>();
-  for (const lead of remoteLeads) {
-    const id = String(lead.id || "").trim();
-    const email = String(lead.email || "")
-      .trim()
-      .toLowerCase();
-    if (id) live.add(id);
-    if (email) live.add(`e:${email}`);
+function deletedKeyCount(payload: unknown, bucket: string): number {
+  if (!payload || typeof payload !== "object") return 0;
+  const deleted = (payload as { deleted?: Record<string, unknown> }).deleted;
+  if (!deleted || typeof deleted !== "object") return 0;
+  const arr = deleted[bucket];
+  return Array.isArray(arr) ? arr.length : 0;
+}
+
+/** True when local merge carried delete tombs the server does not have yet. */
+function localDeletesAhead(remote: unknown, merged: unknown): boolean {
+  for (const bucket of [
+    "leads",
+    "deals",
+    "orders",
+    "contacts",
+    "visitors",
+    "inbox",
+  ]) {
+    if (deletedKeyCount(merged, bucket) > deletedKeyCount(remote, bucket)) {
+      return true;
+    }
   }
-  if (!live.size) return local;
-  const deleted =
-    l.deleted && typeof l.deleted === "object"
-      ? { ...(l.deleted as Record<string, unknown>) }
-      : {};
-  const tombs = Array.isArray(deleted.leads)
-    ? (deleted.leads as unknown[]).map(String)
-    : [];
-  const nextTombs = tombs.filter((t) => !live.has(t));
-  if (nextTombs.length === tombs.length) return local;
-  deleted.leads = nextTombs;
-  l.deleted = deleted;
-  return l;
+  return false;
 }
 
 /**
@@ -170,20 +167,16 @@ export async function hydrateStoreKey(opts: {
   // CRM: merge both sides so drag-stage / local edits survive poll hydrate.
   if (opts.key === "crm" && hasRemote && localPayload) {
     const { mergeCrmDocuments } = await import("@/lib/merge-store");
-    // Stale local delete-tombstones must not wipe fresh server leads
-    // (e.g. contact form submit after an earlier delete of the same email).
-    const localSafe = scrubLocalLeadTombsAgainstRemote(
-      remote.payload,
-      localPayload,
-    );
-    const merged = mergeCrmDocuments(remote.payload, localSafe);
+    const merged = mergeCrmDocuments(remote.payload, localPayload);
+    const deletesNeedSync = localDeletesAhead(remote.payload, merged);
     const mergedAt =
-      localAt > remoteAt
+      localAt > remoteAt || deletesNeedSync
         ? opts.localUpdatedAt || new Date().toISOString()
         : remote.updatedAt || new Date().toISOString();
     opts.writeLocal(JSON.stringify(merged), mergedAt);
-    // If local had newer edits, push merged back so other browsers see stages.
-    if (localAt > remoteAt) {
+    // Push when local is newer OR local delete tombs must land on the server
+    // (otherwise the next poll brings deleted rows back).
+    if (localAt > remoteAt || deletesNeedSync) {
       try {
         await putStoreDocument("crm", merged, mergedAt);
         return "pushed";
