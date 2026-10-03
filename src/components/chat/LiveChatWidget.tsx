@@ -8,6 +8,7 @@ import {
   getVisitorChatKey,
   humanReplyDelayMs,
   isBotAllowed,
+  LIVE_CHAT_ADMIN_NAME,
   onLiveChatUpdated,
   openLiveChat,
   postChatMessage,
@@ -197,7 +198,7 @@ export function LiveChatWidget() {
           <div className="flex items-center justify-between bg-ink px-4 py-3 !text-white">
             <div>
               <p className="text-sm font-semibold">
-                Chat with {humanMode ? "Support" : headerAgent}
+                Chat with {humanMode ? LIVE_CHAT_ADMIN_NAME : headerAgent}
               </p>
               <p className="text-[11px] text-white/65">
                 {typing
@@ -244,7 +245,7 @@ export function LiveChatWidget() {
                   ) : null}
                   {m.role === "admin" ? (
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-green">
-                      Support
+                      {m.agentName || ADMIN_DISPLAY_NAME}
                     </p>
                   ) : null}
                   <p className="whitespace-pre-wrap">{m.body}</p>

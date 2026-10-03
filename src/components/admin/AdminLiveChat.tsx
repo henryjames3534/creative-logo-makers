@@ -7,6 +7,7 @@ import {
   listChatSessions,
   markChatSeen,
   onLiveChatUpdated,
+  LIVE_CHAT_ADMIN_NAME,
   postChatMessage,
   releaseChatToBot,
   takeOverChatSession,
@@ -49,6 +50,7 @@ export function AdminLiveChat() {
       sessionId: active.id,
       role: "admin",
       body: reply,
+      agentName: LIVE_CHAT_ADMIN_NAME,
     });
     setReply("");
     refresh();

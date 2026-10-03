@@ -149,6 +149,9 @@ export function unreadChatCount(): number {
 export const LIVE_CHAT_WELCOME =
   "Hey — thanks for stopping by Creative Logo Makers. Quick heads-up: our package sale is live (70% off — logo contests from about $75, was $249). I can help with logos, websites, packaging, pricing, contests, or hiring a designer. What are you working on?";
 
+/** Display name for human admin messages in the visitor widget */
+export const LIVE_CHAT_ADMIN_NAME = "Angelina";
+
 /** Support agents shown on replies (human feel) */
 export const LIVE_CHAT_AGENTS = [
   "Mike",
