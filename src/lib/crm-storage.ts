@@ -2208,6 +2208,10 @@ export function deleteLead(id: string) {
     relatedId: id,
   });
   saveCrm(state);
+  // Land tombstone on server immediately so the next form submit can resurrect cleanly
+  void import("@/lib/db-sync").then(({ flushStorePush }) => {
+    void flushStorePush("crm");
+  });
   return state;
 }
 

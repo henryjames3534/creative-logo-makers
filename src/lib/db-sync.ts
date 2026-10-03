@@ -103,6 +103,43 @@ function countCrmRows(payload: unknown) {
 }
 
 /**
+ * Drop local lead tombstones that match a live server lead.
+ * Prevents admin localStorage delete-history from erasing new form leads.
+ */
+function scrubLocalLeadTombsAgainstRemote(
+  remote: unknown,
+  local: unknown,
+): unknown {
+  if (!local || typeof local !== "object") return local;
+  if (!remote || typeof remote !== "object") return local;
+  const r = remote as Record<string, unknown>;
+  const l = { ...(local as Record<string, unknown>) };
+  const remoteLeads = Array.isArray(r.leads) ? (r.leads as Record<string, unknown>[]) : [];
+  const live = new Set<string>();
+  for (const lead of remoteLeads) {
+    const id = String(lead.id || "").trim();
+    const email = String(lead.email || "")
+      .trim()
+      .toLowerCase();
+    if (id) live.add(id);
+    if (email) live.add(`e:${email}`);
+  }
+  if (!live.size) return local;
+  const deleted =
+    l.deleted && typeof l.deleted === "object"
+      ? { ...(l.deleted as Record<string, unknown>) }
+      : {};
+  const tombs = Array.isArray(deleted.leads)
+    ? (deleted.leads as unknown[]).map(String)
+    : [];
+  const nextTombs = tombs.filter((t) => !live.has(t));
+  if (nextTombs.length === tombs.length) return local;
+  deleted.leads = nextTombs;
+  l.deleted = deleted;
+  return l;
+}
+
+/**
  * Pull server doc into localStorage when newer; otherwise push local up.
  * Never push an empty/thin local CRM over a richer server document.
  * CRM: always merge local↔remote so pipeline stage moves aren't wiped.
@@ -133,7 +170,13 @@ export async function hydrateStoreKey(opts: {
   // CRM: merge both sides so drag-stage / local edits survive poll hydrate.
   if (opts.key === "crm" && hasRemote && localPayload) {
     const { mergeCrmDocuments } = await import("@/lib/merge-store");
-    const merged = mergeCrmDocuments(remote.payload, localPayload);
+    // Stale local delete-tombstones must not wipe fresh server leads
+    // (e.g. contact form submit after an earlier delete of the same email).
+    const localSafe = scrubLocalLeadTombsAgainstRemote(
+      remote.payload,
+      localPayload,
+    );
+    const merged = mergeCrmDocuments(remote.payload, localSafe);
     const mergedAt =
       localAt > remoteAt
         ? opts.localUpdatedAt || new Date().toISOString()

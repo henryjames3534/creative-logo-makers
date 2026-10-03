@@ -55,9 +55,7 @@ export function AdminLeads() {
       setState(crm);
       // Snapshot unread rows for this visit, then clear sidebar badge
       const fresh = new Set(
-        crm.leads
-          .filter((l) => !isContactFormLead(l) && isLeadUnread(l.id))
-          .map((l) => l.id),
+        crm.leads.filter((l) => isLeadUnread(l.id)).map((l) => l.id),
       );
       setUnreadIds(fresh);
       markLeadsSeen();
@@ -110,9 +108,9 @@ export function AdminLeads() {
   const rows = useMemo(() => {
     if (!state) return [];
     return state.leads.filter((l) => {
-      if (isContactFormLead(l)) return false;
+      // Show every lead (contact form, package, manual) — all connected here
       if (status !== "all" && l.status !== status) return false;
-      const hay = `${l.name} ${l.email} ${l.company ?? ""} ${l.interest}`.toLowerCase();
+      const hay = `${l.name} ${l.email} ${l.company ?? ""} ${l.interest} ${l.source}`.toLowerCase();
       return !q.trim() || hay.includes(q.trim().toLowerCase());
     });
   }, [state, q, status]);
@@ -198,20 +196,11 @@ export function AdminLeads() {
         <div>
           <h1 className="text-2xl font-semibold text-[var(--a-text)]">Leads</h1>
           <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-            Capture, score, and progress inbound demand.
-            {contactFormCount > 0 ? (
-              <>
-                {" "}
-                Contact form submissions are under{" "}
-                <a
-                  href="/admin/contact-form-entries"
-                  className="text-[#5ee0bf] hover:underline"
-                >
-                  Contact form entries
-                </a>
-                .
-              </>
-            ) : null}
+            Capture, score, and progress inbound demand
+            {contactFormCount > 0
+              ? ` · ${contactFormCount} from contact form`
+              : ""}
+            .
           </p>
         </div>
         <button
@@ -273,10 +262,14 @@ export function AdminLeads() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium text-[var(--a-text)]">{l.name}</p>
                       {unread ? <Badge tone="coral">New</Badge> : null}
+                      {isContactFormLead(l) ? (
+                        <Badge tone="blue">Contact form</Badge>
+                      ) : null}
                     </div>
                     <p className="text-xs text-[color:var(--a-faint)]">
                       {l.email}
                       {l.company ? ` · ${l.company}` : ""}
+                      {l.source ? ` · ${l.source}` : ""}
                     </p>
                   </td>
                   <td className="px-4 py-3 text-[color:var(--a-muted)]">{l.interest}</td>

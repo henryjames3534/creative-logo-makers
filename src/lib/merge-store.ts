@@ -464,10 +464,11 @@ export function mergeCrmDocuments(
     ["updatedAt", "createdAt"],
   ).filter((x) => !looksLikeSeedEmail(String(x.customerEmail || "")) && String(x.id || "") !== "rv_seed_1");
 
-  // Incoming leads (e.g. contact form) clear their tombstones so a deleted
-  // email can submit again and still appear in the admin dashboard.
+  // Live leads on either side clear matching tombstones. Without this,
+  // a stale local `e:email` delete can wipe a fresh server Contact form lead
+  // during admin hydrate (mergeCrmDocuments(remote, local)).
   const resurrectLeadKeys = new Set<string>();
-  for (const l of incomingLeads) {
+  for (const l of [...remoteLeads, ...incomingLeads]) {
     const id = String(l.id || "");
     const email = String(l.email || "").trim().toLowerCase();
     // Never resurrect staff / junk site-visit leads
