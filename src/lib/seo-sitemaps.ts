@@ -69,6 +69,7 @@ export function buildAllSeoSitemapEntries(
     entry("/contact", { priority: 0.75 }, now),
     entry("/case-studies", { changeFrequency: "weekly", priority: 0.88 }, now),
     entry("/testimonials", { changeFrequency: "weekly", priority: 0.85 }, now),
+    entry("/reviews", { changeFrequency: "weekly", priority: 0.88 }, now),
     entry("/team", { changeFrequency: "weekly", priority: 0.85 }, now),
     entry("/process", { priority: 0.8 }, now),
     entry("/policies", { priority: 0.65 }, now),

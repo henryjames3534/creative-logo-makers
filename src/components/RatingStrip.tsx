@@ -49,15 +49,18 @@ export function RatingStrip() {
           <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[#4b4b4b] md:text-base">
             Folks think we&apos;re pretty rad. We&apos;re rated{" "}
             <Link
-              href="/inspiration"
+              href="/reviews"
               className="font-bold text-[#191919] underline decoration-[#00B67A]/40 underline-offset-2 hover:decoration-[#00B67A]"
             >
               {brand.rating}
             </Link>{" "}
             from{" "}
-            <span className="font-semibold text-[#191919]">
+            <Link
+              href="/reviews"
+              className="font-semibold text-[#191919] underline decoration-[#00B67A]/40 underline-offset-2 hover:decoration-[#00B67A]"
+            >
               {brand.reviews}
-            </span>{" "}
+            </Link>{" "}
             customer reviews.
           </p>
 
@@ -70,7 +73,7 @@ export function RatingStrip() {
               Based on verified reviews
             </span>
             <Link
-              href="/inspiration"
+              href="/reviews"
               className="font-medium text-[#191919] underline-offset-2 hover:underline"
             >
               Read reviews →
