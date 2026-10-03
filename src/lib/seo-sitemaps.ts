@@ -19,6 +19,7 @@ import {
   statePath,
   stateServicePath,
 } from "@/data/us-states";
+import { caseStudies } from "@/data/case-studies";
 import { getPublishedBlogPosts } from "@/lib/blog";
 import { SITE_URL } from "@/lib/seo";
 
@@ -65,6 +66,11 @@ export function buildAllSeoSitemapEntries(
     entry("/studio", { priority: 0.9 }, now),
     entry("/about", { priority: 0.7 }, now),
     entry("/contact", { priority: 0.75 }, now),
+    entry("/case-studies", { changeFrequency: "weekly", priority: 0.88 }, now),
+    entry("/testimonials", { changeFrequency: "weekly", priority: 0.85 }, now),
+    entry("/team", { changeFrequency: "weekly", priority: 0.85 }, now),
+    entry("/process", { priority: 0.8 }, now),
+    entry("/policies", { priority: 0.65 }, now),
     entry("/terms", { priority: 0.3, changeFrequency: "yearly" }, now),
     entry("/privacy", { priority: 0.3, changeFrequency: "yearly" }, now),
   ];
@@ -173,6 +179,14 @@ export function buildAllSeoSitemapEntries(
     ),
   );
 
+  const caseStudyPages = caseStudies.map((c) =>
+    entry(
+      `/case-studies/${c.slug}`,
+      { priority: 0.84, changeFrequency: "monthly" },
+      now,
+    ),
+  );
+
   return [
     ...staticPages,
     ...servicePages,
@@ -185,6 +199,7 @@ export function buildAllSeoSitemapEntries(
     ...intentPages,
     ...designerPages,
     ...blogPages,
+    ...caseStudyPages,
   ];
 }
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/Button";
 import { BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+import { NapBlock } from "@/components/seo/NapBlock";
 import { Container } from "@/components/Section";
 import { getCategory } from "@/data/categories";
 import {
@@ -79,31 +80,37 @@ export default async function CityHubPage({ params }: Props) {
 
       <section className="py-14">
         <Container>
-          <h2 className="text-2xl font-medium text-ink">
-            Popular services in {city.name}
-          </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {LOCATION_SEO_SERVICES.map((slug) => {
-              const cat = getCategory(slug);
-              return (
-                <Link
-                  key={slug}
-                  href={locationPath(city.slug, slug)}
-                  className="rounded-2xl border border-line bg-white p-5 shadow-sm transition hover:border-ink"
-                >
-                  <h3 className="font-semibold text-ink">
-                    {cat?.productName || slug.replace(/-/g, " ")} in {city.name}
-                  </h3>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted">
-                    {cat?.description ||
-                      `Professional ${slug.replace(/-/g, " ")} for ${city.name} brands.`}
-                  </p>
-                  <p className="mt-3 text-sm font-bold text-ink">
-                    From {cat?.startingPrice || "$249"}
-                  </p>
-                </Link>
-              );
-            })}
+          <div className="grid gap-10 lg:grid-cols-[1fr_300px] lg:items-start">
+            <div>
+              <h2 className="text-2xl font-medium text-ink">
+                Popular services in {city.name}
+              </h2>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                {LOCATION_SEO_SERVICES.map((slug) => {
+                  const cat = getCategory(slug);
+                  return (
+                    <Link
+                      key={slug}
+                      href={locationPath(city.slug, slug)}
+                      className="rounded-2xl border border-line bg-white p-5 shadow-sm transition hover:border-ink"
+                    >
+                      <h3 className="font-semibold text-ink">
+                        {cat?.productName || slug.replace(/-/g, " ")} in{" "}
+                        {city.name}
+                      </h3>
+                      <p className="mt-2 line-clamp-2 text-sm text-muted">
+                        {cat?.description ||
+                          `Professional ${slug.replace(/-/g, " ")} for ${city.name} brands.`}
+                      </p>
+                      <p className="mt-3 text-sm font-bold text-ink">
+                        From {cat?.startingPrice || "$249"}
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+            <NapBlock serviceArea={`${city.name}, ${city.state}`} />
           </div>
         </Container>
       </section>

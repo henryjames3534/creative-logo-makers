@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/Button";
 import { LocalizedFromPrice } from "@/components/locale/LocalizedPrice";
+import { NapBlock } from "@/components/seo/NapBlock";
 import { Container } from "@/components/Section";
 import { categoryLaunchHref } from "@/data/serviceRoutes";
 import {
@@ -85,19 +86,24 @@ export function LocationServicePage({
 
       <section className="py-14 md:py-16">
         <Container>
-          <h2 className="text-3xl font-medium tracking-tight text-ink">
-            Why {city.name} businesses choose Creative Logo Makers
-          </h2>
-          <ul className="mt-8 grid gap-4 md:grid-cols-2">
-            {seo.why.map((item) => (
-              <li
-                key={item}
-                className="rounded-2xl border border-line bg-white p-5 text-[15px] leading-relaxed text-ink/80 shadow-sm"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
+          <div className="grid gap-10 lg:grid-cols-[1fr_300px] lg:items-start">
+            <div>
+              <h2 className="text-3xl font-medium tracking-tight text-ink">
+                Why {city.name} businesses choose Creative Logo Makers
+              </h2>
+              <ul className="mt-8 grid gap-4 md:grid-cols-2">
+                {seo.why.map((item) => (
+                  <li
+                    key={item}
+                    className="rounded-2xl border border-line bg-white p-5 text-[15px] leading-relaxed text-ink/80 shadow-sm"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <NapBlock serviceArea={`${city.name}, ${city.state}`} />
+          </div>
         </Container>
       </section>
 

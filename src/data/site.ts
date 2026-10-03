@@ -1,19 +1,22 @@
+import { nap, napAddressFull, napAddressLine } from "@/data/nap";
+
+/** Brand + NAP — phone/address always match `src/data/nap.ts`. */
 export const brand = {
-  name: "Creative Logo Makers",
-  shortName: "Creative Logo Makers",
+  name: nap.name,
+  shortName: nap.name,
   tagline: "Logos, Web, Graphic Design & More.",
-  url: "https://www.creativelogomakers.com",
-  /** Primary phone (display) */
-  phone: "+14698515003",
+  url: nap.url,
+  /** Primary phone (display) — canonical NAP */
+  phone: nap.phoneDisplay,
   /** Secondary phone (display) */
-  phoneAlt: "+1 (469) 754 1570",
+  phoneAlt: nap.phoneAltDisplay,
   /** tel: hrefs */
-  phoneTel: "+14698515003",
-  phoneAltTel: "+14697541570",
-  email: "info@creativelogomakers.com",
-  addressCountry: "USA",
-  address: "16192 Coastal Highway Lewes Delaware 19958",
-  addressFull: "USA: 16192 Coastal Highway Lewes Delaware 19958",
+  phoneTel: nap.phoneTel,
+  phoneAltTel: nap.phoneAltTel,
+  email: nap.email,
+  addressCountry: nap.addressCountryName,
+  address: napAddressLine(),
+  addressFull: napAddressFull(),
   rating: "4.8/5",
   reviews: "37,648",
   designsEvery: "every 2 seconds",
@@ -44,9 +47,12 @@ export const footerColumns = [
       { href: "/us", label: "US cities & SEO pages" },
       { href: "/usa", label: "USA keyword pages" },
       { href: "/us/state/california", label: "California design services" },
-      { href: "/about", label: "Press releases" },
-      { href: "/about", label: "In the media" },
-      { href: "/inspiration", label: "Testimonials" },
+      { href: "/case-studies", label: "Case studies" },
+      { href: "/testimonials", label: "Testimonials" },
+      { href: "/team", label: "Our designers" },
+      { href: "/process", label: "Our process" },
+      { href: "/policies", label: "Policies" },
+      { href: "/about", label: "Press & media" },
       { href: "/about", label: "Nonprofits" },
     ],
   },
@@ -96,6 +102,8 @@ export const footerColumns = [
     links: [
       { href: "/designers", label: "Become a designer" },
       { href: "/blog", label: "Blog" },
+      { href: "/case-studies", label: "Case studies" },
+      { href: "/testimonials", label: "Client stories" },
       { href: "/inspiration", label: "Design without borders" },
       { href: "/inspiration", label: "Awards" },
       { href: "/about", label: "Affiliates" },

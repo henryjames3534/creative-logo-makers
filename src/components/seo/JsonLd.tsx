@@ -1,3 +1,4 @@
+import { nap, napPostalAddress } from "@/data/nap";
 import { brand, socialLinks } from "@/data/site";
 import {
   absoluteUrl,
@@ -27,26 +28,20 @@ export function SiteJsonLd() {
   const websiteId = `${SITE_URL}/#website`;
 
   const organization = {
-    "@type": "Organization",
+    "@type": ["Organization", "ProfessionalService"],
     "@id": orgId,
-    name: SITE_NAME,
-    url: SITE_URL,
+    name: nap.name,
+    legalName: nap.legalName,
+    url: nap.url,
     logo: absoluteUrl("/brand/icon-512.png"),
-    email: brand.email,
-    telephone: brand.phoneTel,
+    email: nap.email,
+    telephone: nap.phoneTel,
     sameAs: Object.values(socialLinks),
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "16192 Coastal Highway",
-      addressLocality: "Lewes",
-      addressRegion: "DE",
-      postalCode: "19958",
-      addressCountry: "US",
-    },
+    address: napPostalAddress(),
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: brand.phoneTel,
+        telephone: nap.phoneTel,
         contactType: "customer service",
         areaServed: ["US", "Worldwide"],
         availableLanguage: ["English"],

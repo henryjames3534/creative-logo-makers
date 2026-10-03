@@ -108,7 +108,7 @@ export const testimonials = [
   },
   {
     name: "Juliette Simpkins",
-    role: "Owner, Black Ring Coffee. USA",
+    role: "Owner, Black Ring Coffee · USA",
     quote:
       "We wanted something fun and eye-catching that didn’t look like every other coffee logo. There were so many designs to choose from and designers were friendly and willing to change things based on our preferences.",
     image: "/clm/hires/strategist-woman.jpg",
@@ -121,6 +121,46 @@ export const testimonials = [
       "When it came to developing my own brand, I wanted alignment between who I am and what I am representing. We gravitated quickly to a design we love — responsive and a great designer.",
     image: "/clm/hires/designer-man.jpg",
     projectImage: "/clm/unique/brand-pack.jpg",
+  },
+  {
+    name: "Sam Ortiz",
+    role: "Founder, Orbit Apps · USA",
+    quote:
+      "Our SaaS mark finally works as an app icon and in the product UI. The brief process was clear and revisions stayed on schedule.",
+    image: "/clm/avatars/gusz.jpg",
+    projectImage: "/clm/unique/mobile-app.jpg",
+  },
+  {
+    name: "Priya Nair",
+    role: "Head of Brand, Pulse Health · USA",
+    quote:
+      "Packaging that survives shipping and still wins the Amazon thumbnail is rare. Creative Logo Makers delivered both.",
+    image: "/clm/hires/laura.jpg",
+    projectImage: "/clm/unique/svc-food-pack.jpg",
+  },
+  {
+    name: "Jordan Blake",
+    role: "Marketing Lead, Northwind · USA",
+    quote:
+      "We stopped wasting ad spend on a brochure homepage. The new landing page asks for one action — and our leads show it.",
+    image: "/clm/hires/designer-man.jpg",
+    projectImage: "/clm/unique/landing-ui.jpg",
+  },
+  {
+    name: "Elena Vargas",
+    role: "Author / Publisher · USA",
+    quote:
+      "We only approved the cover after it still worked at postage-stamp size. That thumbnail test changed our Amazon results.",
+    image: "/clm/hires/strategist-woman.jpg",
+    projectImage: "/showcase/book.jpg",
+  },
+  {
+    name: "Chris Hale",
+    role: "Owner, Indie Cafe Athletics · USA",
+    quote:
+      "Our merch finally matches the energy of the gym — and the logo still reads after a wash cycle.",
+    image: "/clm/avatars/gusz.jpg",
+    projectImage: "/clm/parent-categories/clothing-01.png",
   },
 ];
 
