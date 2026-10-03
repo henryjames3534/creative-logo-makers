@@ -8,6 +8,8 @@ import {
   markChatSeen,
   onLiveChatUpdated,
   postChatMessage,
+  releaseChatToBot,
+  takeOverChatSession,
   type LiveChatSession,
 } from "@/lib/live-chat";
 
@@ -57,7 +59,8 @@ export function AdminLiveChat() {
       <div>
         <h1 className="text-2xl font-semibold text-[var(--a-text)]">Live chat</h1>
         <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-          Visitor chats open automatically on the site. Reply here in real time.
+          AI answers in English from site knowledge until you take over — then
+          the bot stays silent.
         </p>
       </div>
 
@@ -112,7 +115,7 @@ export function AdminLiveChat() {
             </p>
           ) : (
             <>
-              <div className="flex items-center justify-between border-b border-[color:var(--a-border)] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--a-border)] px-4 py-3">
                 <div>
                   <p className="text-sm font-semibold text-[var(--a-text)]">
                     {active.visitorKey}
@@ -120,20 +123,47 @@ export function AdminLiveChat() {
                   <p className="text-[11px] text-[color:var(--a-faint)]">
                     {active.path || "/"} · opened{" "}
                     {new Date(active.createdAt).toLocaleString()}
+                    {active.adminTakeover ? " · YOU own this chat (AI off)" : " · AI active"}
                   </p>
                 </div>
-                {active.status === "open" ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeChatSession(active.id);
-                      refresh();
-                    }}
-                    className="rounded-full border border-[color:var(--a-border-strong)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
-                  >
-                    Close chat
-                  </button>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  {active.status === "open" && !active.adminTakeover ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        takeOverChatSession(active.id);
+                        refresh();
+                      }}
+                      className="rounded-full bg-[#fe5f50] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                    >
+                      Take over (stop AI)
+                    </button>
+                  ) : null}
+                  {active.status === "open" && active.adminTakeover ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        releaseChatToBot(active.id);
+                        refresh();
+                      }}
+                      className="rounded-full border border-[color:var(--a-border-strong)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
+                    >
+                      Return to AI
+                    </button>
+                  ) : null}
+                  {active.status === "open" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeChatSession(active.id);
+                        refresh();
+                      }}
+                      className="rounded-full border border-[color:var(--a-border-strong)] px-3 py-1.5 text-xs text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
+                    >
+                      Close chat
+                    </button>
+                  ) : null}
+                </div>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
                 {active.messages.map((m) => (

@@ -2,6 +2,7 @@ import {
   LIVE_CHAT_KNOWLEDGE,
   type ChatKnowledgeTopic,
 } from "@/lib/live-chat-knowledge";
+import { matchSiteChatAnswer } from "@/lib/live-chat-site-brain";
 
 /** Proactive visitor live chat — localStorage + admin alerts + smart replies */
 
@@ -35,6 +36,13 @@ export type LiveChatSession = {
   seenByAdmin?: boolean;
   /** Sticky support agent name for this chat (human feel) */
   agentName?: string;
+  /**
+   * When true, AI/bot must not reply — a human admin owns the thread.
+   * Set automatically on first admin message or explicit Take over.
+   */
+  adminTakeover?: boolean;
+  /** ISO time when admin took over */
+  adminTakeoverAt?: string;
 };
 
 type ChatStore = {
@@ -206,8 +214,8 @@ export function humanReplyDelayMs(visitorMessage: string): number {
 }
 
 /**
- * Relevant bot reply for a visitor message.
- * agentName is set on every reply for a human feel.
+ * Relevant English bot reply for a visitor message (local fallback).
+ * Prefers website-trained SITE_CHAT_QA, then legacy knowledge topics.
  */
 export function generateBotReply(
   visitorMessage: string,
@@ -225,6 +233,11 @@ export function generateBotReply(
     };
   }
 
+  const siteHit = matchSiteChatAnswer(visitorMessage);
+  if (siteHit) {
+    return { agentName, body: siteHit.answer };
+  }
+
   let bestTopic: ChatKnowledgeTopic | null = null;
   let bestScore = 0;
   for (const topic of LIVE_CHAT_KNOWLEDGE) {
@@ -235,18 +248,10 @@ export function generateBotReply(
     }
   }
 
-  if (bestTopic && bestScore >= 28) {
-    return {
-      agentName,
-      body: pickOne(bestTopic.replies),
-    };
-  }
-
-  if (bestTopic && bestScore >= 16) {
-    return {
-      agentName,
-      body: `${pickOne(bestTopic.replies)} If I misunderstood, just rephrase and I will adjust.`,
-    };
+  if (bestTopic && bestScore >= 32) {
+    // Strip broken encoding leftovers from older generated replies
+    const raw = pickOne(bestTopic.replies).replace(/â€”/g, "—").replace(/â€™/g, "'");
+    return { agentName, body: raw };
   }
 
   const fallbacks = [
@@ -258,6 +263,39 @@ export function generateBotReply(
     agentName,
     body: pickOne(fallbacks),
   };
+}
+
+export function isBotAllowed(session: LiveChatSession | null | undefined) {
+  if (!session) return false;
+  if (session.status !== "open") return false;
+  if (session.adminTakeover) return false;
+  return true;
+}
+
+/** Admin takes the thread — AI/bot stops immediately. */
+export function takeOverChatSession(sessionId: string): LiveChatSession | null {
+  const store = loadStore();
+  const session = store.sessions.find((s) => s.id === sessionId);
+  if (!session) return null;
+  const now = new Date().toISOString();
+  session.adminTakeover = true;
+  session.adminTakeoverAt = now;
+  session.seenByAdmin = true;
+  session.updatedAt = now;
+  saveStore(store);
+  return session;
+}
+
+/** Optional: return chat to AI after admin is done. */
+export function releaseChatToBot(sessionId: string): LiveChatSession | null {
+  const store = loadStore();
+  const session = store.sessions.find((s) => s.id === sessionId);
+  if (!session) return null;
+  session.adminTakeover = false;
+  session.adminTakeoverAt = undefined;
+  session.updatedAt = new Date().toISOString();
+  saveStore(store);
+  return session;
 }
 
 export function openLiveChat(input?: {
@@ -332,6 +370,11 @@ export function postChatMessage(input: {
   }
   if (input.role === "admin") {
     session.seenByAdmin = true;
+    // First admin message = takeover (bot must stop)
+    if (!session.adminTakeover) {
+      session.adminTakeover = true;
+      session.adminTakeoverAt = now;
+    }
   }
   saveStore(store);
   return session;
@@ -344,7 +387,7 @@ export function postBotReply(
 ): LiveChatSession | null {
   const store = loadStore();
   const session = store.sessions.find((s) => s.id === sessionId);
-  if (!session) return null;
+  if (!session || !isBotAllowed(session)) return null;
   if (!session.agentName) {
     session.agentName = pickRandomAgent();
     saveStore(store);
@@ -353,6 +396,9 @@ export function postBotReply(
     visitorMessage,
     session.agentName,
   );
+  // Re-check after generating — admin may have taken over during delay
+  const fresh = loadStore().sessions.find((s) => s.id === sessionId);
+  if (!fresh || !isBotAllowed(fresh)) return null;
   return postChatMessage({ sessionId, role: "bot", body, agentName });
 }
 
