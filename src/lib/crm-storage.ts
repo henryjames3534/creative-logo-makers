@@ -2185,10 +2185,10 @@ export function deleteLead(id: string) {
   state.deals = state.deals.filter((d) => d.leadId !== id);
 
   state.deleted = state.deleted || {};
-  const tomb: string[] = [id];
-  if (lead?.email) tomb.push(`e:${lead.email.toLowerCase()}`);
+  // Id-only tombstones — never ban by email. Same person can submit the
+  // contact form again and must still appear under Leads.
   state.deleted.leads = Array.from(
-    new Set([...(state.deleted.leads || []), ...tomb]),
+    new Set([...(state.deleted.leads || []), id]),
   ).slice(-500);
   if (dealIds.length) {
     state.deleted.deals = Array.from(

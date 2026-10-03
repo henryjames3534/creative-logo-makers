@@ -534,6 +534,9 @@ export function mergeCrmDocuments(
       ]),
     )
       .filter((t) => !resurrectLeadKeys.has(t))
+      // Drop legacy e: tombs — deletes are id-only so the same email can
+      // submit the contact form again and still show under Leads.
+      .filter((t) => !String(t).startsWith("e:"))
       .slice(-500),
     orders: Array.from(
       new Set([
