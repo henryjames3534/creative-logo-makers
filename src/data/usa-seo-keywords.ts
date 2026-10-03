@@ -69,14 +69,16 @@ function genericFaqs(product: string, price: string): SeoFaq[] {
 /** Hand-crafted clusters for highest-volume USA keywords */
 const OVERRIDES: Record<string, UsaSeoCluster> = {
   "logo-design": {
-    primary: "logo design",
+    primary: "logo design services",
     secondary: [
+      "logo design",
       "custom logo design",
-      "business logo design",
-      "logo design services",
       "logo designer",
-      "professional logo design",
+      "logo designers",
       "logo design company",
+      "logo design agency",
+      "business logo design",
+      "professional logo design",
       "logo design USA",
       "affordable logo design",
       "logo design contest",
@@ -88,12 +90,13 @@ const OVERRIDES: Record<string, UsaSeoCluster> = {
       "hire a logo designer USA",
       "cheap professional logo design",
       "custom logo design with copyright",
+      "logo design agency USA",
       ...cityTails("logo design"),
     ],
-    title: "Logo Design Services in the USA — Custom Logos from $249",
+    title: "Logo Design Services USA — Hire a Logo Designer from $249",
     description:
-      "Get professional logo design in the USA via contest or 1-to-1. Custom concepts, revisions, full copyright, and print/digital files — starting from $249.",
-    h1: "Custom logo design for US businesses",
+      "Logo design services for US businesses. Hire a logo designer or logo design company via contest — custom concepts, revisions, copyright, files from $249.",
+    h1: "Logo design services for US businesses",
     faqs: [
       {
         question: "How much does logo design cost in the USA?",
@@ -357,9 +360,15 @@ const OVERRIDES: Record<string, UsaSeoCluster> = {
     faqs: genericFaqs("brand guide design", "$329"),
   },
   "full-service-branding": {
-    primary: "branding agency",
+    primary: "brand identity agency",
     secondary: [
+      "branding agency",
+      "brand strategy agency",
       "brand identity design",
+      "brand identity design services",
+      "brand identity services",
+      "rebranding agency",
+      "brand strategy consulting",
       "full service branding",
       "branding services USA",
       "corporate branding",
@@ -367,11 +376,14 @@ const OVERRIDES: Record<string, UsaSeoCluster> = {
     longTail: [
       "full service branding for startups",
       "hire branding agency online",
+      "law firm branding agency",
+      "architecture branding agency",
     ],
-    title: "Full-Service Branding USA — Identity Systems & Brand Strategy",
+    title: "Brand Identity Agency USA — Strategy, Identity & Rebranding",
     description:
-      "Full-service branding for US businesses — identity, systems, and launch-ready assets through contests or Creative Logo Makers Studio.",
-    faqs: genericFaqs("branding", "$499"),
+      "Brand identity agency for US companies: brand strategy, identity design services, and rebranding via contests or Creative Logo Makers Studio.",
+    h1: "Brand identity agency services for US brands",
+    faqs: genericFaqs("brand identity design", "$499"),
   },
 };
 

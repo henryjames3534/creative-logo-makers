@@ -2,8 +2,10 @@ import type { MetadataRoute } from "next";
 import { categories } from "@/data/categories";
 import { designers } from "@/data/designers";
 import { studioServices } from "@/data/studio";
+import { caseStudies } from "@/data/case-studies";
 import {
   ALL_USA_KEYWORD_PAGES,
+  GSC_PRIORITY_SLUGS,
   USA_INTENTS,
   intentPath,
 } from "@/data/usa-intents";
@@ -19,7 +21,6 @@ import {
   statePath,
   stateServicePath,
 } from "@/data/us-states";
-import { caseStudies } from "@/data/case-studies";
 import { getPublishedBlogPosts } from "@/lib/blog";
 import { SITE_URL } from "@/lib/seo";
 
@@ -225,6 +226,7 @@ export function listPrioritySeoUrls(): string[] {
     `${SITE_URL}/t-shirt-design/details`,
     `${SITE_URL}/blog`,
     ...getPublishedBlogPosts().map((p) => `${SITE_URL}/blog/${p.slug}`),
+    ...GSC_PRIORITY_SLUGS.map((s) => `${SITE_URL}${intentPath(s)}`),
   ];
   return Array.from(new Set([...core, ...featured]));
 }

@@ -4,22 +4,25 @@ import { Button } from "@/components/Button";
 import { Container } from "@/components/Section";
 import {
   ALL_USA_KEYWORD_PAGES,
+  GSC_PRIORITY_SLUGS,
   USA_INTENTS,
+  getIntentBySlug,
   intentPath,
 } from "@/data/usa-intents";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "USA Design Keywords — Logo, Web, App & Branding Search Terms",
+  title: "USA Design Keywords — Logo Design Services, Brand Agency & More",
   description:
-    "Browse every USA design keyword page: logo design near me, hire web designer, packaging design, branding agency, and thousands more commercial phrases.",
+    "USA keyword hub: logo design services, logo designer, brand identity agency, brand strategy agency, rebranding agency, and thousands more commercial pages.",
   path: "/usa",
   keywords: [
-    "USA design keywords",
-    "logo design near me",
-    "hire logo designer",
-    "website design USA",
-    "branding agency USA",
+    "logo design services",
+    "logo designer",
+    "brand identity agency",
+    "brand strategy agency",
+    "logo design company",
+    "custom logo design",
   ],
 });
 
@@ -73,6 +76,30 @@ export default function UsaIntentsHubPage() {
               {L}
             </a>
           ))}
+        </div>
+
+        <h2 className="mt-14 text-xl font-medium text-ink">
+          Priority ranking keywords
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted">
+          High-intent phrases we are actively strengthening for first-page
+          visibility — logo design services, brand identity agency, brand
+          strategy, and related commercial searches.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {GSC_PRIORITY_SLUGS.map((slug) => {
+            const i = getIntentBySlug(slug);
+            if (!i) return null;
+            return (
+              <Link
+                key={slug}
+                href={intentPath(slug)}
+                className="rounded-full border border-hero/30 bg-hero/5 px-3 py-1.5 text-sm font-semibold text-hero hover:border-hero"
+              >
+                {i.keyword}
+              </Link>
+            );
+          })}
         </div>
 
         <h2 className="mt-14 text-xl font-medium text-ink">Featured keywords</h2>

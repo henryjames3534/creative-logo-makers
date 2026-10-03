@@ -12,6 +12,7 @@ import { Container } from "@/components/Section";
 import { getCategory } from "@/data/categories";
 import { categoryLaunchHref } from "@/data/serviceRoutes";
 import {
+  GSC_PRIORITY_SLUGS,
   getIntentBySlug,
   intentPath,
   relatedUsaKeywords,
@@ -28,8 +29,9 @@ type Props = { params: Promise<{ intent: string }> };
 export const dynamicParams = true;
 export const revalidate = 86400;
 
+/** Prebuild GSC money-keyword pages so Google can crawl strong HTML immediately. */
 export function generateStaticParams() {
-  return [] as { intent: string }[];
+  return GSC_PRIORITY_SLUGS.map((intent) => ({ intent }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -59,6 +61,9 @@ export default async function UsaIntentPage({ params }: Props) {
     ["CA", "TX", "NY", "FL", "IL", "PA", "OH", "GA", "NC", "MI"].includes(s.code),
   );
   const related = relatedUsaKeywords(intent.slug, 12);
+  const isGscPriority = (GSC_PRIORITY_SLUGS as readonly string[]).includes(
+    intent.slug,
+  );
 
   return (
     <>
@@ -123,6 +128,59 @@ export default async function UsaIntentPage({ params }: Props) {
           <p className="mt-4 max-w-3xl text-base leading-relaxed text-ink/75">
             {copy.howItWorks}
           </p>
+
+          {isGscPriority ? (
+            <div className="mt-14 rounded-2xl border border-line bg-white p-6 shadow-sm md:p-8">
+              <h2 className="text-2xl font-medium text-ink">
+                What buyers mean by “{intent.keyword}”
+              </h2>
+              <p className="mt-4 max-w-3xl text-base leading-relaxed text-ink/75">
+                People searching <strong>{intent.keyword}</strong> usually want
+                a clear US vendor, fixed pricing, and proof they will own the
+                final files — not a vague proposal. Creative Logo Makers answers
+                that with contest packages (many concepts) or 1-to-1 hire, plus
+                Studio when you need a fuller brand system.
+              </p>
+              <ul className="mt-4 max-w-2xl list-disc space-y-2 pl-5 text-ink/80">
+                <li>
+                  Exact-match landing for <strong>{intent.keyword}</strong> with
+                  packages, FAQs, and city/state links
+                </li>
+                <li>
+                  Deep link to{" "}
+                  <Link
+                    href={`/${intent.serviceSlug}/details`}
+                    className="font-semibold text-hero hover:underline"
+                  >
+                    {productName} packages
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/case-studies"
+                    className="font-semibold text-hero hover:underline"
+                  >
+                    case studies
+                  </Link>
+                </li>
+                <li>
+                  Supporting proof via{" "}
+                  <Link
+                    href="/testimonials"
+                    className="font-semibold text-hero hover:underline"
+                  >
+                    testimonials
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/process"
+                    className="font-semibold text-hero hover:underline"
+                  >
+                    our process
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          ) : null}
 
           <h2 className="mt-14 text-2xl font-medium text-ink">Related searches</h2>
           <div className="mt-6 flex flex-wrap gap-2">

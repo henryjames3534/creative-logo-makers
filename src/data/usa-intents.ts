@@ -40,16 +40,18 @@ export const USA_INTENTS: UsaIntent[] = [
     slug: "hire-logo-designer",
     keyword: "hire logo designer",
     related: [
+      "logo designer",
+      "logo designers",
       "hire a logo designer",
       "hire logo designer USA",
       "freelance logo designer for hire",
       "best logo designer to hire",
     ],
     serviceSlug: "logo-design",
-    title: "Hire a Logo Designer USA — Contests & 1-to-1 Projects",
+    title: "Logo Designer USA — Hire Logo Designers Online from $249",
     description:
-      "Hire a logo designer in the USA via contest or private project. Compare custom concepts, request revisions, and own the final brand mark.",
-    h1: "Hire a logo designer for your US brand",
+      "Need a logo designer? Hire logo designers in the USA via contest or 1-to-1. Compare custom concepts, request revisions, own the final mark.",
+    h1: "Logo designer for your US brand — hire with confidence",
   },
   {
     slug: "cheap-logo-design",
@@ -74,12 +76,13 @@ export const USA_INTENTS: UsaIntent[] = [
       "bespoke logo design",
       "unique logo design",
       "custom business logo",
+      "custom logo design services",
     ],
     serviceSlug: "logo-design",
-    title: "Custom Logo Design USA — Unique Logos Built for Your Brand",
+    title: "Custom Logo Design USA — Original Logos, Not Templates",
     description:
-      "Custom logo design for US companies. No templates — real designers create original marks matched to your brief.",
-    h1: "Custom logo design for American businesses",
+      "Custom logo design for US companies. Real designers, multiple concepts, commercial files — skip Canva clones and generic templates.",
+    h1: "Custom logo design that only your brand can own",
   },
   {
     slug: "business-logo-design",
@@ -117,12 +120,13 @@ export const USA_INTENTS: UsaIntent[] = [
       "logo design agency",
       "best logo design company",
       "logo design firm USA",
+      "logo design services",
     ],
     serviceSlug: "logo-design",
-    title: "Logo Design Company USA — Creative Logo Makers Contests",
+    title: "Logo Design Company USA — Contests, Packages & Files",
     description:
-      "Looking for a logo design company in the USA? Get agency-quality marks via Creative Logo Makers contests and Studio branding.",
-    h1: "A logo design company built for online briefs",
+      "Logo design company for US brands. Compare custom concepts via contest, pick a winner, get print + digital files with commercial ownership.",
+    h1: "Logo design company results without the agency waitlist",
   },
   {
     slug: "website-design-near-me",
@@ -270,41 +274,46 @@ export const USA_INTENTS: UsaIntent[] = [
     related: [
       "branding agency USA",
       "brand identity agency",
+      "brand strategy agency",
+      "rebranding agency",
       "branding company",
     ],
     serviceSlug: "full-service-branding",
-    title: "Branding Agency USA — Contests & Studio",
+    title: "Branding Agency USA — Identity, Strategy & Studio",
     description:
-      "Branding agency alternative for US companies — contests for marks plus Studio for full systems.",
-    h1: "Branding agency outcomes without the agency waitlist",
+      "Branding agency for US companies — logo systems, brand identity, and Studio strategy without a six-month retainer.",
+    h1: "Branding agency outcomes for growing US brands",
   },
   {
     slug: "brand-identity-design",
     keyword: "brand identity design",
     related: [
+      "brand identity design services",
+      "brand identity services",
       "brand identity package",
       "visual identity design",
       "brand system design",
     ],
     serviceSlug: "full-service-branding",
-    title: "Brand Identity Design USA",
+    title: "Brand Identity Design Services USA — Logo Systems & Guides",
     description:
-      "Brand identity design for US businesses — logo systems, guides, and launch-ready assets.",
-    h1: "Brand identity design that stays consistent",
+      "Brand identity design services for US businesses — logos, color/type systems, guides, and launch-ready assets.",
+    h1: "Brand identity design services that stay consistent",
   },
   {
     slug: "graphic-design-services-usa",
     keyword: "graphic design services",
     related: [
+      "custom graphic design",
       "graphic designer USA",
       "graphic design company",
       "hire graphic designer",
     ],
     serviceSlug: "flyer-design",
-    title: "Graphic Design Services USA",
+    title: "Graphic Design Services USA — Custom Design for Marketing",
     description:
-      "Graphic design services across logos, print, and digital — US pricing and English support.",
-    h1: "Graphic design services for everyday marketing needs",
+      "Custom graphic design and graphic design services for US brands — logos, print, social, and digital assets.",
+    h1: "Custom graphic design services for US marketing teams",
   },
   {
     slug: "design-contest",
@@ -535,12 +544,214 @@ export const USA_INTENTS: UsaIntent[] = [
   {
     slug: "law-firm-logo-design",
     keyword: "law firm logo design",
-    related: ["lawyer logo design", "attorney logo", "legal branding"],
+    related: [
+      "lawyer logo design",
+      "attorney logo",
+      "legal branding",
+      "law firm branding agency",
+    ],
     serviceSlug: "logo-design",
     title: "Law Firm Logo Design USA — Professional Legal Brands",
     description:
       "Law firm logo design for US attorneys — polished, credible identity concepts via contest.",
     h1: "Law firm logo design that signals authority",
+  },
+
+  // —— GSC money keywords (impressions, weak position) — dedicated landing URLs ——
+  {
+    slug: "logo-design-services",
+    keyword: "logo design services",
+    related: [
+      "logo design",
+      "professional logo design services",
+      "best logo design services",
+      "logo design services USA",
+    ],
+    serviceSlug: "logo-design",
+    title: "Logo Design Services USA — Contests from $249 (2026)",
+    description:
+      "Logo design services for US businesses. Multiple custom concepts, revisions, and commercial files — Creative Logo Makers contests from $249.",
+    h1: "Logo design services built for US buyers",
+  },
+  {
+    slug: "logo-design-agency",
+    keyword: "logo design agency",
+    related: [
+      "logo design company",
+      "logo design firm",
+      "best logo design agency",
+      "logo agency USA",
+    ],
+    serviceSlug: "logo-design",
+    title: "Logo Design Agency USA — Agency Results, Contest Speed",
+    description:
+      "Logo design agency alternative for US brands. Get agency-quality marks faster with designer contests, packages, and full file ownership.",
+    h1: "Logo design agency quality without the retainer",
+  },
+  {
+    slug: "logo-designer",
+    keyword: "logo designer",
+    related: [
+      "logo designers",
+      "hire logo designer",
+      "professional logo designer",
+      "best logo designer USA",
+    ],
+    serviceSlug: "logo-design",
+    title: "Logo Designer USA — Find & Hire Top Logo Designers",
+    description:
+      "Looking for a logo designer? Browse contests and 1-to-1 projects with US-ready designers — clear pricing, revisions, commercial ownership.",
+    h1: "Find a logo designer who fits your brief",
+  },
+  {
+    slug: "logo-designers",
+    keyword: "logo designers",
+    related: [
+      "logo designer",
+      "hire logo designers",
+      "top logo designers USA",
+      "logo design team",
+    ],
+    serviceSlug: "logo-design",
+    title: "Logo Designers USA — Multiple Pros on One Brief",
+    description:
+      "Work with logo designers across the USA. Contests put many logo designers on your brief so you can compare styles before you choose.",
+    h1: "Logo designers competing for your brand",
+  },
+  {
+    slug: "brand-strategy-agency",
+    keyword: "brand strategy agency",
+    related: [
+      "brand strategy consulting",
+      "branding agency",
+      "brand strategy firm",
+      "brand strategist USA",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Brand Strategy Agency USA — Strategy + Identity Delivery",
+    description:
+      "Brand strategy agency for US companies. Pair positioning clarity with identity design — Studio strategists and designer contests.",
+    h1: "Brand strategy agency support that ships identity too",
+  },
+  {
+    slug: "brand-strategy-consulting",
+    keyword: "brand strategy consulting",
+    related: [
+      "brand strategy agency",
+      "brand consulting USA",
+      "brand strategist",
+      "brand positioning consulting",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Brand Strategy Consulting USA — Clear Positioning & Design",
+    description:
+      "Brand strategy consulting for US founders — positioning, messaging direction, and design systems that match how you sell.",
+    h1: "Brand strategy consulting with design follow-through",
+  },
+  {
+    slug: "brand-identity-agency",
+    keyword: "brand identity agency",
+    related: [
+      "brand identity design services",
+      "brand identity services",
+      "branding agency",
+      "visual identity agency",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Brand Identity Agency USA — Logos, Systems & Guides",
+    description:
+      "Brand identity agency for US businesses. Logo, color, type, and usage systems — contests for marks, Studio for fuller identity.",
+    h1: "Brand identity agency work US teams can launch with",
+  },
+  {
+    slug: "brand-identity-design-services",
+    keyword: "brand identity design services",
+    related: [
+      "brand identity design",
+      "brand identity services",
+      "brand identity package",
+      "corporate identity design",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Brand Identity Design Services USA — From Mark to System",
+    description:
+      "Brand identity design services for US companies: custom logos, brand kits, and guidelines ready for web, print, and packaging.",
+    h1: "Brand identity design services end-to-end",
+  },
+  {
+    slug: "brand-identity-services",
+    keyword: "brand identity services",
+    related: [
+      "brand identity design services",
+      "brand identity agency",
+      "identity design USA",
+      "brand system services",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Brand Identity Services USA — Consistent Brand Systems",
+    description:
+      "Brand identity services that keep US marketing consistent — logo lockups, palettes, type, and do/don’t rules teams can follow.",
+    h1: "Brand identity services for growing companies",
+  },
+  {
+    slug: "custom-graphic-design",
+    keyword: "custom graphic design",
+    related: [
+      "graphic design services",
+      "custom graphic designer",
+      "custom design services USA",
+      "hire graphic designer",
+    ],
+    serviceSlug: "flyer-design",
+    title: "Custom Graphic Design USA — Marketing & Brand Assets",
+    description:
+      "Custom graphic design for US businesses — flyers, social, logos, and campaign visuals from real designers, not stock templates.",
+    h1: "Custom graphic design for campaigns that need to convert",
+  },
+  {
+    slug: "rebranding-agency",
+    keyword: "rebranding agency",
+    related: [
+      "rebranding services",
+      "company rebrand USA",
+      "brand refresh agency",
+      "brand identity agency",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Rebranding Agency USA — Refresh Without Losing Equity",
+    description:
+      "Rebranding agency path for US brands: evolve the mark and system while protecting recognition — contests + Studio options.",
+    h1: "Rebranding agency support for the next chapter",
+  },
+  {
+    slug: "law-firm-branding-agency",
+    keyword: "law firm branding agency",
+    related: [
+      "law firm logo design",
+      "attorney branding",
+      "legal branding agency",
+      "law firm brand identity",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Law Firm Branding Agency USA — Credible Legal Identity",
+    description:
+      "Law firm branding agency services for US practices — modern authority in logos, websites, and letterhead without dated clichés.",
+    h1: "Law firm branding agency craft that still feels human",
+  },
+  {
+    slug: "architecture-branding-agency",
+    keyword: "architecture branding agency",
+    related: [
+      "architecture firm branding",
+      "architect logo design",
+      "architecture brand identity",
+      "AEC branding agency",
+    ],
+    serviceSlug: "full-service-branding",
+    title: "Architecture Branding Agency USA — Firm Identity & Portfolios",
+    description:
+      "Architecture branding agency work for US firms — precise identity systems for proposals, sites, and project portfolios.",
+    h1: "Architecture branding agency clarity for design firms",
   },
 
   // —— 70% off sale intents (append-only; do not edit rows above) ——
@@ -812,29 +1023,40 @@ export function intentPath(slug: string) {
   return `/usa/${slug}`;
 }
 
+/**
+ * Exact GSC queries with impressions but weak position / 0 clicks.
+ * Pre-rendered + featured for ranking push (no old URLs removed).
+ */
+export const GSC_PRIORITY_SLUGS = [
+  "brand-strategy-agency",
+  "logo-design-services",
+  "brand-identity-agency",
+  "brand-identity-design-services",
+  "logo-designer",
+  "logo-design-company",
+  "custom-logo-design",
+  "logo-design-agency",
+  "custom-graphic-design",
+  "brand-identity-services",
+  "law-firm-branding-agency",
+  "rebranding-agency",
+  "logo-designers",
+  "brand-strategy-consulting",
+  "architecture-branding-agency",
+] as const;
+
 /** Footer / hub samples — stable slice of commercial keywords */
 export function usaKeywordFooterLinks(limit = 16): { href: string; label: string }[] {
   const preferred = [
+    ...GSC_PRIORITY_SLUGS,
     "logo-design-near-me",
     "hire-logo-designer",
     "cheap-logo-design",
-    "custom-logo-design",
     "website-design-near-me",
     "hire-web-designer",
     "branding-agency-usa",
     "packaging-design-services",
-    "business-card-design-services",
-    "flyer-design-services",
-    "t-shirt-design-services",
-    "book-cover-design-services",
-    "mobile-app-design-services",
-    "startup-logo-design",
-    "restaurant-logo-design",
-    "law-firm-logo-design",
     "70-off-logo-design",
-    "logo-design-discount-usa",
-    "70-off-website-design",
-    "design-contest-70-off",
   ];
   const links: { href: string; label: string }[] = [];
   for (const slug of preferred) {
