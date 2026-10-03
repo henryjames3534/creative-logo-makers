@@ -99,7 +99,7 @@ def ping_sitemaps() -> None:
     for url in pings:
         try:
             status, body = fetch(url)
-            print(f"Ping {url.split('?')[0]} → {status}")
+            print(f"Ping {url.split('?')[0]} -> {status}")
             if body.strip():
                 print(" ", body[:200].replace("\n", " "))
         except Exception as e:
@@ -151,8 +151,8 @@ def main() -> None:
     submit_indexnow(ordered)
     ping_sitemaps()
     print(
-        "Done. In Google Search Console → Sitemaps, resubmit "
-        f"{SITE}/sitemap.xml (and optionally {SITE}/api/sitemap-index)."
+        "Done. In Google Search Console > Sitemaps, resubmit "
+        f"{SITE}/sitemap.xml"
     )
 
 
