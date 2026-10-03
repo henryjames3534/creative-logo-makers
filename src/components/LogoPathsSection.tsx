@@ -6,22 +6,6 @@ import { Button } from "@/components/Button";
 import { LocalizedPrice } from "@/components/locale/LocalizedPrice";
 import { Container } from "@/components/Section";
 
-const logoTiles = [
-  "/clm/logomaker-tiles/1.png",
-  "/clm/logomaker-tiles/2.png",
-  "/clm/logomaker-tiles/3.png",
-  "/clm/logomaker-tiles/4.png",
-  "/clm/logomaker-tiles/5.png",
-];
-
-const logoSlots = [
-  { top: "5%", left: "4%", width: "45%", height: "46%" },
-  { top: "5%", left: "51%", width: "45%", height: "46%" },
-  { top: "54%", left: "3%", width: "30%", height: "41%" },
-  { top: "54%", left: "35%", width: "30%", height: "41%" },
-  { top: "54%", left: "67%", width: "30%", height: "41%" },
-];
-
 const contestReviews = [
   {
     name: "TikaDesign",
@@ -47,20 +31,15 @@ const contestSlots = [
   { top: "64%", left: "18%" },
 ];
 
-/** Free Logomaker + contest — cards swap into each other's places */
+/** Free Logomaker + contest — video + cards */
 export function LogoPathsSection() {
-  const [logoStep, setLogoStep] = useState(0);
   const [contestStep, setContestStep] = useState(0);
 
   useEffect(() => {
-    const logoTimer = setInterval(() => {
-      setLogoStep((s) => (s + 1) % logoTiles.length);
-    }, 2800);
     const contestTimer = setInterval(() => {
       setContestStep((s) => (s + 1) % contestReviews.length);
     }, 2800);
     return () => {
-      clearInterval(logoTimer);
       clearInterval(contestTimer);
     };
   }, []);
@@ -101,32 +80,21 @@ export function LogoPathsSection() {
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
           <div>
             <div className="relative mb-5 overflow-hidden rounded-2xl bg-green p-4 shadow-md md:p-5">
-              <div className="relative aspect-[5/4] w-full">
-                {logoTiles.map((src, cardIndex) => {
-                  const slot =
-                    logoSlots[(cardIndex + logoStep) % logoSlots.length];
-                  return (
-                    <div
-                      key={src}
-                      className="absolute overflow-hidden rounded-xl bg-white shadow-md transition-all duration-700 ease-[cubic-bezier(0.34,1.15,0.64,1)]"
-                      style={{
-                        top: slot.top,
-                        left: slot.left,
-                        width: slot.width,
-                        height: slot.height,
-                        zIndex: 10 - ((cardIndex + logoStep) % logoSlots.length),
-                      }}
-                    >
-                      <Image
-                        src={src}
-                        alt={`Logo option ${cardIndex + 1}`}
-                        fill
-                        sizes="220px"
-                        className="object-cover"
-                      />
-                    </div>
-                  );
-                })}
+              <div className="relative aspect-[5/4] w-full overflow-hidden rounded-xl bg-green">
+                <video
+                  className="absolute inset-0 h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-label="Logo design examples video"
+                >
+                  <source
+                    src="/clm/videos/logo-design-video.webm"
+                    type="video/webm"
+                  />
+                </video>
               </div>
             </div>
             <h3 className="text-[1.5rem] font-medium text-ink">Free Logomaker</h3>
