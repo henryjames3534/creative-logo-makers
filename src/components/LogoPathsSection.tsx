@@ -1,49 +1,9 @@
-"use client";
-
-import Image from "next/image";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { LocalizedPrice } from "@/components/locale/LocalizedPrice";
 import { Container } from "@/components/Section";
 
-const contestReviews = [
-  {
-    name: "TikaDesign",
-    level: "Top Level",
-    avatar: "/clm/hero/avatar-raveart.jpg",
-  },
-  {
-    name: "Adam Marsh",
-    level: "Mid Level",
-    avatar: "/clm/hero/avatar-mjvass.jpg",
-  },
-  {
-    name: "Nadya Nadya",
-    level: "Mid Level",
-    avatar: "/clm/hero/avatar-kamilla.jpg",
-  },
-];
-
-/** Percent-only slots so CSS can animate smoothly (no auto/right) */
-const contestSlots = [
-  { top: "8%", left: "20%" },
-  { top: "36%", left: "5%" },
-  { top: "64%", left: "18%" },
-];
-
-/** Free Logomaker + contest — video + cards */
+/** Free Logomaker + contest — both media panels are videos */
 export function LogoPathsSection() {
-  const [contestStep, setContestStep] = useState(0);
-
-  useEffect(() => {
-    const contestTimer = setInterval(() => {
-      setContestStep((s) => (s + 1) % contestReviews.length);
-    }, 2800);
-    return () => {
-      clearInterval(contestTimer);
-    };
-  }, []);
-
   return (
     <section className="relative overflow-hidden py-14 md:py-20">
       <div
@@ -112,59 +72,27 @@ export function LogoPathsSection() {
 
           <div>
             <div
-              className="relative mb-5 overflow-hidden rounded-2xl shadow-md"
+              className="relative mb-5 overflow-hidden rounded-2xl p-4 shadow-md md:p-5"
               style={{ backgroundColor: "#3e00cd" }}
             >
-              {/* Purple-only deco — no blue */}
               <div
-                className="pointer-events-none absolute left-[10%] top-[8%] h-2.5 w-24 rounded-full"
-                style={{ backgroundColor: "#2a0099" }}
-              />
-              <div
-                className="pointer-events-none absolute bottom-[6%] right-[6%] h-14 w-14 rounded-full border-[9px]"
-                style={{ borderColor: "#2a0099" }}
-              />
-
-              <div className="relative aspect-[5/4] w-full">
-                {contestReviews.map((card, cardIndex) => {
-                  const slotIndex =
-                    (cardIndex + contestStep) % contestSlots.length;
-                  const slot = contestSlots[slotIndex];
-                  return (
-                    <div
-                      key={card.name}
-                      className="absolute w-[72%] max-w-[260px] transition-[top,left,z-index] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                      style={{
-                        top: slot.top,
-                        left: slot.left,
-                        zIndex: slotIndex === 1 ? 30 : 10 + slotIndex,
-                      }}
-                    >
-                      <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-[0_10px_28px_rgba(0,0,0,0.28)]">
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#f3f2f0]">
-                          <Image
-                            src={card.avatar}
-                            alt=""
-                            fill
-                            sizes="48px"
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-ink">
-                            {card.name}
-                          </p>
-                          <p className="mt-0.5 text-[11px] tracking-wide text-[#f5a623]">
-                            ★★★★★
-                          </p>
-                          <span className="mt-1 inline-block rounded border border-ink/20 px-1.5 py-0.5 text-[10px] font-semibold text-ink/70">
-                            {card.level}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                className="relative aspect-[5/4] w-full overflow-hidden rounded-xl"
+                style={{ backgroundColor: "#3e00cd" }}
+              >
+                <video
+                  className="absolute inset-0 h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-label="Branding services video"
+                >
+                  <source
+                    src="/clm/videos/branding-services.webm"
+                    type="video/webm"
+                  />
+                </video>
               </div>
             </div>
             <h3 className="text-[1.5rem] font-medium text-ink">
