@@ -62,7 +62,14 @@ const sections: LegalSection[] = [
             <a href={`mailto:${brand.email}`}>{brand.email}</a>
           </li>
           <li>
-            <strong>Phone:</strong> {brand.phone} · {brand.phoneAlt}
+            <strong>Phone:</strong>{" "}
+            <a href={`tel:${brand.phoneTel}`} className="font-bold">
+              {brand.phone}
+            </a>{" "}
+            <span className="text-muted">(primary)</span>
+            {" · "}
+            <a href={`tel:${brand.phoneAltTel}`}>{brand.phoneAlt}</a>{" "}
+            <span className="text-muted">(secondary)</span>
           </li>
           <li>
             <strong>Address:</strong> {brand.addressFull}

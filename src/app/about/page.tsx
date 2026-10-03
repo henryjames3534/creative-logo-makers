@@ -45,7 +45,8 @@ export default function AboutPage() {
           <div>
             <h2 className="text-2xl font-bold">Talk to us</h2>
             <p className="mt-2 text-muted">
-              {brand.phone} · {brand.phoneAlt}
+              <span className="font-bold text-hero">{brand.phone}</span>
+              <span className="text-muted"> · Alt {brand.phoneAlt}</span>
             </p>
             <p className="mt-1 text-muted">{brand.email}</p>
             <p className="mt-1 text-sm text-muted">{brand.addressFull}</p>
