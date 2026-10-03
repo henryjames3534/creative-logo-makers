@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LocaleSwitcher } from "@/components/locale/LocaleSwitcher";
-import { brand, footerColumns, socialLinks } from "@/data/site";
+import { brand, footerColumns, footerSearchLinks, socialLinks } from "@/data/site";
 
 const pressOutlets = [
   { name: "The Wall Street Journal", src: "/press/wsj.svg", w: 140, h: 18 },
@@ -155,7 +155,7 @@ export function Footer() {
               </Link>
             </div>
 
-            {/* Link columns */}
+            {/* Link columns — short lists only */}
             <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
               {footerColumns.map((col) => (
                 <div key={col.title}>
@@ -177,6 +177,33 @@ export function Footer() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* SEO keywords as compact chips — not one tall column */}
+          <div className="mt-12 border-t border-ink/10 pt-8">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h3 className="text-sm font-bold tracking-tight text-ink">
+                Popular searches
+              </h3>
+              <Link
+                href="/usa"
+                className="text-xs font-semibold text-hero hover:underline"
+              >
+                All USA keywords →
+              </Link>
+            </div>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {footerSearchLinks.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link
+                    href={l.href}
+                    className="inline-flex rounded-full border border-ink/10 bg-white/70 px-3 py-1.5 text-xs font-medium text-[#5c5b59] transition-colors hover:border-ink/25 hover:text-ink"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

@@ -38,22 +38,25 @@ export const navLinks = [
   { href: "/studio", label: "Studio" },
 ];
 
-export const footerColumns = [
+export type FooterLink = { href: string; label: string };
+
+export type FooterColumn = {
+  title: string;
+  links: FooterLink[];
+};
+
+/** Main footer columns — keep each list short; keywords live in `footerSearchLinks`. */
+export const footerColumns: FooterColumn[] = [
   {
     title: "Company",
     links: [
       { href: "/about", label: "About" },
       { href: "/contact", label: "Contact" },
-      { href: "/us", label: "US cities & SEO pages" },
-      { href: "/usa", label: "USA keyword pages" },
-      { href: "/us/state/california", label: "California design services" },
-      { href: "/case-studies", label: "Case studies" },
-      { href: "/testimonials", label: "Testimonials" },
       { href: "/team", label: "Our designers" },
       { href: "/process", label: "Our process" },
       { href: "/policies", label: "Policies" },
-      { href: "/about", label: "Press & media" },
-      { href: "/about", label: "Nonprofits" },
+      { href: "/case-studies", label: "Case studies" },
+      { href: "/testimonials", label: "Testimonials" },
     ],
   },
   {
@@ -62,65 +65,64 @@ export const footerColumns = [
       { href: "/contests", label: "Design contests" },
       { href: "/projects", label: "1-to-1 Projects" },
       { href: "/designers/search", label: "Find a designer" },
-      { href: "/inspiration", label: "Discover inspiration" },
       { href: "/pricing", label: "Pricing" },
-      { href: "/studio", label: "Creative Logo Makers Studio" },
-      { href: "/studio/full-brand-identity", label: "Full brand identity" },
+      { href: "/studio", label: "Studio" },
       { href: "/studio/brand-strategy", label: "Brand strategy" },
-      { href: "/studio/launch-packages", label: "Launch packages" },
-      { href: "/studio/talk-to-strategist", label: "Talk to a strategist" },
+      { href: "/studio/full-brand-identity", label: "Full brand identity" },
     ],
   },
   {
     title: "Get a design",
     links: [
       { href: "/logo-design/details", label: "Logo design" },
-      { href: "/web-design/details", label: "Web page design" },
+      { href: "/web-design/details", label: "Web design" },
       { href: "/mobile-app-design/details", label: "Mobile app design" },
-      { href: "/us/new-york/logo-design", label: "Logo design New York" },
-      { href: "/us/los-angeles/web-design", label: "Website design LA" },
-      { href: "/usa/logo-design-services", label: "Logo design services" },
-      { href: "/usa/logo-designer", label: "Logo designer" },
-      { href: "/usa/logo-design-company", label: "Logo design company" },
-      { href: "/usa/logo-design-agency", label: "Logo design agency" },
-      { href: "/usa/custom-logo-design", label: "Custom logo design" },
-      { href: "/usa/brand-identity-agency", label: "Brand identity agency" },
-      { href: "/usa/brand-strategy-agency", label: "Brand strategy agency" },
-      { href: "/usa/rebranding-agency", label: "Rebranding agency" },
-      { href: "/usa/custom-graphic-design", label: "Custom graphic design" },
-      { href: "/usa/law-firm-branding-agency", label: "Law firm branding agency" },
-      { href: "/usa/logo-design-near-me", label: "Logo design near me" },
-      { href: "/usa/hire-logo-designer", label: "Hire logo designer" },
-      { href: "/usa/website-design-near-me", label: "Website design near me" },
-      { href: "/usa/branding-agency-usa", label: "Branding agency USA" },
-      { href: "/usa/packaging-design-services", label: "Packaging design" },
-      { href: "/us/state/texas/logo-design", label: "Logo design Texas" },
       { href: "/business-card-design/details", label: "Business card" },
       { href: "/logo-brand-guide/details", label: "Brand guide" },
       { href: "/t-shirt-design/details", label: "T-shirt design" },
       { href: "/book-cover-design/details", label: "Book cover design" },
       { href: "/categories", label: "Browse all categories" },
-      { href: "/us", label: "All US city pages" },
-      { href: "/usa", label: "All USA keyword pages" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { href: "/designers", label: "Become a designer" },
       { href: "/blog", label: "Blog" },
-      { href: "/case-studies", label: "Case studies" },
-      { href: "/testimonials", label: "Client stories" },
-      { href: "/inspiration", label: "Design without borders" },
-      { href: "/inspiration", label: "Awards" },
-      { href: "/about", label: "Affiliates" },
+      { href: "/inspiration", label: "Inspiration" },
       { href: "/logo-maker", label: "Logo ideas" },
-      { href: "/t-shirt-design/details", label: "T-shirt ideas" },
-      { href: "/designers", label: "Designer resources" },
-      { href: "/about", label: "Featured partners" },
+      { href: "/designers", label: "Become a designer" },
+      { href: "/us", label: "US city pages" },
+      { href: "/usa", label: "USA keyword pages" },
       { href: "/contact", label: "Help" },
     ],
   },
+];
+
+/** SEO keyword chips — shown as a wrap row under the columns (not one tall list). */
+export const footerSearchLinks: FooterLink[] = [
+  { href: "/usa/logo-design-services", label: "Logo design services" },
+  { href: "/usa/logo-designer", label: "Logo designer" },
+  { href: "/usa/logo-designers", label: "Logo designers" },
+  { href: "/usa/logo-design-company", label: "Logo design company" },
+  { href: "/usa/logo-design-agency", label: "Logo design agency" },
+  { href: "/usa/custom-logo-design", label: "Custom logo design" },
+  { href: "/usa/logo-design-near-me", label: "Logo design near me" },
+  { href: "/usa/hire-logo-designer", label: "Hire logo designer" },
+  { href: "/usa/brand-identity-agency", label: "Brand identity agency" },
+  { href: "/usa/brand-identity-services", label: "Brand identity services" },
+  { href: "/usa/brand-strategy-agency", label: "Brand strategy agency" },
+  { href: "/usa/brand-strategy-consulting", label: "Brand strategy consulting" },
+  { href: "/usa/rebranding-agency", label: "Rebranding agency" },
+  { href: "/usa/custom-graphic-design", label: "Custom graphic design" },
+  { href: "/usa/branding-agency-usa", label: "Branding agency USA" },
+  { href: "/usa/law-firm-branding-agency", label: "Law firm branding" },
+  { href: "/usa/architecture-branding-agency", label: "Architecture branding" },
+  { href: "/usa/packaging-design-services", label: "Packaging design" },
+  { href: "/usa/website-design-near-me", label: "Website design near me" },
+  { href: "/us/new-york/logo-design", label: "Logo design New York" },
+  { href: "/us/los-angeles/web-design", label: "Website design LA" },
+  { href: "/us/state/texas/logo-design", label: "Logo design Texas" },
+  { href: "/us/state/california", label: "California design" },
 ];
 
 export const stats = [
