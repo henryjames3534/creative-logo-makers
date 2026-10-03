@@ -194,5 +194,5 @@ export function listPrioritySeoUrls(): string[] {
     `${SITE_URL}/product-packaging-design/details`,
     `${SITE_URL}/t-shirt-design/details`,
   ];
-  return [...new Set([...core, ...featured])];
+  return Array.from(new Set([...core, ...featured]));
 }
