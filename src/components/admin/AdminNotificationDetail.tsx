@@ -6,6 +6,7 @@ import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
 import {
   formatDuration,
   hydrateCrmFromServer,
+  isContactFormLead,
   loadCrm,
   money,
   relativeDay,
@@ -429,8 +430,7 @@ export function AdminNotificationDetail({ kind, id }: Props) {
     if (!state) return null;
     if (safeKind === "lead") {
       const lead = state.leads.find((l) => l.id === id);
-      const contactForm =
-        (lead?.source || "").toLowerCase() === "contact form";
+      const contactForm = !!lead && isContactFormLead(lead);
       return lead
         ? {
             title: contactForm

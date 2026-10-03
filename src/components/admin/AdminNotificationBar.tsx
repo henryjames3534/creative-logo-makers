@@ -6,6 +6,7 @@ import {
   CRM_CHANGED_EVENT,
   CRM_HYDRATED_EVENT,
   hydrateCrmFromServer,
+  isContactFormLead,
   loadCrm,
   relativeDay,
   type CrmActivity,
@@ -55,7 +56,11 @@ function saveIdSet(key: string, set: Set<string>) {
 function hrefFor(a: CrmActivity): string {
   if (a.relatedType === "lead" && a.relatedId) {
     const t = `${a.title} ${a.body}`.toLowerCase();
-    if (t.includes("contact form") || t.includes("form: contact")) {
+    if (
+      t.includes("contact form") ||
+      t.includes("contactform") ||
+      t.includes("form: contact")
+    ) {
       return `/admin/contact-form-entries?id=${encodeURIComponent(a.relatedId)}`;
     }
     return detailHref("lead", a.relatedId);
@@ -118,7 +123,7 @@ function buildFeed(state: CrmState, cleared: Set<string>): NotifItem[] {
     });
   }
   for (const l of (state.leads || []).slice(0, 8)) {
-    const isContact = (l.source || "").toLowerCase() === "contact form";
+    const isContact = isContactFormLead(l);
     extras.push({
       id: `ld-${l.id}`,
       title: isContact ? "Contact form" : "Lead",

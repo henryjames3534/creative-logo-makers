@@ -757,17 +757,28 @@ export function ensurePipelineLinks(state: CrmState): boolean {
   return dirty;
 }
 
-/** Website /contact (and studio/signup form) sources saved by /api/forms/submit */
+/** Normalize CRM lead source for matching (handles "Contact form" vs "contactform"). */
+function normalizeLeadSource(source?: string) {
+  return String(source || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+/** Website /contact form sources saved by /api/forms/submit */
 export function isContactFormLead(lead: { source?: string }) {
-  const s = String(lead.source || "").trim().toLowerCase();
-  return s === "contact form";
+  const s = normalizeLeadSource(lead.source);
+  // Saved as "Contact form"; older rows may omit the space
+  return s === "contact form" || s === "contactform";
 }
 
 export function isWebsiteFormLead(lead: { source?: string }) {
-  const s = String(lead.source || "").trim().toLowerCase();
+  const s = normalizeLeadSource(lead.source);
   return (
     s === "contact form" ||
+    s === "contactform" ||
     s === "studio form" ||
+    s === "studioform" ||
     s === "signup" ||
     s === "package brief"
   );
