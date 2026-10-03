@@ -3,6 +3,8 @@ import {
   buildLiveChatSystemPrompt,
   matchSiteChatAnswer,
 } from "@/lib/live-chat-site-brain";
+import { PACKAGE_DISCOUNT_PERCENT } from "@/data/packages";
+import { resolveConversationalReply } from "@/lib/live-chat-conversation";
 import { ensureSalePricingCopy, generateBotReply } from "@/lib/live-chat";
 
 export const runtime = "nodejs";
@@ -36,13 +38,21 @@ function getAiConfig(): {
   return null;
 }
 
-function isPricingQuestion(message: string) {
-  return /\b(price|pricing|cost|rate|rates|how much|discount|sale|offer|promo|70\s*%|package|budget|fee|charges)\b/i.test(
-    message,
-  );
-}
+function groundedReply(
+  message: string,
+  history: HistoryItem[],
+  path: string | undefined,
+  agentName?: string,
+) {
+  const convo = resolveConversationalReply(message, history, path);
+  if (convo) {
+    return {
+      body: ensureSalePricingCopy(convo.body),
+      agentName,
+      source: "conversation" as const,
+    };
+  }
 
-function localEnglishReply(message: string, agentName?: string) {
   const site = matchSiteChatAnswer(message);
   if (site) {
     return {
@@ -51,7 +61,8 @@ function localEnglishReply(message: string, agentName?: string) {
       source: "site-brain" as const,
     };
   }
-  const legacy = generateBotReply(message, agentName);
+
+  const legacy = generateBotReply(message, agentName, history);
   return {
     body: ensureSalePricingCopy(legacy.body),
     agentName: legacy.agentName,
@@ -67,8 +78,15 @@ async function aiReply(
   const cfg = getAiConfig();
   if (!cfg) return null;
 
-  const system = buildLiveChatSystemPrompt();
-  const recent = history.slice(-10).map((h) => ({
+  const system = `${buildLiveChatSystemPrompt()}
+
+MULTI-TURN RULES:
+- Use the full chat history. Short replies like "pricing", "basic", "bronze", or "yes" refer to the previous topic.
+- If the visitor asks for a basic/starter package, that means Bronze contest tier on sale.
+- Never repeat the same clarifying question twice. If still unclear, give Bronze sale pricing and ask which service.
+- Always mention the live ${PACKAGE_DISCOUNT_PERCENT}% package sale and sale starting price when discussing packages.`;
+
+  const recent = history.slice(-12).map((h) => ({
     role: h.role === "visitor" ? ("user" as const) : ("assistant" as const),
     content: h.body.slice(0, 800),
   }));
@@ -81,8 +99,8 @@ async function aiReply(
     },
     body: JSON.stringify({
       model: cfg.model,
-      temperature: 0.4,
-      max_tokens: 280,
+      temperature: 0.35,
+      max_tokens: 320,
       messages: [
         { role: "system", content: system },
         ...recent,
@@ -107,10 +125,20 @@ async function aiReply(
   };
   const text = data.choices?.[0]?.message?.content?.trim();
   if (!text) return null;
-  // Force English-looking output; reject obvious non-Latin dumps
   const latinRatio =
     (text.match(/[A-Za-z]/g)?.length ?? 0) / Math.max(text.length, 1);
   if (latinRatio < 0.55) return null;
+
+  // Block AI from looping the old clarify script
+  if (
+    /pricing, turnaround, contests, or hiring a designer/i.test(text) &&
+    history.some((h) =>
+      /pricing, turnaround, contests, or hiring a designer/i.test(h.body),
+    )
+  ) {
+    return null;
+  }
+
   return ensureSalePricingCopy(text.slice(0, 1200));
 }
 
@@ -136,7 +164,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Admin has the chat — never invent a bot answer
   if (body.adminTakeover) {
     return NextResponse.json({
       ok: true,
@@ -147,22 +174,17 @@ export async function POST(req: NextRequest) {
 
   const agentName = body.agentName;
   const history = Array.isArray(body.history) ? body.history : [];
+  const path = body.path;
 
-  // Pricing / sale questions: prefer grounded site answers over free-form AI
-  if (isPricingQuestion(message)) {
-    const site = matchSiteChatAnswer(message);
-    if (site && site.score >= 28) {
-      return NextResponse.json({
-        ok: true,
-        body: ensureSalePricingCopy(site.answer),
-        agentName,
-        source: "site-brain",
-      });
-    }
+  // Grounded multi-turn engine first (works without AI keys)
+  const grounded = groundedReply(message, history, path, agentName);
+  if (grounded.source === "conversation" || grounded.source === "site-brain") {
+    return NextResponse.json({ ok: true, ...grounded });
   }
 
+  // Optional AI for open-ended questions only
   try {
-    const ai = await aiReply(message, history, body.path);
+    const ai = await aiReply(message, history, path);
     if (ai) {
       return NextResponse.json({
         ok: true,
@@ -175,6 +197,5 @@ export async function POST(req: NextRequest) {
     console.error("chat AI exception", e);
   }
 
-  const local = localEnglishReply(message, agentName);
-  return NextResponse.json({ ok: true, ...local });
+  return NextResponse.json({ ok: true, ...grounded });
 }

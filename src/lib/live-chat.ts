@@ -3,6 +3,10 @@ import {
   type ChatKnowledgeTopic,
 } from "@/lib/live-chat-knowledge";
 import { matchSiteChatAnswer } from "@/lib/live-chat-site-brain";
+import {
+  resolveConversationalReply,
+  type ChatHistoryItem,
+} from "@/lib/live-chat-conversation";
 
 /** Proactive visitor live chat — localStorage + admin alerts + smart replies */
 
@@ -246,11 +250,12 @@ export function humanReplyDelayMs(visitorMessage: string): number {
 
 /**
  * Relevant English bot reply for a visitor message (local fallback).
- * Prefers website-trained SITE_CHAT_QA, then legacy knowledge topics.
+ * Multi-turn conversation engine → site brain → knowledge → soft sale clarify.
  */
 export function generateBotReply(
   visitorMessage: string,
   preferredAgent?: string,
+  history: ChatHistoryItem[] = [],
 ): {
   body: string;
   agentName?: string;
@@ -262,6 +267,11 @@ export function generateBotReply(
       agentName,
       body: "No rush — just tell me what you need: logo, website, packaging, or pricing.",
     };
+  }
+
+  const convo = resolveConversationalReply(visitorMessage, history);
+  if (convo) {
+    return { agentName, body: ensureSalePricingCopy(convo.body) };
   }
 
   const siteHit = matchSiteChatAnswer(visitorMessage);
@@ -280,21 +290,18 @@ export function generateBotReply(
   }
 
   if (bestTopic && bestScore >= 32) {
-    // Strip broken encoding leftovers from older generated replies
     const raw = pickOne(bestTopic.replies)
       .replace(/â€”/g, "—")
       .replace(/â€™/g, "'");
     return { agentName, body: ensureSalePricingCopy(raw) };
   }
 
-  const fallbacks = [
-    `Got it — I want to answer that properly. Are you asking about pricing, turnaround, contests, or hiring a designer?`,
-    `Thanks for the note. Quick check so I can help: is this for a logo, website, packaging, or branding?`,
-    `I can help with that. Share a bit more — budget, deadline, or the service you need — and I will give you a clear next step.`,
-  ];
+  // Never loop a useless clarify — give sale pricing as a useful default
   return {
     agentName,
-    body: pickOne(fallbacks),
+    body: ensureSalePricingCopy(
+      "Our package sale is live: 70% off. Basic/Bronze contest packages start from about $75 (was $249). Tell me logo, website, packaging, or branding and I will point you to the exact page.",
+    ),
   };
 }
 
@@ -425,9 +432,14 @@ export function postBotReply(
     session.agentName = pickRandomAgent();
     saveStore(store);
   }
+  const history: ChatHistoryItem[] = session.messages.map((m) => ({
+    role: m.role,
+    body: m.body,
+  }));
   const { body, agentName } = generateBotReply(
     visitorMessage,
     session.agentName,
+    history,
   );
   // Re-check after generating — admin may have taken over during delay
   const fresh = loadStore().sessions.find((s) => s.id === sessionId);
