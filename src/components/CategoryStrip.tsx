@@ -42,7 +42,7 @@ export function CategoryStrip() {
   }
 
   return (
-    <section className="relative overflow-hidden py-12 md:py-14">
+    <section className="relative z-0 overflow-hidden py-12 md:py-14">
       <div
         className="pointer-events-none absolute inset-0"
         style={{

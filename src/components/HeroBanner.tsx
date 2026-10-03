@@ -238,11 +238,19 @@ export function HeroBanner() {
     }, 200);
   }
 
+  const panelOpen = showBrowse || showResults;
+
   return (
-    <section className="relative overflow-x-clip overflow-y-visible bg-white pb-14 pt-8 md:pb-20 md:pt-10">
+    <section
+      className={`relative bg-white pb-14 pt-8 md:pb-20 md:pt-10 ${
+        panelOpen
+          ? "z-50 overflow-visible"
+          : "z-20 overflow-x-clip overflow-y-visible"
+      }`}
+    >
       <Container className="relative z-10">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-8">
-          <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+          <div className="relative z-0 mx-auto w-full max-w-lg lg:max-w-none">
             <div
               className={`relative aspect-[5/4] transition-opacity duration-300 ${
                 fade ? "opacity-100" : "opacity-0"
@@ -315,7 +323,7 @@ export function HeroBanner() {
             </p>
           </div>
 
-          <div className="lg:pl-2">
+          <div className={`relative lg:pl-2 ${panelOpen ? "z-[60]" : ""}`}>
             <h1 className="max-w-xl text-3xl font-medium leading-[1.05] tracking-tight text-hero sm:text-[2.6rem] md:text-6xl lg:text-[4.6rem]">
               Grow with great design
             </h1>
@@ -325,10 +333,15 @@ export function HeroBanner() {
               Because good design makes great business.
             </p>
 
-            <div ref={wrapRef} className="relative z-30 mt-8 w-full max-w-xl">
+            <div
+              ref={wrapRef}
+              className={`relative mt-8 w-full max-w-xl ${
+                panelOpen ? "z-[60]" : "z-30"
+              }`}
+            >
               <form
                 onSubmit={onSearch}
-                className="hero-search group flex w-full min-w-0 items-center rounded-full border border-line bg-white pl-1 pr-1 shadow-[0_8px_28px_rgba(49,48,48,0.08)] transition-[border-color,box-shadow] focus-within:border-hero focus-within:shadow-[0_10px_32px_rgba(131,70,146,0.18)]"
+                className="hero-search group relative z-[61] flex w-full min-w-0 items-center rounded-full border border-line bg-white pl-1 pr-1 shadow-[0_8px_28px_rgba(49,48,48,0.08)] transition-[border-color,box-shadow] focus-within:border-hero focus-within:shadow-[0_10px_32px_rgba(131,70,146,0.18)]"
                 role="search"
               >
                 <label className="relative min-w-0 flex-1">
@@ -373,7 +386,7 @@ export function HeroBanner() {
                   id={listId}
                   role="listbox"
                   aria-label="Advanced design search"
-                  className="absolute inset-x-0 top-[calc(100%+8px)] z-40 max-h-[min(58dvh,440px)] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)] sm:max-h-[min(62dvh,480px)]"
+                  className="absolute inset-x-0 top-[calc(100%+8px)] z-[62] max-h-[min(58dvh,440px)] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.22)] sm:max-h-[min(62dvh,480px)]"
                 >
                   <div className="sticky top-0 z-10 border-b border-line bg-gradient-to-br from-[#faf8fc] to-white px-3 py-2.5 sm:px-5 sm:py-3">
                     <div className="flex items-start justify-between gap-2 sm:items-center sm:gap-3">
@@ -474,7 +487,7 @@ export function HeroBanner() {
                 <div
                   id={listId}
                   role="listbox"
-                  className="absolute inset-x-0 top-[calc(100%+8px)] z-40 max-h-[min(50dvh,380px)] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.16)] sm:max-h-[min(55dvh,420px)]"
+                  className="absolute inset-x-0 top-[calc(100%+8px)] z-[62] max-h-[min(50dvh,380px)] w-full overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(49,48,48,0.22)] sm:max-h-[min(55dvh,420px)]"
                 >
                   <div className="border-b border-line px-3 py-2.5 sm:px-4">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
