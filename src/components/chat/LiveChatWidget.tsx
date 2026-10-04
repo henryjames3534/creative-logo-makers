@@ -245,7 +245,7 @@ export function LiveChatWidget() {
                   ) : null}
                   {m.role === "admin" ? (
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-green">
-                      {m.agentName || ADMIN_DISPLAY_NAME}
+                      {m.agentName || LIVE_CHAT_ADMIN_NAME}
                     </p>
                   ) : null}
                   <p className="whitespace-pre-wrap">{m.body}</p>
