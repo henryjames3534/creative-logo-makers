@@ -519,8 +519,24 @@ export type CrmState = {
     contacts?: string[];
     inbox?: string[];
     deals?: string[];
+    tasks?: string[];
   };
 };
+
+/** True when a task belongs to this CRM order/project (incl. inbox orphans). */
+export function taskBelongsToOrder(task: CrmTask, order: CrmOrder): boolean {
+  if (task.projectId && task.projectId === order.id) return true;
+  const keys = [order.id, order.orderId, order.serviceId].filter(
+    (x): x is string => Boolean(x),
+  );
+  if (task.relatedId && keys.includes(task.relatedId)) return true;
+  return false;
+}
+
+export function isProjectCompleted(order: CrmOrder): boolean {
+  const s = String(order.status || "").toLowerCase();
+  return s === "completed" || s === "complete" || s === "cancelled";
+}
 
 const CRM_KEY = "clm_crm_v1";
 const CRM_UPDATED_KEY = "clm_crm_updated_at";
@@ -1997,6 +2013,14 @@ export function pushCustomerInbox(input: {
     relatedType: "order",
     relatedId: input.serviceId,
   });
+  // Prefer linking the task to the real CRM project so delete/complete clean it up
+  const linkedProject =
+    state.orders.find(
+      (o) =>
+        (input.serviceId && o.serviceId === input.serviceId) ||
+        (input.serviceId && o.id === input.serviceId),
+    ) || null;
+
   state.tasks.unshift({
     id: uid("tk"),
     title:
@@ -2007,8 +2031,9 @@ export function pushCustomerInbox(input: {
     priority: input.kind === "revision" ? "high" : "medium",
     dueAt: isoDays(1),
     ownerId: "own_admin",
+    projectId: linkedProject?.id,
     relatedType: "order",
-    relatedId: input.serviceId,
+    relatedId: linkedProject?.id || input.serviceId,
     createdAt: now,
   });
   saveCrm(state);
@@ -2458,8 +2483,11 @@ export function deleteOrder(id: string) {
     }
   }
 
+  const removedTasks = state.tasks.filter((t) => taskBelongsToOrder(t, o));
+  const removedTaskIds = removedTasks.map((t) => t.id);
+
   state.orders = state.orders.filter((x) => x.id !== id);
-  state.tasks = state.tasks.filter((t) => t.projectId !== id);
+  state.tasks = state.tasks.filter((t) => !taskBelongsToOrder(t, o));
   state.deals = state.deals.filter((d) => !linkedDealIds.includes(d.id));
   state.leads = state.leads.filter((l) => !linkedLeadIds.includes(l.id));
 
@@ -2508,16 +2536,89 @@ export function deleteOrder(id: string) {
       ]),
     ).slice(-500);
   }
+  if (removedTaskIds.length) {
+    state.deleted.tasks = Array.from(
+      new Set([...(state.deleted.tasks || []), ...removedTaskIds]),
+    ).slice(-500);
+  }
 
   state.activities.unshift({
     id: uid("ac"),
     type: "note",
     title: "Project deleted",
-    body: `${o.orderId} · ${o.customerName} <${o.customerEmail}> · removed ${linkedDealIds.length} deal(s)${linkedLeadIds.length ? `, ${linkedLeadIds.length} lead(s)` : ""}`,
+    body: `${o.orderId} · ${o.customerName} <${o.customerEmail}> · removed ${linkedDealIds.length} deal(s)${linkedLeadIds.length ? `, ${linkedLeadIds.length} lead(s)` : ""}${removedTaskIds.length ? `, ${removedTaskIds.length} task(s)` : ""}`,
     createdAt: new Date().toISOString(),
     ownerId: "own_admin",
     relatedType: "order",
     relatedId: id,
+  });
+  saveCrmFlush(state);
+  return state;
+}
+
+/** Admin marks a paid project complete → leaves Ongoing, shows in Completed history. */
+export function markProjectCompleted(projectId: string) {
+  const state = loadCrm();
+  const project = state.orders.find((o) => o.id === projectId);
+  if (!project) return state;
+  const now = new Date().toISOString();
+  project.status = "completed";
+  project.updatedAt = now;
+
+  // Close open tasks tied to this project
+  for (const t of state.tasks) {
+    if (taskBelongsToOrder(t, project) && t.status !== "done") {
+      t.status = "done";
+    }
+  }
+
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "Project marked completed",
+    body: `${project.orderId} · ${project.customerName} · moved to completed history`,
+    createdAt: now,
+    ownerId: "own_admin",
+    relatedType: "order",
+    relatedId: project.id,
+  });
+  saveCrmFlush(state);
+
+  // Keep customer account service in sync when linked
+  if (project.serviceId && project.customerEmail) {
+    try {
+      // Lazy import avoids circular init with auth-storage
+      const { adminCompleteService } = require("@/lib/auth-storage") as {
+        adminCompleteService: (
+          email: string,
+          serviceId: string,
+        ) => unknown;
+      };
+      adminCompleteService(project.customerEmail, project.serviceId);
+    } catch {
+      /* account sync is best-effort */
+    }
+  }
+  return state;
+}
+
+/** Reopen a completed project back into Ongoing. */
+export function reopenProject(projectId: string) {
+  const state = loadCrm();
+  const project = state.orders.find((o) => o.id === projectId);
+  if (!project) return state;
+  const now = new Date().toISOString();
+  project.status = "in_progress";
+  project.updatedAt = now;
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: "Project reopened",
+    body: `${project.orderId} · ${project.customerName} · back to ongoing`,
+    createdAt: now,
+    ownerId: "own_admin",
+    relatedType: "order",
+    relatedId: project.id,
   });
   saveCrmFlush(state);
   return state;

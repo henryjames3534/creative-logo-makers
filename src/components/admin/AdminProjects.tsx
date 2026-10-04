@@ -12,13 +12,17 @@ import {
   deleteOrder,
   hydrateCrmFromServer,
   isPaidProject,
+  isProjectCompleted,
   loadCrm,
+  markProjectCompleted,
   markUpsellPaid,
   money,
   onInboxUpdated,
   projectFinancials,
   relativeDay,
+  reopenProject,
   saveCrm,
+  taskBelongsToOrder,
   updateProjectRevision,
   upsertTask,
   type CrmOrder,
@@ -41,6 +45,9 @@ export function AdminProjects() {
   const focusId = searchParams.get("id");
   const [state, setState] = useHydratedCrm();
   const [q, setQ] = useState("");
+  const [listFilter, setListFilter] = useState<"ongoing" | "completed">(
+    "ongoing",
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<"tasks" | "revisions" | "upsells">("revisions");
 
@@ -68,24 +75,27 @@ export function AdminProjects() {
     return onInboxUpdated(() => setState(loadCrm()));
   }, [setState]);
 
-  useEffect(() => {
-    if (focusId) {
-      setSelectedId(focusId);
-      return;
-    }
-    const paid = (state?.orders || []).filter(isPaidProject);
-    if (!selectedId && paid[0]) setSelectedId(paid[0].id);
-  }, [state, selectedId, focusId]);
-
   const projects = useMemo(() => {
     if (!state) return [];
     return state.orders.filter((o) => {
       if (!isPaidProject(o)) return false;
+      const done = isProjectCompleted(o);
+      if (listFilter === "ongoing" && done) return false;
+      if (listFilter === "completed" && !done) return false;
       const hay =
         `${o.orderId} ${o.title ?? ""} ${o.customerName} ${o.customerEmail} ${o.categoryName}`.toLowerCase();
       return !q.trim() || hay.includes(q.trim().toLowerCase());
     });
-  }, [state, q]);
+  }, [state, q, listFilter]);
+
+  const counts = useMemo(() => {
+    if (!state) return { ongoing: 0, completed: 0 };
+    const paid = state.orders.filter(isPaidProject);
+    return {
+      ongoing: paid.filter((o) => !isProjectCompleted(o)).length,
+      completed: paid.filter((o) => isProjectCompleted(o)).length,
+    };
+  }, [state]);
 
   const project: CrmOrder | null = useMemo(() => {
     if (!state || !selectedId) return null;
@@ -102,9 +112,21 @@ export function AdminProjects() {
   const projectTasks: CrmTask[] = useMemo(() => {
     if (!state || !project) return [];
     return state.tasks
-      .filter((t) => t.projectId === project.id)
+      .filter((t) => taskBelongsToOrder(t, project))
       .sort((a, b) => +new Date(a.dueAt) - +new Date(b.dueAt));
   }, [state, project]);
+
+  useEffect(() => {
+    if (focusId) {
+      setSelectedId(focusId);
+      const focused = (state?.orders || []).find((o) => o.id === focusId);
+      if (focused && isPaidProject(focused)) {
+        setListFilter(isProjectCompleted(focused) ? "completed" : "ongoing");
+      }
+      return;
+    }
+    if (!selectedId && projects[0]) setSelectedId(projects[0].id);
+  }, [state, selectedId, focusId, projects]);
 
   function refresh() {
     setState(loadCrm());
@@ -114,14 +136,44 @@ export function AdminProjects() {
     if (!project) return;
     if (
       !window.confirm(
-        `Delete project ${project.orderId} (${project.customerName})?\n\nPipeline deal + linked lead for this project will also be removed.`,
+        `Delete project ${project.orderId} (${project.customerName})?\n\nLinked tasks, pipeline deal, and lead for this project will also be removed.`,
       )
     ) {
       return;
     }
     const next = deleteOrder(project.id);
     setState({ ...next });
-    setSelectedId(next.orders[0]?.id ?? null);
+    const remaining = next.orders.filter(
+      (o) =>
+        isPaidProject(o) &&
+        (listFilter === "completed"
+          ? isProjectCompleted(o)
+          : !isProjectCompleted(o)),
+    );
+    setSelectedId(remaining[0]?.id ?? null);
+  }
+
+  function onMarkComplete() {
+    if (!project) return;
+    if (
+      !window.confirm(
+        `Mark ${project.orderId} as completed?\n\nIt will move out of Ongoing into Completed history.`,
+      )
+    ) {
+      return;
+    }
+    const next = markProjectCompleted(project.id);
+    setState({ ...next });
+    setListFilter("completed");
+    setSelectedId(project.id);
+  }
+
+  function onReopen() {
+    if (!project) return;
+    const next = reopenProject(project.id);
+    setState({ ...next });
+    setListFilter("ongoing");
+    setSelectedId(project.id);
   }
 
   function onAddTask(e: FormEvent) {
@@ -297,9 +349,40 @@ export function AdminProjects() {
       <div>
         <h1 className="text-2xl font-semibold text-[var(--a-text)]">Projects</h1>
         <p className="mt-1 text-sm text-[color:var(--a-muted)]">
-          Paid projects — tasks, revisions, upsells. Unpaid briefs stay in Orders
-          + Leads.
+          Paid projects — tasks, revisions, upsells. Mark complete to move into
+          history. Unpaid briefs stay in Orders + Leads.
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setListFilter("ongoing");
+            setSelectedId(null);
+          }}
+          className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+            listFilter === "ongoing"
+              ? "bg-[#00a581] !text-white"
+              : "border border-[color:var(--a-border)] text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
+          }`}
+        >
+          Ongoing ({counts.ongoing})
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setListFilter("completed");
+            setSelectedId(null);
+          }}
+          className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+            listFilter === "completed"
+              ? "bg-[#00a581] !text-white"
+              : "border border-[color:var(--a-border)] text-[color:var(--a-muted)] hover:bg-[var(--a-hover)]"
+          }`}
+        >
+          Completed history ({counts.completed})
+        </button>
       </div>
 
       <input
@@ -314,13 +397,13 @@ export function AdminProjects() {
           <ul className="divide-y divide-white/5">
             {projects.length === 0 ? (
               <li className="px-4 py-8 text-center text-sm text-[color:var(--a-faint)]">
-                Abhi koi paid project nahi. Orders mein payment{" "}
-                <span className="text-[color:var(--a-muted)]">paid</span> mark
-                karo — yahan aa jayega.
+                {listFilter === "completed"
+                  ? "No completed projects yet. Open a project and click Mark complete."
+                  : "Abhi koi ongoing paid project nahi. Orders mein payment paid mark karo — yahan aa jayega."}
               </li>
             ) : null}
             {projects.map((o) => {
-              const tasksN = state.tasks.filter((t) => t.projectId === o.id)
+              const tasksN = state.tasks.filter((t) => taskBelongsToOrder(t, o))
                 .length;
               const openRevs = (o.revisions || []).filter(
                 (r) => r.status === "pending" || r.status === "in_progress",
@@ -398,11 +481,29 @@ export function AdminProjects() {
                   <p className="text-xs capitalize text-[color:var(--a-faint)]">
                     {project.status.replace(/_/g, " ")}
                   </p>
-                  <DeleteBtn
-                    label="Delete project"
-                    className="mt-2"
-                    onClick={() => onDeleteProject()}
-                  />
+                  <div className="mt-2 flex flex-col items-end gap-1.5">
+                    {isProjectCompleted(project) ? (
+                      <button
+                        type="button"
+                        onClick={() => onReopen()}
+                        className="rounded-lg border border-[color:var(--a-border)] px-3 py-1.5 text-xs font-semibold text-[var(--a-text)] hover:bg-[var(--a-hover)]"
+                      >
+                        Reopen to Ongoing
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onMarkComplete()}
+                        className="rounded-lg bg-[#00a581] px-3 py-1.5 text-xs font-semibold !text-white hover:opacity-90"
+                      >
+                        Mark complete
+                      </button>
+                    )}
+                    <DeleteBtn
+                      label="Delete project"
+                      onClick={() => onDeleteProject()}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-[color:var(--a-muted)]">

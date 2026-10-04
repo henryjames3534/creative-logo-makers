@@ -1152,6 +1152,39 @@ export function markServiceCompleted(
   });
 }
 
+/** Admin marks customer service complete (no review required). */
+export function adminCompleteService(
+  email: string,
+  serviceId: string,
+): SessionUser | null {
+  return mutateUser(email, (user) => {
+    const services = user.services.map((svc) => {
+      if (svc.id !== serviceId) return svc;
+      if (svc.status === "completed") return svc;
+      const now = new Date().toISOString();
+      return {
+        ...svc,
+        status: "completed" as ServiceStatus,
+        progress: 100,
+        steps: defaultSteps("completed", svc.createdAt),
+        updatedAt: now,
+        updates: [
+          {
+            id: uid("upd"),
+            kind: "milestone" as const,
+            from: "admin" as const,
+            title: "Project marked completed",
+            body: "Your project was marked complete by the Creative Logo Makers team.",
+            createdAt: now,
+          },
+          ...svc.updates,
+        ],
+      };
+    });
+    return { ...user, services };
+  });
+}
+
 export function savePendingBrief(brief: PendingBrief) {
   sessionStorage.setItem(PENDING_BRIEF_KEY, JSON.stringify(brief));
 }
