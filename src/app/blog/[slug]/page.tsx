@@ -16,8 +16,8 @@ import { absoluteUrl, pageMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
-/** Revalidate often so scheduled posts unlock near 2 AM PKT. */
-export const revalidate = 300;
+/** Daily refresh for scheduled posts — avoids 5-minute ISR rewrite churn. */
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return getAllBlogPosts().map((p) => ({ slug: p.slug }));

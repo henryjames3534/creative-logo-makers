@@ -25,14 +25,13 @@ import { buildUsaKeywordCopy } from "@/lib/usa-keyword-copy";
 
 type Props = { params: Promise<{ intent: string }> };
 
-/** Keyword pages generate on first request — keep build light. */
+/**
+ * ~5k keyword URLs — do NOT use ISR (revalidate).
+ * ISR was writing a cache entry per crawl/regen and blowing Vercel ISR writes.
+ * Serve dynamically; CDN caches HTML via next.config Cache-Control.
+ */
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
-export const revalidate = 86400;
-
-/** Prebuild GSC money-keyword pages so Google can crawl strong HTML immediately. */
-export function generateStaticParams() {
-  return GSC_PRIORITY_SLUGS.map((intent) => ({ intent }));
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { intent: slug } = await params;

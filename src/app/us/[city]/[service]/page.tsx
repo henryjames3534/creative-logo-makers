@@ -10,21 +10,18 @@ import {
   getCityBySlug,
   isLocationService,
   locationPath,
-  priorityLocationParams,
 } from "@/data/us-locations";
 import { buildLocationSeo } from "@/lib/location-seo";
 import { pageMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ city: string; service: string }> };
 
-/** Cache on-demand pages for 24h after first generate */
-export const revalidate = 86400;
+/**
+ * Large city×service matrix — avoid ISR writes (on-demand revalidate was
+ * regenerating thousands of pages for crawlers). CDN caches instead.
+ */
+export const dynamic = "force-dynamic";
 export const dynamicParams = true;
-
-/** Only top city × hot services at build; sitemap still has all URLs */
-export function generateStaticParams() {
-  return priorityLocationParams();
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city: citySlug, service } = await params;

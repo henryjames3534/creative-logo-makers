@@ -139,17 +139,14 @@ export function allLocationParams(): { city: string; service: string }[] {
   return out;
 }
 
-/** Hot services pre-rendered at build (rest = on-demand ISR). */
+/** Kept for docs/tools — location service pages are force-dynamic (no ISR). */
 export const BUILD_TIME_LOCATION_SERVICES = [
   "logo-design",
   "web-design",
   "mobile-app-design",
 ] as const;
 
-/**
- * Small build-time set so Vercel deploy stays small.
- * Sitemap still lists every city × service URL; others generate on first request.
- */
+/** @deprecated Pages are force-dynamic; kept for any external tooling. */
 export function priorityLocationParams(): { city: string; service: string }[] {
   const topCities = US_CITIES.slice(0, 12);
   const out: { city: string; service: string }[] = [];

@@ -13,8 +13,8 @@ import {
 } from "@/lib/blog";
 import { pageMetadata } from "@/lib/seo";
 
-/** Revalidate often so daily 2 AM PKT publishes go live without redeploy. */
-export const revalidate = 300;
+/** Daily is enough — 5-minute ISR was creating unnecessary rewrite churn. */
+export const revalidate = 86400;
 
 export const metadata: Metadata = pageMetadata({
   title: "Design Blog — USA Branding & Logo Guides",
