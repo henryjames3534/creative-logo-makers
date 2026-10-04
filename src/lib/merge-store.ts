@@ -681,3 +681,88 @@ export function mergeUsersDocuments(
     ["updatedAt", "createdAt"],
   );
 }
+
+function mergeChatMessages(a: Dict[], b: Dict[]): Dict[] {
+  const map = new Map<string, Dict>();
+  for (const msg of [...a, ...b]) {
+    const id = String(msg.id || "");
+    if (!id) continue;
+    const prev = map.get(id);
+    map.set(id, prev ? pickNewer(prev, msg, ["createdAt"]) : msg);
+  }
+  return [...map.values()].sort(
+    (x, y) => ts(x.createdAt) - ts(y.createdAt),
+  );
+}
+
+function mergeChatSessionRow(a: Dict, b: Dict): Dict {
+  const newer = pickNewer(a, b, ["updatedAt", "createdAt", "lastVisitorAt"]);
+  const messages = mergeChatMessages(
+    asArray<Dict>(a.messages),
+    asArray<Dict>(b.messages),
+  );
+  return {
+    ...newer,
+    ip: newer.ip || a.ip || b.ip,
+    visitorKey: newer.visitorKey || a.visitorKey || b.visitorKey,
+    messages,
+    adminTakeover: Boolean(a.adminTakeover || b.adminTakeover || newer.adminTakeover),
+    adminTakeoverAt: newer.adminTakeoverAt || a.adminTakeoverAt || b.adminTakeoverAt,
+    agentName: newer.agentName || a.agentName || b.agentName,
+  };
+}
+
+function chatSessionDedupeKey(row: Dict) {
+  const ip = String(row.ip || "").trim().toLowerCase();
+  if (ip) return `ip:${ip}`;
+  const visitorKey = String(row.visitorKey || "").trim().toLowerCase();
+  if (visitorKey) return `vk:${visitorKey}`;
+  return String(row.id || "");
+}
+
+/**
+ * Merge live-chat stores so concurrent browsers keep one thread per IP
+ * and don't wipe each other's messages.
+ */
+export function mergeChatDocuments(remote: unknown, incoming: unknown): Dict {
+  const a = (remote && typeof remote === "object" ? remote : {}) as Dict;
+  const b = (incoming && typeof incoming === "object" ? incoming : {}) as Dict;
+
+  const byId = mergeByKeys(
+    asArray<Dict>(a.sessions),
+    asArray<Dict>(b.sessions),
+    (row) => String(row.id || ""),
+    ["updatedAt", "createdAt", "lastVisitorAt"],
+    mergeChatSessionRow,
+  );
+
+  // Collapse multiple open sessions that share the same IP / visitor key.
+  const openByKey = new Map<string, Dict>();
+  const closed: Dict[] = [];
+  for (const session of byId) {
+    if (String(session.status || "") !== "open") {
+      closed.push(session);
+      continue;
+    }
+    const key = chatSessionDedupeKey(session);
+    const prev = openByKey.get(key);
+    if (!prev) {
+      openByKey.set(key, session);
+      continue;
+    }
+    const kept = mergeChatSessionRow(prev, session);
+    const drop = kept.id === prev.id ? session : prev;
+    openByKey.set(key, kept);
+    closed.push({
+      ...drop,
+      status: "closed",
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  const sessions = [...openByKey.values(), ...closed].sort(
+    (x, y) => ts(y.updatedAt) - ts(x.updatedAt),
+  );
+
+  return { sessions };
+}

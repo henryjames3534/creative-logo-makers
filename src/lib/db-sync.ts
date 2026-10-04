@@ -187,6 +187,57 @@ export async function hydrateStoreKey(opts: {
     return "server";
   }
 
+  // Chat: merge sessions by id/IP so same visitor doesn't spawn parallel threads.
+  if (opts.key === "chat" && hasRemote && localPayload) {
+    const { mergeChatDocuments } = await import("@/lib/merge-store");
+    const merged = mergeChatDocuments(remote.payload, localPayload) as {
+      sessions?: Array<{
+        id?: string;
+        status?: string;
+        updatedAt?: string;
+        messages?: unknown[];
+      }>;
+    };
+    const fingerprint = (payload: unknown) => {
+      const sessions = Array.isArray(
+        (payload as { sessions?: unknown[] } | null)?.sessions,
+      )
+        ? (
+            payload as {
+              sessions: Array<{
+                id?: string;
+                status?: string;
+                updatedAt?: string;
+                messages?: unknown[];
+              }>;
+            }
+          ).sessions
+        : [];
+      return sessions
+        .map(
+          (s) =>
+            `${s.id || ""}:${s.status || ""}:${s.messages?.length || 0}:${s.updatedAt || ""}`,
+        )
+        .sort()
+        .join("|");
+    };
+    const changed =
+      fingerprint(merged) !== fingerprint(remote.payload) || localAt > remoteAt;
+    const mergedAt = changed
+      ? new Date().toISOString()
+      : remote.updatedAt || opts.localUpdatedAt || new Date().toISOString();
+    opts.writeLocal(JSON.stringify(merged), mergedAt);
+    if (changed) {
+      try {
+        await putStoreDocument("chat", merged, mergedAt);
+        return "pushed";
+      } catch {
+        return "server";
+      }
+    }
+    return "server";
+  }
+
   // Prefer server whenever it has more CRM rows (guards against stale local wipe).
   if (
     opts.key === "crm" &&

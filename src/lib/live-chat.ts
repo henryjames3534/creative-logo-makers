@@ -12,6 +12,10 @@ import {
 
 const CHAT_KEY = "clm_live_chat_v1";
 const CHAT_UPDATED_KEY = "clm_live_chat_updated_at";
+/** Stable across tabs/refreshes (sessionStorage was creating a new chat each tab). */
+const VISITOR_KEY_LS = "clm_chat_visitor_v1";
+const VISITOR_KEY_SS_LEGACY = "clm_chat_visitor";
+const VISITOR_IP_LS = "clm_chat_visitor_ip_v1";
 export const LIVE_CHAT_EVENT = "clm_live_chat";
 export const LIVE_CHAT_OPEN_EVENT = "clm_live_chat_open";
 export const LIVE_CHAT_HYDRATED_EVENT = "clm_live_chat_hydrated";
@@ -30,6 +34,8 @@ export type ChatMessage = {
 export type LiveChatSession = {
   id: string;
   visitorKey: string;
+  /** Public client IP — used to keep one open chat per IP */
+  ip?: string;
   path?: string;
   status: "open" | "closed";
   createdAt: string;
@@ -107,17 +113,154 @@ function emitOpen(session: LiveChatSession) {
   );
 }
 
+function normalizeChatIp(ip: string | undefined | null) {
+  return (ip || "").trim().toLowerCase();
+}
+
+function isUsableChatIp(ip: string) {
+  if (!ip) return false;
+  // Mirror server private-IP rules (avoid treating LAN/dev as a shared key).
+  if (ip === "::1" || ip === "127.0.0.1" || ip === "localhost") return false;
+  if (ip.startsWith("10.")) return false;
+  if (ip.startsWith("192.168.")) return false;
+  if (ip.startsWith("172.")) {
+    const second = Number(ip.split(".")[1]);
+    if (second >= 16 && second <= 31) return false;
+  }
+  if (ip.startsWith("fc") || ip.startsWith("fd") || ip.startsWith("fe80")) {
+    return false;
+  }
+  return true;
+}
+
+function visitorKeyFromIp(ip: string) {
+  return `ip_${ip.replace(/[^a-z0-9.]/gi, "_")}`;
+}
+
+function readStoredVisitorKey() {
+  if (typeof window === "undefined") return "";
+  try {
+    const fromLs = localStorage.getItem(VISITOR_KEY_LS);
+    if (fromLs) return fromLs;
+    const legacy = sessionStorage.getItem(VISITOR_KEY_SS_LEGACY);
+    if (legacy) {
+      localStorage.setItem(VISITOR_KEY_LS, legacy);
+      return legacy;
+    }
+  } catch {
+    /* ignore */
+  }
+  return "";
+}
+
+function writeStoredVisitorKey(key: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(VISITOR_KEY_LS, key);
+    sessionStorage.setItem(VISITOR_KEY_SS_LEGACY, key);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function getVisitorChatKey() {
   if (typeof window === "undefined") return "anon";
-  try {
-    const existing = sessionStorage.getItem("clm_chat_visitor");
-    if (existing) return existing;
-    const key = uid("vis");
-    sessionStorage.setItem("clm_chat_visitor", key);
-    return key;
-  } catch {
-    return uid("vis");
+  const existing = readStoredVisitorKey();
+  if (existing) return existing;
+  const key = uid("vis");
+  writeStoredVisitorKey(key);
+  return key;
+}
+
+/** Resolve public IP and pin visitorKey to it so same IP reopens the same chat. */
+export async function ensureChatVisitorIdentity(): Promise<{
+  visitorKey: string;
+  ip?: string;
+}> {
+  if (typeof window === "undefined") {
+    return { visitorKey: "anon" };
   }
+
+  let ip = "";
+  try {
+    ip = normalizeChatIp(localStorage.getItem(VISITOR_IP_LS) || "");
+  } catch {
+    ip = "";
+  }
+
+  if (!isUsableChatIp(ip)) {
+    try {
+      const res = await fetch("/api/visitor-geo", {
+        method: "GET",
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { ip?: string };
+        ip = normalizeChatIp(data.ip);
+        if (isUsableChatIp(ip)) {
+          localStorage.setItem(VISITOR_IP_LS, ip);
+        }
+      }
+    } catch {
+      /* keep fallback key */
+    }
+  }
+
+  if (isUsableChatIp(ip)) {
+    const key = visitorKeyFromIp(ip);
+    writeStoredVisitorKey(key);
+    return { visitorKey: key, ip };
+  }
+
+  return { visitorKey: getVisitorChatKey() };
+}
+
+function findOpenSession(
+  store: ChatStore,
+  visitorKey: string,
+  ip?: string,
+): LiveChatSession | null {
+  const byKey =
+    store.sessions.find(
+      (s) => s.visitorKey === visitorKey && s.status === "open",
+    ) || null;
+  if (byKey) return byKey;
+
+  const normalizedIp = normalizeChatIp(ip);
+  if (!isUsableChatIp(normalizedIp)) return null;
+
+  const byIp = store.sessions
+    .filter(
+      (s) =>
+        s.status === "open" &&
+        normalizeChatIp(s.ip) === normalizedIp,
+    )
+    .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+  return byIp[0] || null;
+}
+
+/** Close extra open threads for the same visitor/IP — keep the active one. */
+function collapseDuplicateOpenSessions(
+  store: ChatStore,
+  keepId: string,
+  visitorKey: string,
+  ip?: string,
+) {
+  const normalizedIp = normalizeChatIp(ip);
+  let changed = false;
+  for (const session of store.sessions) {
+    if (session.id === keepId || session.status !== "open") continue;
+    const sameKey = session.visitorKey === visitorKey;
+    const sameIp =
+      isUsableChatIp(normalizedIp) &&
+      normalizeChatIp(session.ip) === normalizedIp;
+    if (sameKey || sameIp) {
+      session.status = "closed";
+      session.updatedAt = new Date().toISOString();
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 export function listChatSessions(): LiveChatSession[] {
@@ -132,12 +275,9 @@ export function getChatSession(id: string): LiveChatSession | null {
 
 export function getOpenSessionForVisitor(
   visitorKey: string,
+  ip?: string,
 ): LiveChatSession | null {
-  return (
-    loadStore().sessions.find(
-      (s) => s.visitorKey === visitorKey && s.status === "open",
-    ) || null
-  );
+  return findOpenSession(loadStore(), visitorKey, ip);
 }
 
 export function unreadChatCount(): number {
@@ -344,17 +484,20 @@ export function releaseChatToBot(sessionId: string): LiveChatSession | null {
 export function openLiveChat(input?: {
   path?: string;
   visitorKey?: string;
+  ip?: string;
 }): LiveChatSession {
   const store = loadStore();
   const visitorKey = input?.visitorKey || getVisitorChatKey();
-  const existing = store.sessions.find(
-    (s) => s.visitorKey === visitorKey && s.status === "open",
-  );
+  const ip = normalizeChatIp(input?.ip) || undefined;
+  const existing = findOpenSession(store, visitorKey, ip);
   if (existing) {
     existing.path = input?.path || existing.path;
+    existing.visitorKey = visitorKey;
+    if (ip) existing.ip = ip;
     existing.updatedAt = new Date().toISOString();
     existing.seenByAdmin = false;
     if (!existing.agentName) existing.agentName = pickRandomAgent();
+    collapseDuplicateOpenSessions(store, existing.id, visitorKey, ip);
     saveStore(store);
     emitOpen(existing);
     return existing;
@@ -365,6 +508,7 @@ export function openLiveChat(input?: {
   const session: LiveChatSession = {
     id: uid("chat"),
     visitorKey,
+    ...(ip ? { ip } : {}),
     path: input?.path,
     status: "open",
     createdAt: now,
@@ -382,6 +526,7 @@ export function openLiveChat(input?: {
     seenByAdmin: false,
   };
   store.sessions.unshift(session);
+  collapseDuplicateOpenSessions(store, session.id, visitorKey, ip);
   saveStore(store);
   emitOpen(session);
   return session;

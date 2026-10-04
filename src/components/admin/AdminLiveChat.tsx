@@ -91,7 +91,11 @@ export function AdminLiveChat() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="truncate text-sm font-medium text-[var(--a-text)]">
-                          {s.visitorKey.slice(0, 14)}…
+                          {s.ip
+                            ? s.ip
+                            : `${s.visitorKey.replace(/^ip_/, "").slice(0, 18)}${
+                                s.visitorKey.length > 18 ? "…" : ""
+                              }`}
                         </p>
                         {!s.seenByAdmin && s.status === "open" ? (
                           <Badge tone="coral">New</Badge>

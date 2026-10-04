@@ -3,9 +3,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
+  ensureChatVisitorIdentity,
   getChatSession,
   getOpenSessionForVisitor,
   getVisitorChatKey,
+  hydrateChatFromServer,
   humanReplyDelayMs,
   isBotAllowed,
   LIVE_CHAT_ADMIN_NAME,
@@ -32,31 +34,53 @@ export function LiveChatWidget() {
   const openedOnce = useRef(false);
   const replyTimer = useRef<number | null>(null);
   const replySeq = useRef(0);
+  const identityRef = useRef<{ visitorKey: string; ip?: string } | null>(null);
 
   useEffect(() => {
     if (hide) return;
-    const key = getVisitorChatKey();
-    const existing = getOpenSessionForVisitor(key);
-    if (existing) {
-      setSession(existing);
-    }
+    let cancelled = false;
+    let openTimer: number | null = null;
 
-    const t = window.setTimeout(() => {
-      if (openedOnce.current) return;
-      openedOnce.current = true;
-      const s = openLiveChat({ path: pathname || "/" });
-      setSession(s);
-      setOpen(true);
-    }, AUTO_OPEN_DELAY_MS);
+    void (async () => {
+      await hydrateChatFromServer().catch(() => null);
+      if (cancelled) return;
+      const identity = await ensureChatVisitorIdentity();
+      if (cancelled) return;
+      identityRef.current = identity;
 
-    return () => window.clearTimeout(t);
+      const existing = getOpenSessionForVisitor(
+        identity.visitorKey,
+        identity.ip,
+      );
+      if (existing) {
+        setSession(existing);
+      }
+
+      openTimer = window.setTimeout(() => {
+        if (cancelled || openedOnce.current) return;
+        openedOnce.current = true;
+        const s = openLiveChat({
+          path: pathname || "/",
+          visitorKey: identity.visitorKey,
+          ip: identity.ip,
+        });
+        setSession(s);
+        setOpen(true);
+      }, AUTO_OPEN_DELAY_MS);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (openTimer) window.clearTimeout(openTimer);
+    };
   }, [hide, pathname]);
 
   useEffect(() => {
     if (hide) return;
     return onLiveChatUpdated(() => {
-      const key = getVisitorChatKey();
-      const s = getOpenSessionForVisitor(key);
+      const identity = identityRef.current;
+      const key = identity?.visitorKey || getVisitorChatKey();
+      const s = getOpenSessionForVisitor(key, identity?.ip);
       if (s) {
         setSession({ ...s, messages: [...s.messages] });
         // Admin took over — cancel pending AI/bot reply
@@ -89,10 +113,19 @@ export function LiveChatWidget() {
   if (hide) return null;
 
   function ensureOpen() {
-    const s = openLiveChat({ path: pathname || "/" });
-    setSession(s);
-    setOpen(true);
-    openedOnce.current = true;
+    void (async () => {
+      const identity =
+        identityRef.current || (await ensureChatVisitorIdentity());
+      identityRef.current = identity;
+      const s = openLiveChat({
+        path: pathname || "/",
+        visitorKey: identity.visitorKey,
+        ip: identity.ip,
+      });
+      setSession(s);
+      setOpen(true);
+      openedOnce.current = true;
+    })();
   }
 
   function onSend(e: FormEvent) {
