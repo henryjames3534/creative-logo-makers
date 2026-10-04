@@ -1,5 +1,21 @@
+"use client";
+
 import { Button } from "@/components/Button";
 import { Container } from "@/components/Section";
+
+/** React often drops the muted attr on <video>; set the DOM property so autoplay works. */
+function bindAutoplayVideo(el: HTMLVideoElement | null) {
+  if (!el) return;
+  el.muted = true;
+  el.defaultMuted = true;
+  el.playsInline = true;
+  const play = el.play();
+  if (play && typeof play.catch === "function") {
+    play.catch(() => {
+      /* autoplay can still be blocked; muted retry covers most cases */
+    });
+  }
+}
 
 /** Logo design + branding — both media panels are videos */
 export function LogoPathsSection() {
@@ -41,12 +57,13 @@ export function LogoPathsSection() {
             <div className="relative mb-5 overflow-hidden rounded-2xl bg-green p-4 shadow-md md:p-5">
               <div className="relative aspect-[5/4] w-full overflow-hidden rounded-xl bg-green">
                 <video
+                  ref={bindAutoplayVideo}
                   className="absolute inset-0 h-full w-full object-cover"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  preload="metadata"
+                  preload="auto"
                   aria-label="Logo design examples video"
                 >
                   <source
@@ -81,12 +98,13 @@ export function LogoPathsSection() {
                 style={{ backgroundColor: "#3e00cd" }}
               >
                 <video
+                  ref={bindAutoplayVideo}
                   className="absolute inset-0 h-full w-full object-cover"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  preload="metadata"
+                  preload="auto"
                   aria-label="Branding services video"
                 >
                   <source
