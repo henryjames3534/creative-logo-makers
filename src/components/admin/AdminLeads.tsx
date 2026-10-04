@@ -6,6 +6,7 @@ import { AdminCard, Badge, DeleteBtn, SectionTitle } from "@/components/admin/Ad
 import {
   LEAD_STATUSES,
   deleteLead,
+  deleteLeads,
   isContactFormLead,
   isLeadUnread,
   loadCrm,
@@ -26,6 +27,7 @@ export function AdminLeads() {
   const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<LeadStatus | "all">("all");
+  const [checked, setChecked] = useState<Set<string>>(new Set());
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CrmLead | null>(null);
   const [draft, setDraft] = useState({
@@ -119,6 +121,42 @@ export function AdminLeads() {
     () => (state ? state.leads.filter(isContactFormLead).length : 0),
     [state],
   );
+
+  const allChecked =
+    rows.length > 0 && rows.every((l) => checked.has(l.id));
+  const checkedCount = rows.filter((l) => checked.has(l.id)).length;
+
+  function toggleCheck(id: string) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleCheckAll() {
+    if (allChecked) {
+      setChecked(new Set());
+      return;
+    }
+    setChecked(new Set(rows.map((l) => l.id)));
+  }
+
+  function onBulkDelete() {
+    const ids = rows.filter((l) => checked.has(l.id)).map((l) => l.id);
+    if (!ids.length) return;
+    if (
+      !window.confirm(
+        `Delete ${ids.length} selected lead${ids.length > 1 ? "s" : ""} permanently?`,
+      )
+    ) {
+      return;
+    }
+    setState({ ...deleteLeads(ids) });
+    setChecked(new Set());
+    if (editing && ids.includes(editing.id)) setFormOpen(false);
+  }
 
   function openCreate() {
     setEditing(null);
@@ -233,11 +271,43 @@ export function AdminLeads() {
         </select>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2.5">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-[color:var(--a-muted)]">
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={toggleCheckAll}
+            className="h-4 w-4 rounded border-[color:var(--a-border)] accent-[#00a581]"
+          />
+          Select all ({rows.length})
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[color:var(--a-faint)]">
+            {checkedCount} selected
+          </span>
+          <DeleteBtn
+            label={
+              checkedCount
+                ? `Delete selected (${checkedCount})`
+                : "Delete selected"
+            }
+            className={checkedCount ? "" : "pointer-events-none opacity-40"}
+            onClick={() => {
+              if (!checkedCount) return;
+              onBulkDelete();
+            }}
+          />
+        </div>
+      </div>
+
       <AdminCard className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-[color:var(--a-border)] text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
               <tr>
+                <th className="px-3 py-3 font-medium">
+                  <span className="sr-only">Select</span>
+                </th>
                 <th className="px-4 py-3 font-medium">Lead</th>
                 <th className="px-4 py-3 font-medium">Interest</th>
                 <th className="px-4 py-3 font-medium">Score</th>
@@ -250,6 +320,7 @@ export function AdminLeads() {
             <tbody>
               {rows.map((l) => {
                 const unread = unreadIds.has(l.id);
+                const isChecked = checked.has(l.id);
                 return (
                 <tr
                   key={l.id}
@@ -258,6 +329,15 @@ export function AdminLeads() {
                   }`}
                   onClick={() => openEdit(l)}
                 >
+                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleCheck(l.id)}
+                      className="h-4 w-4 rounded border-[color:var(--a-border)] accent-[#00a581]"
+                      aria-label={`Select lead ${l.name}`}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium text-[var(--a-text)]">{l.name}</p>

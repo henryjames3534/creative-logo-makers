@@ -728,13 +728,27 @@ export function mergeChatDocuments(remote: unknown, incoming: unknown): Dict {
   const a = (remote && typeof remote === "object" ? remote : {}) as Dict;
   const b = (incoming && typeof incoming === "object" ? incoming : {}) as Dict;
 
-  const byId = mergeByKeys(
+  const aDeleted = (a.deleted && typeof a.deleted === "object"
+    ? a.deleted
+    : {}) as Dict;
+  const bDeleted = (b.deleted && typeof b.deleted === "object"
+    ? b.deleted
+    : {}) as Dict;
+  const deletedSessions = Array.from(
+    new Set([
+      ...asArray<string>(aDeleted.sessions),
+      ...asArray<string>(bDeleted.sessions),
+    ]),
+  ).slice(-500);
+
+  let byId = mergeByKeys(
     asArray<Dict>(a.sessions),
     asArray<Dict>(b.sessions),
     (row) => String(row.id || ""),
     ["updatedAt", "createdAt", "lastVisitorAt"],
     mergeChatSessionRow,
   );
+  byId = applyDeleted(byId, deletedSessions, (row) => [String(row.id || "")]);
 
   // Collapse multiple open sessions that share the same IP / visitor key.
   const openByKey = new Map<string, Dict>();
@@ -764,5 +778,8 @@ export function mergeChatDocuments(remote: unknown, incoming: unknown): Dict {
     (x, y) => ts(y.updatedAt) - ts(x.updatedAt),
   );
 
-  return { sessions };
+  return {
+    sessions,
+    deleted: deletedSessions.length ? { sessions: deletedSessions } : undefined,
+  };
 }

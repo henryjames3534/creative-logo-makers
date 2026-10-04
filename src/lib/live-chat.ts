@@ -57,6 +57,8 @@ export type LiveChatSession = {
 
 type ChatStore = {
   sessions: LiveChatSession[];
+  /** Tombstones so deleted chats don't come back on hydrate merge */
+  deleted?: { sessions?: string[] };
 };
 
 function uid(prefix: string) {
@@ -69,7 +71,15 @@ function loadStore(): ChatStore {
     const raw = localStorage.getItem(CHAT_KEY);
     if (!raw) return { sessions: [] };
     const parsed = JSON.parse(raw) as ChatStore;
-    return { sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [] };
+    const deletedSessions = Array.isArray(parsed.deleted?.sessions)
+      ? parsed.deleted.sessions.filter(Boolean)
+      : [];
+    return {
+      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+      deleted: deletedSessions.length
+        ? { sessions: deletedSessions.slice(-500) }
+        : parsed.deleted,
+    };
   } catch {
     return { sessions: [] };
   }
@@ -264,9 +274,11 @@ function collapseDuplicateOpenSessions(
 }
 
 export function listChatSessions(): LiveChatSession[] {
-  return loadStore().sessions.sort(
-    (a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt),
-  );
+  const store = loadStore();
+  const banned = new Set(store.deleted?.sessions || []);
+  return store.sessions
+    .filter((s) => !banned.has(s.id))
+    .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
 }
 
 export function getChatSession(id: string): LiveChatSession | null {
@@ -610,6 +622,24 @@ export function closeChatSession(sessionId: string) {
   session.status = "closed";
   session.updatedAt = new Date().toISOString();
   saveStore(store);
+}
+
+export function deleteChatSession(sessionId: string) {
+  return deleteChatSessions([sessionId]);
+}
+
+/** Permanently remove chat sessions (bulk-capable). */
+export function deleteChatSessions(ids: string[]) {
+  const store = loadStore();
+  const idSet = new Set(ids.filter(Boolean));
+  if (!idSet.size) return store;
+  store.sessions = store.sessions.filter((s) => !idSet.has(s.id));
+  store.deleted = store.deleted || {};
+  store.deleted.sessions = Array.from(
+    new Set([...(store.deleted.sessions || []), ...idSet]),
+  ).slice(-500);
+  saveStore(store);
+  return store;
 }
 
 export function onLiveChatUpdated(cb: () => void) {

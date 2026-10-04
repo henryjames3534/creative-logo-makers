@@ -2228,39 +2228,51 @@ export function upsertLead(input: Partial<CrmLead> & { name: string; email: stri
 }
 
 export function deleteLead(id: string) {
-  const state = loadCrm();
-  const lead = state.leads.find((l) => l.id === id);
-  state.leads = state.leads.filter((l) => l.id !== id);
+  return deleteLeads([id]);
+}
 
-  // Cascade pipeline deals tied to this lead
+export function deleteLeads(ids: string[]) {
+  const state = loadCrm();
+  const idSet = new Set(ids.filter(Boolean));
+  if (!idSet.size) return state;
+
+  const removed = state.leads.filter((l) => idSet.has(l.id));
+  state.leads = state.leads.filter((l) => !idSet.has(l.id));
+
+  // Cascade pipeline deals tied to these leads
   const dealIds = state.deals
-    .filter((d) => d.leadId === id)
+    .filter((d) => Boolean(d.leadId) && idSet.has(d.leadId!))
     .map((d) => d.id);
-  state.deals = state.deals.filter((d) => d.leadId !== id);
+  state.deals = state.deals.filter(
+    (d) => !(d.leadId && idSet.has(d.leadId)),
+  );
 
   state.deleted = state.deleted || {};
   // Id-only lead tombs — same email may submit contact form again (new id).
   state.deleted.leads = Array.from(
-    new Set([...(state.deleted.leads || []), id]),
+    new Set([...(state.deleted.leads || []), ...idSet]),
   ).slice(-500);
   state.deleted.deals = Array.from(
     new Set([
       ...(state.deleted.deals || []),
       ...dealIds,
-      `lead:${id}`,
+      ...[...idSet].map((id) => `lead:${id}`),
     ]),
   ).slice(-500);
   state.activities.unshift({
     id: uid("ac"),
     type: "note",
-    title: "Lead deleted",
-    body: lead
-      ? `${lead.name} <${lead.email}>${dealIds.length ? ` · ${dealIds.length} pipeline deal(s) removed` : ""}`
-      : id,
+    title: removed.length > 1 ? "Leads deleted" : "Lead deleted",
+    body:
+      removed.length > 1
+        ? `${removed.length} leads removed${dealIds.length ? ` · ${dealIds.length} pipeline deal(s) removed` : ""}`
+        : removed[0]
+          ? `${removed[0].name} <${removed[0].email}>${dealIds.length ? ` · ${dealIds.length} pipeline deal(s) removed` : ""}`
+          : [...idSet][0],
     createdAt: new Date().toISOString(),
     ownerId: "own_admin",
     relatedType: "lead",
-    relatedId: id,
+    relatedId: removed[0]?.id || [...idSet][0],
   });
   saveCrmFlush(state);
   return state;
@@ -2694,6 +2706,37 @@ export function upsertTask(input: Partial<CrmTask> & { title: string }) {
     });
   }
   saveCrm(state);
+  emitCrm(VISITOR_EVENT);
+  return state;
+}
+
+export function deleteTask(id: string) {
+  return deleteTasks([id]);
+}
+
+export function deleteTasks(ids: string[]) {
+  const state = loadCrm();
+  const idSet = new Set(ids.filter(Boolean));
+  if (!idSet.size) return state;
+
+  const removed = state.tasks.filter((t) => idSet.has(t.id));
+  state.tasks = state.tasks.filter((t) => !idSet.has(t.id));
+  state.deleted = state.deleted || {};
+  state.deleted.tasks = Array.from(
+    new Set([...(state.deleted.tasks || []), ...idSet]),
+  ).slice(-500);
+  state.activities.unshift({
+    id: uid("ac"),
+    type: "note",
+    title: removed.length > 1 ? "Tasks deleted" : "Task deleted",
+    body:
+      removed.length > 1
+        ? `${removed.length} tasks removed`
+        : removed[0]?.title || [...idSet][0],
+    createdAt: new Date().toISOString(),
+    ownerId: "own_admin",
+  });
+  saveCrmFlush(state);
   emitCrm(VISITOR_EVENT);
   return state;
 }

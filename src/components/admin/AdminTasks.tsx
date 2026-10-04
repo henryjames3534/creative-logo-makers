@@ -1,9 +1,15 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { AdminCard, Badge, SectionTitle } from "@/components/admin/AdminUi";
+import {
+  AdminCard,
+  Badge,
+  DeleteBtn,
+  SectionTitle,
+} from "@/components/admin/AdminUi";
 import { useHydratedCrm } from "@/components/admin/useHydratedCrm";
 import {
+  deleteTasks,
   relativeDay,
   upsertTask,
   type CrmTask,
@@ -14,6 +20,7 @@ import {
 export function AdminTasks() {
   const [state, setState] = useHydratedCrm();
   const [status, setStatus] = useState<TaskStatus | "all">("all");
+  const [checked, setChecked] = useState<Set<string>>(new Set());
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CrmTask | null>(null);
   const [draft, setDraft] = useState({
@@ -60,6 +67,42 @@ export function AdminTasks() {
       status: t.status === "done" ? "todo" : "done",
     });
     setState({ ...next });
+  }
+
+  const allChecked =
+    rows.length > 0 && rows.every((t) => checked.has(t.id));
+  const checkedCount = rows.filter((t) => checked.has(t.id)).length;
+
+  function toggleCheck(id: string) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleCheckAll() {
+    if (allChecked) {
+      setChecked(new Set());
+      return;
+    }
+    setChecked(new Set(rows.map((t) => t.id)));
+  }
+
+  function onBulkDelete() {
+    const ids = rows.filter((t) => checked.has(t.id)).map((t) => t.id);
+    if (!ids.length) return;
+    if (
+      !window.confirm(
+        `Delete ${ids.length} selected task${ids.length > 1 ? "s" : ""} permanently?`,
+      )
+    ) {
+      return;
+    }
+    setState({ ...deleteTasks(ids) });
+    setChecked(new Set());
+    if (editing && ids.includes(editing.id)) setFormOpen(false);
   }
 
   function onSave(e: FormEvent) {
@@ -117,13 +160,50 @@ export function AdminTasks() {
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--a-border)] bg-[var(--a-surface)] px-3 py-2.5">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-[color:var(--a-muted)]">
+          <input
+            type="checkbox"
+            checked={allChecked}
+            onChange={toggleCheckAll}
+            className="h-4 w-4 rounded border-[color:var(--a-border)] accent-[#00a581]"
+          />
+          Select all ({rows.length})
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[color:var(--a-faint)]">
+            {checkedCount} selected
+          </span>
+          <DeleteBtn
+            label={
+              checkedCount
+                ? `Delete selected (${checkedCount})`
+                : "Delete selected"
+            }
+            className={checkedCount ? "" : "pointer-events-none opacity-40"}
+            onClick={() => {
+              if (!checkedCount) return;
+              onBulkDelete();
+            }}
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
         {rows.map((t) => {
           const overdue =
             t.status !== "done" && new Date(t.dueAt) < new Date();
+          const isChecked = checked.has(t.id);
           return (
             <AdminCard key={t.id} className="p-4">
               <div className="flex flex-wrap items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleCheck(t.id)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-[color:var(--a-border)] accent-[#00a581]"
+                  aria-label={`Select task ${t.title}`}
+                />
                 <button
                   type="button"
                   onClick={() => quickDone(t)}
@@ -260,20 +340,38 @@ export function AdminTasks() {
                 className="mt-1 w-full rounded-lg border border-[color:var(--a-border)] bg-[var(--a-bg)] px-3 py-2 text-sm text-[var(--a-text)]"
               />
             </label>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setFormOpen(false)}
-                className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="rounded-full bg-[#00a581] px-4 py-2 text-sm font-semibold text-white"
-              >
-                Save task
-              </button>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+              {editing ? (
+                <DeleteBtn
+                  onClick={() => {
+                    if (!window.confirm("Delete this task permanently?")) return;
+                    setState({ ...deleteTasks([editing.id]) });
+                    setChecked((prev) => {
+                      const next = new Set(prev);
+                      next.delete(editing.id);
+                      return next;
+                    });
+                    setFormOpen(false);
+                  }}
+                />
+              ) : (
+                <span />
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormOpen(false)}
+                  className="rounded-full border border-[color:var(--a-border)] px-4 py-2 text-sm text-[color:var(--a-muted)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#00a581] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Save task
+                </button>
+              </div>
             </div>
           </form>
         </div>
