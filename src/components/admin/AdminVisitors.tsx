@@ -64,18 +64,9 @@ export function AdminVisitors() {
         /* ignore */
       }
       if (cancelled) return;
-      const next = loadCrm();
-      const junk = (next.visitors || []).filter((v) => !isWebsiteVisitor(v));
-      if (junk.length) {
-        deleteVisitors(junk.map((v) => v.id));
-      }
-      const cleaned = loadCrm();
-      setState(cleaned);
-      if (junk.length) {
-        setHint(
-          `${junk.length} non-visitor rows cleaned (admin IP / form / no geo).`,
-        );
-      }
+      // Only display-filter in the UI — do not auto-delete older rows
+      // (that was wiping historical visitors that failed strict checks).
+      setState(loadCrm());
     })();
 
     const offHydrated = onCrmHydrated((s) => setState(s));
@@ -100,14 +91,35 @@ export function AdminVisitors() {
   const rows = useMemo(() => {
     if (!state?.visitors) return [];
     return [...state.visitors]
-      .filter((v) => isWebsiteVisitor(v))
+      // Prefer public website visitors; still keep older IP rows that
+      // fail stricter path checks so history stays visible.
+      .filter((v) => {
+        if (isWebsiteVisitor(v)) return true;
+        const ip = (v.geo?.ip || "").trim().toLowerCase();
+        if (!ip) return false;
+        if (
+          ip === "::1" ||
+          ip === "127.0.0.1" ||
+          ip === "localhost" ||
+          ip.startsWith("10.") ||
+          ip.startsWith("192.168.") ||
+          ip.startsWith("fc") ||
+          ip.startsWith("fd") ||
+          ip.startsWith("fe80:")
+        ) {
+          return false;
+        }
+        return true;
+      })
       .filter((v) => {
         const hay =
-          `${v.geo?.ip ?? ""} ${v.geo?.city ?? ""} ${v.geo?.country ?? ""} ${v.geo?.countryCode ?? ""} ${v.path ?? ""} ${v.geo?.isp ?? ""}`.toLowerCase();
+          `${v.geo?.ip ?? ""} ${v.geo?.city ?? ""} ${v.geo?.country ?? ""} ${v.geo?.countryCode ?? ""} ${v.path ?? ""} ${v.geo?.isp ?? ""} ${v.name ?? ""} ${v.email ?? ""}`.toLowerCase();
         return !q.trim() || hay.includes(q.trim().toLowerCase());
       })
       .sort((a, b) => +new Date(b.lastSeenAt) - +new Date(a.lastSeenAt));
   }, [state, q]);
+
+  const storedCount = state?.visitors?.length || 0;
 
   const allChecked = rows.length > 0 && rows.every((v) => checked.has(v.id));
   const checkedCount = rows.filter((v) => checked.has(v.id)).length;
@@ -210,6 +222,12 @@ export function AdminVisitors() {
           <p className="mt-1 text-2xl font-semibold text-[var(--a-text)]">
             {rows.length}
           </p>
+          {storedCount > rows.length ? (
+            <p className="mt-1 text-[11px] text-[color:var(--a-faint)]">
+              {storedCount} stored · {storedCount - rows.length} hidden
+              (private/staff)
+            </p>
+          ) : null}
         </AdminCard>
         <AdminCard className="p-4">
           <p className="text-[11px] uppercase tracking-wide text-[color:var(--a-faint)]">
@@ -265,8 +283,17 @@ export function AdminVisitors() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
-        <div className="space-y-2">
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr] xl:items-start">
+        <div className="flex max-h-[min(70vh,calc(100dvh-14rem))] flex-col overflow-hidden rounded-2xl border border-[color:var(--a-border)] bg-[var(--a-surface)]">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[color:var(--a-border)] px-3 py-2">
+            <p className="text-xs font-medium text-[color:var(--a-muted)]">
+              Visitor list · scroll for older rows
+            </p>
+            <p className="text-[11px] text-[color:var(--a-faint)]">
+              {rows.length} shown
+            </p>
+          </div>
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-2">
           {rows.length === 0 ? (
             <AdminCard className="p-8 text-center text-sm text-[color:var(--a-faint)]">
               Abhi koi public visitor nahi. Incognito / dusra network se site
@@ -347,9 +374,10 @@ export function AdminVisitors() {
               );
             })
           )}
+          </div>
         </div>
 
-        <AdminCard className="h-fit p-5">
+        <AdminCard className="h-fit max-h-[min(70vh,calc(100dvh-14rem))] overflow-y-auto overscroll-contain p-5 xl:sticky xl:top-4">
           {!selected ? (
             <p className="text-sm text-[color:var(--a-faint)]">
               Detail ke liye left se visitor select karo.
