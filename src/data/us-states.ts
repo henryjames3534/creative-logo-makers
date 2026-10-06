@@ -108,7 +108,7 @@ export function allStateServiceParams(): { state: string; service: string }[] {
   return out;
 }
 
-/** Kept for docs/tools — state service pages are force-dynamic (no ISR). */
+/** Hot services only at build — remaining state×service pages use on-demand ISR. */
 export const BUILD_TIME_STATE_SERVICES = [
   "logo-design",
   "web-design",

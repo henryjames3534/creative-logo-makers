@@ -15,6 +15,7 @@ import {
   US_STATES,
   getStateBySlug,
   isStateService,
+  priorityStateServiceParams,
   statePath,
   stateServicePath,
 } from "@/data/us-states";
@@ -24,10 +25,14 @@ import { pageMetadata } from "@/lib/seo";
 type Props = { params: Promise<{ state: string; service: string }> };
 
 /**
- * Large state×service matrix — avoid ISR writes; CDN caches HTML responses.
+ * ISR restored for Google crawl speed. 7-day revalidate limits rewrite volume.
  */
-export const dynamic = "force-dynamic";
+export const revalidate = 604800;
 export const dynamicParams = true;
+
+export function generateStaticParams() {
+  return priorityStateServiceParams();
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { state: stateSlug, service } = await params;

@@ -36,37 +36,6 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
-      // SEO matrices are force-dynamic (no ISR writes). Cache at CDN edge instead.
-      {
-        source: "/usa/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value:
-              "public, s-maxage=86400, stale-while-revalidate=604800",
-          },
-        ],
-      },
-      {
-        source: "/us/:city/:service",
-        headers: [
-          {
-            key: "Cache-Control",
-            value:
-              "public, s-maxage=86400, stale-while-revalidate=604800",
-          },
-        ],
-      },
-      {
-        source: "/us/state/:state/:service",
-        headers: [
-          {
-            key: "Cache-Control",
-            value:
-              "public, s-maxage=86400, stale-while-revalidate=604800",
-          },
-        ],
-      },
       {
         source: "/clm/:path*",
         headers: [

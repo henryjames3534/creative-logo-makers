@@ -26,12 +26,16 @@ import { buildUsaKeywordCopy } from "@/lib/usa-keyword-copy";
 type Props = { params: Promise<{ intent: string }> };
 
 /**
- * ~5k keyword URLs — do NOT use ISR (revalidate).
- * ISR was writing a cache entry per crawl/regen and blowing Vercel ISR writes.
- * Serve dynamically; CDN caches HTML via next.config Cache-Control.
+ * Keep ISR for Google crawl speed (force-dynamic caused private/no-store and
+ * collapsed impressions). 7-day revalidate cuts rewrite churn vs 1 day.
  */
-export const dynamic = "force-dynamic";
+export const revalidate = 604800;
 export const dynamicParams = true;
+
+/** Prebuild GSC money pages; remaining ~5k intents generate on first request. */
+export function generateStaticParams() {
+  return GSC_PRIORITY_SLUGS.map((intent) => ({ intent }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { intent: slug } = await params;

@@ -10,6 +10,7 @@ import {
   getCityBySlug,
   isLocationService,
   locationPath,
+  priorityLocationParams,
 } from "@/data/us-locations";
 import { buildLocationSeo } from "@/lib/location-seo";
 import { pageMetadata } from "@/lib/seo";
@@ -17,11 +18,15 @@ import { pageMetadata } from "@/lib/seo";
 type Props = { params: Promise<{ city: string; service: string }> };
 
 /**
- * Large city×service matrix — avoid ISR writes (on-demand revalidate was
- * regenerating thousands of pages for crawlers). CDN caches instead.
+ * ISR restored for crawl/CDN speed. 7-day revalidate = fewer writes than daily.
+ * Only top city×hot services prebuilt; rest on first request.
  */
-export const dynamic = "force-dynamic";
+export const revalidate = 604800;
 export const dynamicParams = true;
+
+export function generateStaticParams() {
+  return priorityLocationParams();
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city: citySlug, service } = await params;
