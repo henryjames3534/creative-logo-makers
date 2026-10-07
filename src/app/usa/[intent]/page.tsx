@@ -26,13 +26,14 @@ import { buildUsaKeywordCopy } from "@/lib/usa-keyword-copy";
 type Props = { params: Promise<{ intent: string }> };
 
 /**
- * Keep ISR for Google crawl speed (force-dynamic caused private/no-store and
- * collapsed impressions). 7-day revalidate cuts rewrite churn vs 1 day.
+ * On-demand ISR: light build + cached HTML for Google.
+ * Do not use force-dynamic (broke crawl). Sitemap stays full.
+ * 14-day revalidate = fewer ISR rewrites / storage churn.
  */
-export const revalidate = 604800;
+export const revalidate = 1_209_600;
 export const dynamicParams = true;
 
-/** Prebuild GSC money pages; remaining ~5k intents generate on first request. */
+/** Only GSC money pages at build; rest generate on first request. */
 export function generateStaticParams() {
   return GSC_PRIORITY_SLUGS.map((intent) => ({ intent }));
 }

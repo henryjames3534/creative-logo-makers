@@ -18,10 +18,10 @@ import { pageMetadata } from "@/lib/seo";
 type Props = { params: Promise<{ city: string; service: string }> };
 
 /**
- * ISR restored for crawl/CDN speed. 7-day revalidate = fewer writes than daily.
- * Only top city×hot services prebuilt; rest on first request.
+ * On-demand ISR: light build + SEO cache. Sitemap unchanged.
+ * 14-day revalidate cuts rewrite/storage churn vs daily/weekly.
  */
-export const revalidate = 604800;
+export const revalidate = 1_209_600;
 export const dynamicParams = true;
 
 export function generateStaticParams() {
