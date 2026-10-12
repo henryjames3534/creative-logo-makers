@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { clmApiFetch } from "@/lib/clm-api";
+import { deliverAdminEmail } from "@/lib/deliver-lead-email";
 import { mergeCrmDocuments } from "@/lib/merge-store";
 
 export const runtime = "nodejs";
@@ -252,63 +253,103 @@ export async function POST(req: Request) {
     relatedId: orderInternalId,
   };
 
-  const current = await readCrm();
-  if (!current.ok || !current.payload) {
-    return NextResponse.json(
-      { ok: false, error: current.error || "CRM read failed" },
-      { status: 502 },
-    );
-  }
+  // 1) Email admin first — works even if CRM / Postgres is down.
+  const mail = await deliverAdminEmail({
+    form: "package",
+    name,
+    email,
+    topic: `${categoryName} · ${packageName}`,
+    message: [
+      `Fulfillment: ${paymentStatus === "paid" ? "PAID" : "PENDING"}`,
+      `Package: ${packageName}${body.packagePrice ? ` (${body.packagePrice})` : ""}`,
+      `Category: ${categoryName}`,
+      `Mode: ${isDirect ? "direct hire" : "contest"}`,
+      body.designerName
+        ? `Designer: ${body.designerName}${body.designerHandle ? ` (@${body.designerHandle})` : ""}`
+        : "",
+      `Order: ${orderCode}`,
+      `Amount: $${amount || 0}`,
+      `Payment: ${paymentStatus}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    page: "/api/crm/fulfill",
+  });
 
-  // Prefer updating existing brief/order for this customer+package
-  const existingOrders = Array.isArray(current.payload.orders)
-    ? (current.payload.orders as Record<string, unknown>[])
-    : [];
-  const match = existingOrders.find((o) => {
-    if (String(o.orderId || "") === orderCode) return true;
-    if (
-      body.serviceId &&
-      String(o.serviceId || "") === String(body.serviceId)
-    ) {
-      return true;
+  // 2) CRM is best-effort — never block a successful admin email.
+  let crmSaved = false;
+  let crmWarning: string | undefined;
+
+  try {
+    const current = await readCrm();
+    if (!current.ok || !current.payload) {
+      throw new Error(current.error || "CRM read failed");
     }
-    return (
-      String(o.customerEmail || "").toLowerCase() === email &&
-      String(o.packageName || "").toLowerCase() ===
-        packageName.toLowerCase() &&
-      String(o.categoryName || "").toLowerCase() ===
-        categoryName.toLowerCase()
-    );
-  });
 
-  let ordersPatch: Record<string, unknown>[] = [order];
-  if (match) {
-    ordersPatch = [
-      {
-        ...match,
-        ...order,
-        id: String(match.id || order.id),
-        orderId: String(match.orderId || order.orderId),
-        paymentStatus,
-        updatedAt: now,
-        serviceId: body.serviceId || String(match.serviceId || "") || undefined,
-      },
-    ];
+    // Prefer updating existing brief/order for this customer+package
+    const existingOrders = Array.isArray(current.payload.orders)
+      ? (current.payload.orders as Record<string, unknown>[])
+      : [];
+    const match = existingOrders.find((o) => {
+      if (String(o.orderId || "") === orderCode) return true;
+      if (
+        body.serviceId &&
+        String(o.serviceId || "") === String(body.serviceId)
+      ) {
+        return true;
+      }
+      return (
+        String(o.customerEmail || "").toLowerCase() === email &&
+        String(o.packageName || "").toLowerCase() ===
+          packageName.toLowerCase() &&
+        String(o.categoryName || "").toLowerCase() ===
+          categoryName.toLowerCase()
+      );
+    });
+
+    let ordersPatch: Record<string, unknown>[] = [order];
+    if (match) {
+      ordersPatch = [
+        {
+          ...match,
+          ...order,
+          id: String(match.id || order.id),
+          orderId: String(match.orderId || order.orderId),
+          paymentStatus,
+          updatedAt: now,
+          serviceId:
+            body.serviceId || String(match.serviceId || "") || undefined,
+        },
+      ];
+    }
+
+    const merged = mergeCrmDocuments(current.payload, {
+      version: 1,
+      contacts: [contact],
+      leads: [lead],
+      deals: [deal],
+      orders: ordersPatch,
+      activities: [activity],
+    });
+
+    const put = await writeCrm(merged, now);
+    if (!put.ok) {
+      throw new Error(put.error || "CRM write failed");
+    }
+    crmSaved = true;
+  } catch (err) {
+    crmWarning =
+      err instanceof Error ? err.message : "Could not save order to CRM.";
   }
 
-  const merged = mergeCrmDocuments(current.payload, {
-    version: 1,
-    contacts: [contact],
-    leads: [lead],
-    deals: [deal],
-    orders: ordersPatch,
-    activities: [activity],
-  });
-
-  const put = await writeCrm(merged, now);
-  if (!put.ok) {
+  if (!mail.emailed && !crmSaved) {
     return NextResponse.json(
-      { ok: false, error: put.error || "CRM write failed" },
+      {
+        ok: false,
+        error: mail.error || crmWarning || "Fulfillment failed",
+        emailed: false,
+        crmSaved: false,
+      },
       { status: 502 },
     );
   }
@@ -317,5 +358,11 @@ export async function POST(req: Request) {
     ok: true,
     orderId: orderCode,
     paymentStatus,
+    emailed: mail.emailed,
+    via: mail.via,
+    crmSaved,
+    warning: mail.emailed
+      ? crmWarning
+      : mail.error || crmWarning,
   });
 }

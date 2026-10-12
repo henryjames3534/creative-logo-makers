@@ -4,7 +4,7 @@ import type { LeadFormPayload } from "@/lib/form-mail";
 
 /**
  * Submit a public lead form via /api/forms/submit.
- * Server saves CRM lead + emails reply@ — no browser redirect.
+ * Server emails reply@ first (works without DB), then best-effort CRM save.
  */
 export async function submitLeadForm(
   payload: LeadFormPayload,

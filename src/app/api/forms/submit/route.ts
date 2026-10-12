@@ -1,38 +1,18 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { clmApiFetch, clmCreateLead } from "@/lib/clm-api";
+import { deliverAdminEmail } from "@/lib/deliver-lead-email";
 import {
-  FORM_FROM_EMAIL,
-  FORM_NOTIFY_EMAIL,
-  notifyHtml,
-  notifySubject,
-  notifyText,
-  thankYouHtml,
-  thankYouSubject,
-  thankYouText,
   type LeadFormPayload,
   type LeadFormType,
 } from "@/lib/form-mail";
 import { mergeCrmDocuments } from "@/lib/merge-store";
-import { isSmtpConfigured, sendSmtpMail } from "@/lib/smtp-mail";
 
 export const runtime = "nodejs";
 
 const ALLOWED: LeadFormType[] = ["contact", "studio", "signup", "package"];
 
-const DEFAULT_EMAIL_RELAY =
-  "https://creative-logo-makers-lovat.vercel.app/api/forms/email";
-
 const DEFAULT_CRM_PROXY =
   "https://www.creativelogomakers.com/api/store/crm";
-
-function getResendKey() {
-  return (process.env.RESEND_API_KEY ?? "").trim();
-}
-
-function emailRelayUrl() {
-  return (process.env.FORM_EMAIL_RELAY_URL ?? DEFAULT_EMAIL_RELAY).trim();
-}
 
 function crmProxyUrl() {
   return (process.env.CRM_STORE_PROXY_URL ?? DEFAULT_CRM_PROXY).trim();
@@ -379,117 +359,10 @@ async function persistLeadToCrm(payload: LeadFormPayload) {
   }
 }
 
-async function notifyViaSmtp(payload: LeadFormPayload) {
-  await sendSmtpMail({
-    to: FORM_NOTIFY_EMAIL,
-    replyTo: payload.email,
-    subject: notifySubject(payload),
-    text: notifyText(payload),
-    html: notifyHtml(payload),
-  });
-
-  // Thank-you is best-effort — never block admin notify.
-  try {
-    await sendSmtpMail({
-      to: payload.email,
-      replyTo: FORM_NOTIFY_EMAIL,
-      subject: thankYouSubject(payload.form),
-      text: thankYouText(payload),
-      html: thankYouHtml(payload),
-    });
-  } catch {
-    /* ignore */
-  }
-
-  return true;
-}
-
-/** When this host has no SMTP, relay to the awsvision deploy that does. */
-async function notifyViaEmailRelay(payload: LeadFormPayload) {
-  const url = emailRelayUrl();
-  if (!url) throw new Error("Email relay URL is not configured.");
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-  const secret = (process.env.FORM_RELAY_SECRET ?? "").trim();
-  if (secret) headers["x-clm-relay-key"] = secret;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(payload),
-  });
-  const data = (await res.json().catch(() => ({}))) as {
-    ok?: boolean;
-    error?: string;
-  };
-  if (!res.ok || !data.ok) {
-    throw new Error(data.error || `Email relay HTTP ${res.status}`);
-  }
-  return true;
-}
-
-/** Last-resort FormSubmit AJAX (often Cloudflare-blocked from servers). */
-async function notifyViaFormSubmit(payload: LeadFormPayload) {
-  const res = await fetch(
-    `https://formsubmit.co/ajax/${encodeURIComponent(FORM_NOTIFY_EMAIL)}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        name: payload.name,
-        email: payload.email,
-        form: payload.form,
-        topic: payload.topic || payload.form,
-        message: payload.message || "(no message)",
-        page: payload.page || "",
-        _subject: notifySubject(payload),
-        _template: "table",
-        _replyto: payload.email,
-        _captcha: "false",
-      }),
-    },
-  );
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `FormSubmit HTTP ${res.status}`);
-  }
-}
-
-async function notifyViaResend(payload: LeadFormPayload) {
-  const apiKey = getResendKey();
-  if (!apiKey) return false;
-  const resend = new Resend(apiKey);
-
-  const notify = await resend.emails.send({
-    from: FORM_FROM_EMAIL,
-    to: [FORM_NOTIFY_EMAIL],
-    replyTo: payload.email,
-    subject: notifySubject(payload),
-    text: notifyText(payload),
-    html: notifyHtml(payload),
-  });
-  if (notify.error) throw new Error(notify.error.message);
-
-  await resend.emails.send({
-    from: FORM_FROM_EMAIL,
-    to: [payload.email],
-    replyTo: FORM_NOTIFY_EMAIL,
-    subject: thankYouSubject(payload.form),
-    text: thankYouText(payload),
-    html: thankYouHtml(payload),
-  });
-  return true;
-}
-
 /**
  * POST /api/forms/submit
- * Saves lead to CRM + emails reply@ + thank-you to client.
+ * Emails reply@ FIRST (DB-independent), then best-effort CRM save.
+ * Contact / studio / signup / package all use this path.
  */
 export async function POST(req: Request) {
   let raw: unknown;
@@ -507,62 +380,42 @@ export async function POST(req: Request) {
     );
   }
 
+  // 1) Email admin first — never blocked by database / CRM failures.
+  const mail = await deliverAdminEmail(payload);
+
+  // 2) CRM is best-effort only. Failure must not kill a successful email.
+  let crmSaved = false;
+  let crmWarning: string | undefined;
   try {
     await persistLeadToCrm(payload);
+    crmSaved = true;
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Could not save your message.";
-    return NextResponse.json({ ok: false, error: message }, { status: 502 });
+    crmWarning =
+      err instanceof Error ? err.message : "Could not save lead to CRM.";
   }
 
-  let emailed = false;
-  let emailVia: "smtp" | "resend" | "relay" | "formsubmit" | undefined;
-  let emailWarning: string | undefined;
-
-  try {
-    if (isSmtpConfigured()) {
-      await notifyViaSmtp(payload);
-      emailed = true;
-      emailVia = "smtp";
-    } else if (getResendKey()) {
-      emailed = await notifyViaResend(payload);
-      emailVia = emailed ? "resend" : undefined;
-    } else {
-      await notifyViaEmailRelay(payload);
-      emailed = true;
-      emailVia = "relay";
-    }
-  } catch (err) {
-    emailWarning =
-      err instanceof Error ? err.message : "Email notify failed.";
-    if (!emailed) {
-      try {
-        if (!isSmtpConfigured()) {
-          await notifyViaEmailRelay(payload);
-          emailed = true;
-          emailVia = "relay";
-          emailWarning = undefined;
-        } else if (getResendKey()) {
-          emailed = await notifyViaResend(payload);
-          emailVia = emailed ? "resend" : emailVia;
-          if (emailed) emailWarning = undefined;
-        } else {
-          await notifyViaFormSubmit(payload);
-          emailed = true;
-          emailVia = "formsubmit";
-          emailWarning = undefined;
-        }
-      } catch (err2) {
-        emailWarning =
-          err2 instanceof Error ? err2.message : emailWarning;
-      }
-    }
+  if (!mail.emailed) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          mail.error ||
+          "Could not email the team. Please try again or call us.",
+        emailed: false,
+        crmSaved,
+        warning: crmWarning,
+      },
+      { status: 502 },
+    );
   }
+
+  const warning = [crmWarning].filter(Boolean).join(" | ") || undefined;
 
   return NextResponse.json({
     ok: true,
-    emailed,
-    via: emailVia,
-    warning: emailWarning,
+    emailed: true,
+    via: mail.via,
+    crmSaved,
+    warning,
   });
 }
