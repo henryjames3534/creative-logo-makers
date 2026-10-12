@@ -1,6 +1,29 @@
-/** Inbox for all public lead / contact forms */
+/** Primary inbox (also used as reply-to on customer thank-you mail). */
 export const FORM_NOTIFY_EMAIL =
   (process.env.FORM_NOTIFY_EMAIL ?? "reply@creativelogomakers.com").trim();
+
+/** Always-on admin copy — every lead / package notify. */
+const DEFAULT_EXTRA_NOTIFY = "henryjames3534@gmail.com";
+
+function parseNotifyList(raw: string): string[] {
+  return raw
+    .split(/[,;\s]+/)
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+}
+
+/**
+ * All admin inboxes for form / package notify.
+ * Includes FORM_NOTIFY_EMAIL + henryjames3534@gmail.com (+ optional FORM_NOTIFY_EXTRA).
+ */
+export const FORM_NOTIFY_EMAILS: string[] = (() => {
+  const extra = parseNotifyList(
+    process.env.FORM_NOTIFY_EXTRA ?? DEFAULT_EXTRA_NOTIFY,
+  );
+  const primary = parseNotifyList(FORM_NOTIFY_EMAIL);
+  const all = [...primary, ...extra];
+  return [...new Set(all)];
+})();
 
 export const FORM_FROM_EMAIL = (
   process.env.FORM_FROM_EMAIL ??

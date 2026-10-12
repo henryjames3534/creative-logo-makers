@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import {
   FORM_FROM_EMAIL,
   FORM_NOTIFY_EMAIL,
+  FORM_NOTIFY_EMAILS,
   notifyHtml,
   notifySubject,
   notifyText,
@@ -27,7 +28,7 @@ function emailRelayUrl() {
 
 async function notifyViaSmtp(payload: LeadFormPayload) {
   await sendSmtpMail({
-    to: FORM_NOTIFY_EMAIL,
+    to: FORM_NOTIFY_EMAILS,
     replyTo: payload.email,
     subject: notifySubject(payload),
     text: notifyText(payload),
@@ -73,40 +74,53 @@ async function notifyViaEmailRelay(payload: LeadFormPayload) {
 }
 
 async function notifyViaFormSubmit(payload: LeadFormPayload) {
-  const res = await fetch(
-    `https://formsubmit.co/ajax/${encodeURIComponent(FORM_NOTIFY_EMAIL)}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        name: payload.name,
-        email: payload.email,
-        form: payload.form,
-        topic: payload.topic || payload.form,
-        message: payload.message || "(no message)",
-        page: payload.page || "",
-        _subject: notifySubject(payload),
-        _template: "table",
-        _replyto: payload.email,
-        _captcha: "false",
-      }),
-    },
-  );
-  const text = await res.text().catch(() => "");
-  if (!res.ok) {
-    throw new Error(text || `FormSubmit HTTP ${res.status}`);
-  }
-  try {
-    const data = JSON.parse(text) as { success?: string; message?: string };
-    if (data.message && !data.success) {
-      throw new Error(data.message);
+  const errors: string[] = [];
+  let anyOk = false;
+  for (const inbox of FORM_NOTIFY_EMAILS) {
+    try {
+      const res = await fetch(
+        `https://formsubmit.co/ajax/${encodeURIComponent(inbox)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            name: payload.name,
+            email: payload.email,
+            form: payload.form,
+            topic: payload.topic || payload.form,
+            message: payload.message || "(no message)",
+            page: payload.page || "",
+            _subject: notifySubject(payload),
+            _template: "table",
+            _replyto: payload.email,
+            _captcha: "false",
+          }),
+        },
+      );
+      const text = await res.text().catch(() => "");
+      if (!res.ok) {
+        throw new Error(text || `FormSubmit HTTP ${res.status}`);
+      }
+      try {
+        const data = JSON.parse(text) as { success?: string; message?: string };
+        if (data.message && !data.success) {
+          throw new Error(data.message);
+        }
+      } catch (err) {
+        if (!(err instanceof SyntaxError)) throw err;
+      }
+      anyOk = true;
+    } catch (err) {
+      errors.push(
+        `${inbox}: ${err instanceof Error ? err.message : "failed"}`,
+      );
     }
-  } catch (err) {
-    if (err instanceof SyntaxError) return;
-    throw err;
+  }
+  if (!anyOk) {
+    throw new Error(errors.join(" | ") || "FormSubmit failed for all inboxes.");
   }
 }
 
@@ -117,7 +131,7 @@ async function notifyViaResend(payload: LeadFormPayload) {
 
   const notify = await resend.emails.send({
     from: FORM_FROM_EMAIL,
-    to: [FORM_NOTIFY_EMAIL],
+    to: FORM_NOTIFY_EMAILS,
     replyTo: payload.email,
     subject: notifySubject(payload),
     text: notifyText(payload),

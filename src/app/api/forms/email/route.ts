@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   FORM_NOTIFY_EMAIL,
+  FORM_NOTIFY_EMAILS,
   notifyHtml,
   notifySubject,
   notifyText,
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
 
   try {
     await sendSmtpMail({
-      to: FORM_NOTIFY_EMAIL,
+      to: FORM_NOTIFY_EMAILS,
       replyTo: payload.email,
       subject: notifySubject(payload),
       text: notifyText(payload),
