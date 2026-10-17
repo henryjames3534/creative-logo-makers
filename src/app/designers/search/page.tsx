@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,26 +9,10 @@ import { pillarPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pillarPageMetadata("designers", "/designers/search");
 
-export default async function DesignersSearchPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ skill?: string; categories?: string }>;
-}) {
-  const sp = await searchParams;
-  const raw = sp.skill || sp.categories || "all";
-  const aliases: Record<string, string> = {
-    packaging: "product-packaging-design",
-    illustration: "illustrations",
-    merchandise: "merchandise-design",
-    "book-cover": "book-cover-design",
-    "brand-identity": "brand-identity-pack",
-    social: "social-media-page-design",
-    print: "print-design",
-    "3d": "3d-design",
-    web: "web-design",
-  };
-  const initialSkill = aliases[raw] ?? raw;
+/** Static for crawl — skill filters apply client-side. */
+export const revalidate = 86400;
 
+export default function DesignersSearchPage() {
   return (
     <>
       <section className="border-b border-line bg-[#f6f5f2]">
@@ -69,7 +54,9 @@ export default async function DesignersSearchPage({
 
       <section className="bg-white py-10 md:py-14">
         <Container>
-          <DesignerSearch initialSkill={initialSkill} />
+          <Suspense fallback={null}>
+            <DesignerSearch />
+          </Suspense>
         </Container>
       </section>
     </>

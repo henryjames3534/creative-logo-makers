@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DesignerProfileView } from "@/components/DesignerProfileView";
@@ -8,18 +9,18 @@ import { pageMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
 };
 
 /** Prebuild a small top set; other profiles render on demand. */
 export function generateStaticParams() {
   return [...designers]
     .sort((a, b) => b.rating - a.rating || b.reviews - a.reviews)
-    .slice(0, 24)
+    .slice(0, 48)
     .map((d) => ({ id: d.id }));
 }
 
 export const dynamicParams = true;
+export const revalidate = 86400;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
@@ -41,12 +42,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function DesignerProfilePage({
-  params,
-  searchParams,
-}: Props) {
+export default async function DesignerProfilePage({ params }: Props) {
   const { id } = await params;
-  const sp = await searchParams;
   const decoded = decodeURIComponent(id);
   const d =
     getDesignerById(decoded) ||
@@ -57,11 +54,6 @@ export default async function DesignerProfilePage({
     );
 
   if (!d) notFound();
-
-  const tab =
-    sp.tab === "about" || sp.tab === "invite" || sp.tab === "portfolio"
-      ? sp.tab
-      : "portfolio";
 
   return (
     <>
@@ -90,7 +82,9 @@ export default async function DesignerProfilePage({
           { name: d.name, path: `/designers/${d.id}` },
         ]}
       />
-      <DesignerProfileView designer={d} initialTab={tab} />
+      <Suspense fallback={null}>
+        <DesignerProfileView designer={d} />
+      </Suspense>
     </>
   );
 }

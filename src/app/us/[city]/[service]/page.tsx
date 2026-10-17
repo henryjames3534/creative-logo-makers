@@ -21,7 +21,7 @@ type Props = { params: Promise<{ city: string; service: string }> };
  * On-demand ISR: light build + SEO cache. Sitemap unchanged.
  * 14-day revalidate cuts rewrite/storage churn vs daily/weekly.
  */
-export const revalidate = 1_209_600;
+export const revalidate = 604_800;
 export const dynamicParams = true;
 
 export function generateStaticParams() {

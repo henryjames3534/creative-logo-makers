@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { LocalizedPrice } from "@/components/locale/LocalizedPrice";
 import {
@@ -40,7 +41,17 @@ export function DesignerProfileView({
   designer: DesignerProfile;
   initialTab?: "portfolio" | "about" | "invite";
 }) {
-  const [tab, setTab] = useState<"portfolio" | "about" | "invite">(initialTab);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const tabFromUrl =
+    tabParam === "about" || tabParam === "invite" || tabParam === "portfolio"
+      ? tabParam
+      : initialTab;
+  const [tab, setTab] = useState<"portfolio" | "about" | "invite">(tabFromUrl);
+
+  useEffect(() => {
+    setTab(tabFromUrl);
+  }, [tabFromUrl]);
   const [skill, setSkill] = useState(d.skills[0] || "logo-design");
   const [approvedReviews, setApprovedReviews] = useState<CrmReview[]>([]);
   const exp = useMemo(() => designerExperience(d), [d]);

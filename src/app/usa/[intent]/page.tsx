@@ -13,6 +13,7 @@ import { getCategory } from "@/data/categories";
 import { categoryLaunchHref } from "@/data/serviceRoutes";
 import {
   GSC_PRIORITY_SLUGS,
+  USA_INTENTS,
   getIntentBySlug,
   intentPath,
   relatedUsaKeywords,
@@ -30,12 +31,17 @@ type Props = { params: Promise<{ intent: string }> };
  * Do not use force-dynamic (broke crawl). Sitemap stays full.
  * 14-day revalidate = fewer ISR rewrites / storage churn.
  */
-export const revalidate = 1_209_600;
+/** 7-day ISR — fresher for Google without force-dynamic. */
+export const revalidate = 604_800;
 export const dynamicParams = true;
 
-/** Only GSC money pages at build; rest generate on first request. */
+/** Prebuild hand-crafted + GSC priority intents; catalog pages still on-demand ISR. */
 export function generateStaticParams() {
-  return GSC_PRIORITY_SLUGS.map((intent) => ({ intent }));
+  const slugs = new Set<string>(USA_INTENTS.map((i) => i.slug));
+  for (const s of GSC_PRIORITY_SLUGS) {
+    if (getIntentBySlug(s)) slugs.add(s);
+  }
+  return [...slugs].map((intent) => ({ intent }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

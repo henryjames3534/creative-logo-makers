@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   designerBrowseIndustries,
@@ -112,8 +113,23 @@ export function DesignerSearch({
 }: {
   initialSkill?: string;
 }) {
+  const searchParams = useSearchParams();
+  const aliases: Record<string, string> = {
+    packaging: "product-packaging-design",
+    illustration: "illustrations",
+    merchandise: "merchandise-design",
+    "book-cover": "book-cover-design",
+    "brand-identity": "brand-identity-pack",
+    social: "social-media-page-design",
+    print: "print-design",
+    "3d": "3d-design",
+    web: "web-design",
+  };
+  const raw = searchParams.get("skill") || searchParams.get("categories") || initialSkill || "all";
+  const skillFromUrl = aliases[raw] ?? raw;
+
   const [q, setQ] = useState("");
-  const [skill, setSkill] = useState(initialSkill);
+  const [skill, setSkill] = useState(skillFromUrl);
   const [level, setLevel] = useState<DesignerLevel | "all">("all");
   const [industry, setIndustry] = useState("all");
   const [language, setLanguage] = useState("all");
@@ -124,8 +140,8 @@ export function DesignerSearch({
   const [visibleCount, setVisibleCount] = useState(24);
 
   useEffect(() => {
-    setSkill(initialSkill || "all");
-  }, [initialSkill]);
+    setSkill(skillFromUrl || "all");
+  }, [skillFromUrl]);
 
   useEffect(() => {
     setVisibleCount(24);
