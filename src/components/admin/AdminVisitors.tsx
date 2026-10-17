@@ -73,7 +73,7 @@ export function AdminVisitors() {
     const offTracked = onVisitorTracked(() => setState(loadCrm()));
     const poll = window.setInterval(() => {
       void hydrateCrmFromServer().catch(() => null);
-    }, 15000);
+    }, 60000);
 
     return () => {
       cancelled = true;

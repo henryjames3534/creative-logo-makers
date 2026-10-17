@@ -61,7 +61,7 @@ export function AdminOrders() {
           if (!cancelled) setState(loadCrm());
         })
         .catch(() => null);
-    }, 20000);
+    }, 60000);
     return () => {
       cancelled = true;
       window.clearInterval(poll);

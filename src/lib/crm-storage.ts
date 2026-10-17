@@ -1001,37 +1001,48 @@ function saveCrmFlush(state: CrmState) {
   );
 }
 
+/** One in-flight hydrate — admin pages were stacking 1MB+ CRM fetches and freezing UI. */
+let crmHydrateInflight: Promise<CrmState> | null = null;
+
 /** Pull CRM from Postgres (or push local if server empty / older). */
 export async function hydrateCrmFromServer(): Promise<CrmState> {
   if (typeof window === "undefined") return seed();
-  const { hydrateStoreKey } = await import("@/lib/db-sync");
-  await hydrateStoreKey({
-    key: "crm",
-    localRaw: localStorage.getItem(CRM_KEY),
-    localUpdatedAt: readCrmUpdatedAt(),
-    writeLocal: (raw, updatedAt) => {
-      localStorage.setItem(CRM_KEY, raw);
-      localStorage.setItem(CRM_UPDATED_KEY, updatedAt);
-    },
+  if (crmHydrateInflight) return crmHydrateInflight;
+
+  crmHydrateInflight = (async () => {
+    const { hydrateStoreKey } = await import("@/lib/db-sync");
+    await hydrateStoreKey({
+      key: "crm",
+      localRaw: localStorage.getItem(CRM_KEY),
+      localUpdatedAt: readCrmUpdatedAt(),
+      writeLocal: (raw, updatedAt) => {
+        localStorage.setItem(CRM_KEY, raw);
+        localStorage.setItem(CRM_UPDATED_KEY, updatedAt);
+      },
+    });
+    const state = loadCrm();
+    if (dedupeOrdersAndDeals(state)) {
+      saveCrm(state);
+    }
+    if (purgeJunkLeads(state)) {
+      saveCrm(state);
+    }
+    if (purgePrivateIpVisitors(state)) {
+      saveCrm(state);
+    }
+    if (ensurePipelineLinks(state)) {
+      saveCrm(state);
+    }
+    if (dedupeOrdersAndDeals(state)) {
+      saveCrm(state);
+    }
+    emitCrm(CRM_HYDRATED_EVENT, state);
+    return state;
+  })().finally(() => {
+    crmHydrateInflight = null;
   });
-  const state = loadCrm();
-  if (dedupeOrdersAndDeals(state)) {
-    saveCrm(state);
-  }
-  if (purgeJunkLeads(state)) {
-    saveCrm(state);
-  }
-  if (purgePrivateIpVisitors(state)) {
-    saveCrm(state);
-  }
-  if (ensurePipelineLinks(state)) {
-    saveCrm(state);
-  }
-  if (dedupeOrdersAndDeals(state)) {
-    saveCrm(state);
-  }
-  emitCrm(CRM_HYDRATED_EVENT, state);
-  return state;
+
+  return crmHydrateInflight;
 }
 
 /** Drop localhost / LAN rows that leaked in from npm run dev. */

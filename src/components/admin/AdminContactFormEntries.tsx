@@ -48,7 +48,7 @@ export function AdminContactFormEntries() {
           if (!cancelled) setState(loadCrm());
         })
         .catch(() => null);
-    }, 15000);
+    }, 60000);
     return () => {
       cancelled = true;
       window.clearInterval(poll);

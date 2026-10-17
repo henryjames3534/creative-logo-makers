@@ -226,15 +226,20 @@ export function AdminNotificationBar() {
     const onChange = () => refresh(clearedRef.current);
     window.addEventListener(CRM_CHANGED_EVENT, onChange);
     window.addEventListener(CRM_HYDRATED_EVENT, onChange);
-    const poll = window.setInterval(() => {
+    // Local refresh often; full CRM hydrate seldom (payload is ~1MB+).
+    const localPoll = window.setInterval(() => {
+      refresh(clearedRef.current);
+    }, 10000);
+    const hydratePoll = window.setInterval(() => {
       void hydrateCrmFromServer()
         .then(() => refresh(clearedRef.current))
         .catch(() => null);
-    }, 10000);
+    }, 60000);
     return () => {
       window.removeEventListener(CRM_CHANGED_EVENT, onChange);
       window.removeEventListener(CRM_HYDRATED_EVENT, onChange);
-      window.clearInterval(poll);
+      window.clearInterval(localPoll);
+      window.clearInterval(hydratePoll);
     };
   }, []);
 

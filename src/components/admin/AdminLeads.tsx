@@ -73,7 +73,7 @@ export function AdminLeads() {
           markLeadsSeen();
         })
         .catch(() => null);
-    }, 20000);
+    }, 60000);
     return () => {
       cancelled = true;
       window.clearInterval(poll);

@@ -9,20 +9,28 @@ import {
 } from "@/lib/crm-storage";
 
 /**
- * Load CRM from localStorage after hydrating from the server store.
- * Keeps admin screens on the same source of truth across browsers.
+ * Load CRM from localStorage immediately, then hydrate from server in background.
+ * Keeps admin screens responsive even when /api/store/crm is large/slow.
  */
-export function useHydratedCrm(pollMs = 20000) {
-  const [state, setState] = useState<CrmState | null>(null);
+export function useHydratedCrm(pollMs = 45000) {
+  const [state, setState] = useState<CrmState | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return loadCrm();
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     let cancelled = false;
 
-    async function refresh() {
+    async function refresh(pushFirst = false) {
       try {
-        const { flushStorePush } = await import("@/lib/db-sync");
-        // Land any pending stage moves before pulling remote.
-        await flushStorePush("crm");
+        if (pushFirst) {
+          const { flushStorePush } = await import("@/lib/db-sync");
+          await flushStorePush("crm");
+        }
         const { hydrateCrmFromServer } = await import("@/lib/crm-storage");
         await hydrateCrmFromServer();
       } catch {
@@ -31,9 +39,10 @@ export function useHydratedCrm(pollMs = 20000) {
       if (!cancelled) setState(loadCrm());
     }
 
-    void refresh();
+    // Local already painted; sync server without blocking first paint.
+    void refresh(true);
     const poll = window.setInterval(() => {
-      void refresh();
+      void refresh(false);
     }, pollMs);
 
     const onLocal = () => {

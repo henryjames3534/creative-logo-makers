@@ -78,24 +78,26 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      await Promise.all([
-        hydrateCrmFromServer().catch(() => null),
-        hydrateChatFromServer().catch(() => null),
-      ]);
+    // Never block the admin UI on the 1MB+ CRM hydrate — show shell first.
+    const sess = getAdminSession();
+    if (sess?.email) rememberStaffEmail(sess.email);
+    setSession(sess);
+    setReady(true);
+    if (sess) {
+      void fetch("/api/visitors/exclude-staff", {
+        method: "POST",
+        keepalive: true,
+      }).catch(() => null);
+    }
+    void Promise.all([
+      hydrateCrmFromServer().catch(() => null),
+      hydrateChatFromServer().catch(() => null),
+    ]).then(() => {
       if (cancelled) return;
-      const sess = getAdminSession();
-      if (sess?.email) rememberStaffEmail(sess.email);
-      // Register this admin's public IP so it never lands in Visitors
-      if (sess) {
-        void fetch("/api/visitors/exclude-staff", {
-          method: "POST",
-          keepalive: true,
-        }).catch(() => null);
-      }
-      setSession(sess);
-      setReady(true);
-    })();
+      // Refresh unread badges after background hydrate
+      setChatUnread(unreadChatCount());
+      setLeadsUnread(unreadLeadCount());
+    });
     return () => {
       cancelled = true;
     };
