@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { LocalizedFromPrice, LocalizedPrice } from "@/components/locale/LocalizedPrice";
@@ -134,12 +134,28 @@ export function GetStartedExperience({
   designerHandle?: string;
 }) {
   const router = useRouter();
-  const designer = designerHandle
-    ? getDesignerByHandle(designerHandle)
+  const searchParams = useSearchParams();
+  const skillAliases: Record<string, string> = {
+    packaging: "product-packaging-design",
+    illustration: "illustrations",
+    web: "web-design",
+    logo: "logo-design",
+  };
+  const skillRaw = searchParams.get("skill") || initialSkill || "";
+  const resolvedSkill = skillRaw
+    ? (skillAliases[skillRaw] ?? skillRaw)
+    : undefined;
+  const resolvedPackage =
+    searchParams.get("package") || initialPackage || undefined;
+  const resolvedDesigner =
+    searchParams.get("designer") || designerHandle || undefined;
+
+  const designer = resolvedDesigner
+    ? getDesignerByHandle(resolvedDesigner)
     : undefined;
 
   const initialCat =
-    (initialSkill && getCategory(initialSkill)) ||
+    (resolvedSkill && getCategory(resolvedSkill)) ||
     getPopularCategories()[0] ||
     categories[0];
 
@@ -150,7 +166,7 @@ export function GetStartedExperience({
   const [group, setGroup] = useState<CategoryGroup | "all">("all");
   const [selected, setSelected] = useState<Category>(initialCat);
   const [pkgId, setPkgId] = useState(
-    initialPackage || (designer ? "growth" : "gold"),
+    resolvedPackage || (designer ? "growth" : "gold"),
   );
 
   const packages = useMemo(
@@ -194,7 +210,7 @@ export function GetStartedExperience({
         const hirePkg =
           dPkgs.find((p) => p.id === pkgId)?.id ??
           dPkgs.find((p) => p.featured)?.id ??
-          initialPackage ??
+          resolvedPackage ??
           "growth";
         router.push(
           categoryLaunchHref(selected.slug, hirePkg, {
@@ -347,7 +363,7 @@ export function GetStartedExperience({
             <Button
               href={categoryLaunchHref(
                 selected.slug,
-                initialPackage ||
+                resolvedPackage ||
                   designerProjectPackages(designer, selected.slug).find(
                     (p) => p.featured,
                   )?.id ||

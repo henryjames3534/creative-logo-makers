@@ -1,24 +1,20 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { CategoriesBrowse } from "@/components/CategoriesBrowse";
 import { CtaBand } from "@/components/CtaBand";
-import {
-  type CategoryGroup,
-} from "@/data/categories";
 import { pillarPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pillarPageMetadata("categories", "/categories");
 
-export default async function CategoriesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; group?: string }>;
-}) {
-  const { q, group } = await searchParams;
-  const groupFilter = group as CategoryGroup | undefined;
+/** Static HTML for crawl — query filters (?q / ?group) apply client-side. */
+export const revalidate = 86400;
 
+export default function CategoriesPage() {
   return (
     <>
-      <CategoriesBrowse initialGroup={groupFilter} initialQuery={q ?? ""} />
+      <Suspense fallback={null}>
+        <CategoriesBrowse />
+      </Suspense>
       <CtaBand />
     </>
   );

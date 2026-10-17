@@ -1,33 +1,15 @@
+import { Suspense } from "react";
 import { GetStartedExperience } from "@/components/GetStartedExperience";
 
 // Metadata defined in layout.tsx via pageMetadata helper
 
-type Props = {
-  searchParams: Promise<{
-    designer?: string;
-    skill?: string;
-    package?: string;
-    mode?: string;
-  }>;
-};
+/** Static HTML for crawl — ?skill / ?package / ?designer apply client-side. */
+export const revalidate = 86400;
 
-export default async function GetStartedPage({ searchParams }: Props) {
-  const sp = await searchParams;
-  const skillAliases: Record<string, string> = {
-    packaging: "product-packaging-design",
-    illustration: "illustrations",
-    web: "web-design",
-    logo: "logo-design",
-  };
-  const skill = sp.skill
-    ? (skillAliases[sp.skill] ?? sp.skill)
-    : undefined;
-
+export default function GetStartedPage() {
   return (
-    <GetStartedExperience
-      initialSkill={skill}
-      initialPackage={sp.package}
-      designerHandle={sp.designer}
-    />
+    <Suspense fallback={null}>
+      <GetStartedExperience />
+    </Suspense>
   );
 }

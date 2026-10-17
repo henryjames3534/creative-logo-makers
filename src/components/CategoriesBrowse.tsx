@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   categories,
@@ -61,25 +61,30 @@ export function CategoriesBrowse({
   initialQuery?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const groupFromUrl = (searchParams.get("group") || initialGroup || "") as
+    | CategoryGroup
+    | "";
+  const queryFromUrl = searchParams.get("q") ?? initialQuery;
   const validGroup =
-    initialGroup && categoryBrowseGroups.some((g) => g.group === initialGroup)
-      ? initialGroup
+    groupFromUrl && categoryBrowseGroups.some((g) => g.group === groupFromUrl)
+      ? groupFromUrl
       : "all";
   const [active, setActive] = useState<CategoryGroup | "all">(validGroup);
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useState(queryFromUrl);
 
   // Keep sidebar filter in sync when header/mega links change ?group=
   useEffect(() => {
     const next =
-      initialGroup && categoryBrowseGroups.some((g) => g.group === initialGroup)
-        ? initialGroup
+      groupFromUrl && categoryBrowseGroups.some((g) => g.group === groupFromUrl)
+        ? groupFromUrl
         : "all";
     setActive(next);
-  }, [initialGroup]);
+  }, [groupFromUrl]);
 
   useEffect(() => {
-    setQuery(initialQuery);
-  }, [initialQuery]);
+    setQuery(queryFromUrl);
+  }, [queryFromUrl]);
 
   function selectGroup(group: CategoryGroup | "all") {
     setActive(group);

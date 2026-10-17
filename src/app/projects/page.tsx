@@ -1,32 +1,27 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/Button";
 import { CtaBand } from "@/components/CtaBand";
 import { DesignerGrid } from "@/components/DesignerGrid";
 import { PackageGrid } from "@/components/PackageGrid";
 import { PageHero } from "@/components/PageHero";
+import { ProjectsDesignerRedirect } from "@/components/ProjectsDesignerRedirect";
 import { Container, SectionHeading } from "@/components/Section";
-import { getDesignerByHandle } from "@/data/designers";
 import { media } from "@/data/media";
 import { projectPackages } from "@/data/packages";
 import { pillarPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pillarPageMetadata("projects", "/projects");
 
-export default async function ProjectsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ designer?: string }>;
-}) {
-  const sp = await searchParams;
-  if (sp.designer) {
-    const d = getDesignerByHandle(sp.designer);
-    if (d) redirect(`/designers/${d.id}?tab=invite`);
-    redirect("/designers/search");
-  }
+/** Static HTML for crawl — ?designer= redirect runs client-side. */
+export const revalidate = 86400;
 
+export default function ProjectsPage() {
   return (
     <>
+      <Suspense fallback={null}>
+        <ProjectsDesignerRedirect />
+      </Suspense>
       <PageHero
         eyebrow="1-to-1 collaboration"
         title="Hire a designer. Build together."
