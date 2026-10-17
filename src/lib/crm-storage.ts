@@ -1,5 +1,7 @@
 /** Local CRM store for /admin — advanced pipeline, leads, contacts, deals, tasks */
 
+import { isBotUserAgent } from "@/lib/bot-detect";
+
 export type LeadStatus =
   | "new"
   | "contacted"
@@ -1030,6 +1032,9 @@ export async function hydrateCrmFromServer(): Promise<CrmState> {
     if (purgePrivateIpVisitors(state)) {
       saveCrm(state);
     }
+    if (purgeBotVisitors(state)) {
+      saveCrm(state);
+    }
     if (ensurePipelineLinks(state)) {
       saveCrm(state);
     }
@@ -1043,6 +1048,26 @@ export async function hydrateCrmFromServer(): Promise<CrmState> {
   });
 
   return crmHydrateInflight;
+}
+
+/** Drop crawler / headless / spam UA rows so Visitors stays human traffic. */
+function purgeBotVisitors(state: CrmState): boolean {
+  const before = state.visitors.length;
+  const removedKeys: string[] = [];
+  state.visitors = (state.visitors || []).filter((v) => {
+    if (!isBotUserAgent(v.userAgent)) return true;
+    removedKeys.push(v.id);
+    if (v.visitorKey) removedKeys.push(`vk:${v.visitorKey}`);
+    const ip = (v.geo?.ip || "").trim().toLowerCase();
+    if (ip) removedKeys.push(`ip:${ip}`);
+    return false;
+  });
+  if (state.visitors.length === before) return false;
+  if (!state.deleted) state.deleted = {};
+  state.deleted.visitors = Array.from(
+    new Set([...(state.deleted.visitors || []), ...removedKeys]),
+  ).slice(-800);
+  return true;
 }
 
 /** Drop localhost / LAN rows that leaked in from npm run dev. */
@@ -1842,6 +1867,7 @@ export function startVisitorSession(input: {
   if (isInternalSitePath(input.path)) return loadCrm();
   if (isStaffBrowser()) return loadCrm();
   if (isStaffEmail(input.email)) return loadCrm();
+  if (isBotUserAgent(input.userAgent)) return loadCrm();
   const state = loadCrm();
   let v = findVisitor(state, {
     visitorKey: input.visitorKey,

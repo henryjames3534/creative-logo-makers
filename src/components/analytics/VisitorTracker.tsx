@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { isBotUserAgent } from "@/lib/bot-detect";
 import {
   endVisitorPage,
   heartbeatVisitorPage,
@@ -102,6 +103,7 @@ export function VisitorTracker() {
   const skip =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/designer") ||
+    (typeof window !== "undefined" && isBotUserAgent(navigator.userAgent)) ||
     (typeof window !== "undefined" &&
       (() => {
         try {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isBotUserAgent } from "@/lib/bot-detect";
 import { enrichGeo, isPrivateIp } from "@/lib/ip-geo";
 import {
   getExcludedVisitorIps,
@@ -74,6 +75,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true, reason: "internal_path" });
   }
 
+  const userAgent =
+    String(body.userAgent ?? "").trim() ||
+    req.headers.get("user-agent") ||
+    "";
+  if (isBotUserAgent(userAgent)) {
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: "bot_ua",
+    });
+  }
+
   const ip = clientIp(req).trim().toLowerCase();
   // Localhost / LAN — never pollute CRM Visitors (npm run dev → ::1)
   if (!ip || isPrivateIp(ip)) {
@@ -98,7 +111,7 @@ export async function POST(req: NextRequest) {
   const result = await upsertVisitorOnServer({
     visitorKey,
     path,
-    userAgent: String(body.userAgent ?? "").trim().slice(0, 400) || undefined,
+    userAgent: userAgent.slice(0, 400) || undefined,
     language: String(body.language ?? "").trim().slice(0, 40) || undefined,
     durationMs: Number(body.durationMs) || 0,
     pageDurationMs: Number(body.pageDurationMs) || 0,
