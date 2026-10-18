@@ -14,7 +14,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({
   title: "USA Design Keywords — Logo Design Services, Brand Agency & More",
   description:
-    "USA keyword hub: logo design services, logo designer, brand identity agency, brand strategy agency, rebranding agency, and thousands more commercial pages.",
+    "USA keyword hub: logo design services, logo designer, brand identity agency, brand strategy agency, rebranding agency, and related commercial design pages.",
   path: "/usa",
   keywords: [
     "logo design services",
@@ -26,6 +26,9 @@ export const metadata: Metadata = pageMetadata({
   ],
 });
 
+/** Keep hub light for Google — full A–Z lives on /usa/letter/[letter]. */
+export const revalidate = 86400;
+
 function letterKey(keyword: string) {
   const ch = keyword.trim().charAt(0).toUpperCase();
   return /[A-Z]/.test(ch) ? ch : "#";
@@ -35,14 +38,12 @@ export default function UsaIntentsHubPage() {
   const total = ALL_USA_KEYWORD_PAGES.length;
   const featured = USA_INTENTS;
 
-  const byLetter = new Map<string, typeof ALL_USA_KEYWORD_PAGES>();
+  const counts = new Map<string, number>();
   for (const page of ALL_USA_KEYWORD_PAGES) {
     const key = letterKey(page.keyword);
-    const list = byLetter.get(key) || [];
-    list.push(page);
-    byLetter.set(key, list);
+    counts.set(key, (counts.get(key) || 0) + 1);
   }
-  const letters = [...byLetter.keys()].sort((a, b) => {
+  const letters = [...counts.keys()].sort((a, b) => {
     if (a === "#") return 1;
     if (b === "#") return -1;
     return a.localeCompare(b);
@@ -58,23 +59,24 @@ export default function UsaIntentsHubPage() {
           USA keyword pages for design services
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink/75">
-          Full directory of{" "}
+          Directory of{" "}
           <strong className="font-semibold text-ink">
             {total.toLocaleString()}
           </strong>{" "}
-          USA keyword pages. Each URL generates on demand — this page lists
-          every keyword so you can open any of them.
+          USA design keyword pages. Start with priority phrases below, or browse
+          by letter — each letter page stays fast for crawlers and visitors.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-2">
           {letters.map((L) => (
-            <a
+            <Link
               key={L}
-              href={`#letter-${L === "#" ? "other" : L}`}
+              href={`/usa/letter/${L === "#" ? "other" : L.toLowerCase()}`}
               className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-bold text-ink hover:border-ink"
             >
-              {L}
-            </a>
+              {L}{" "}
+              <span className="font-normal text-muted">({counts.get(L)})</span>
+            </Link>
           ))}
         </div>
 
@@ -113,36 +115,6 @@ export default function UsaIntentsHubPage() {
               {i.keyword}
             </Link>
           ))}
-        </div>
-
-        <h2 className="mt-16 text-xl font-medium text-ink">
-          All {total.toLocaleString()} keywords (A–Z)
-        </h2>
-        <div className="mt-8 space-y-12">
-          {letters.map((L) => {
-            const pages = byLetter.get(L)!;
-            return (
-              <div key={L} id={`letter-${L === "#" ? "other" : L}`}>
-                <h3 className="sticky top-[72px] z-10 mb-4 border-b border-line bg-paper/95 py-2 text-lg font-semibold text-ink backdrop-blur">
-                  {L}{" "}
-                  <span className="text-sm font-normal text-muted">
-                    ({pages.length})
-                  </span>
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {pages.map((i) => (
-                    <Link
-                      key={i.slug}
-                      href={intentPath(i.slug)}
-                      className="rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink hover:border-ink"
-                    >
-                      {i.keyword}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         <div className="mt-12 flex flex-wrap gap-3">

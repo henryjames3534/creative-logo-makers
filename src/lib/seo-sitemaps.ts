@@ -53,6 +53,15 @@ export function buildAllSeoSitemapEntries(
     entry("/", { changeFrequency: "daily", priority: 1 }, now),
     entry("/us", { changeFrequency: "weekly", priority: 0.95 }, now),
     entry("/usa", { changeFrequency: "weekly", priority: 0.95 }, now),
+    ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      .split("")
+      .map((L) =>
+        entry(`/usa/letter/${L.toLowerCase()}`, {
+          changeFrequency: "weekly",
+          priority: 0.7,
+        }, now),
+      ),
+    entry("/usa/letter/other", { changeFrequency: "weekly", priority: 0.55 }, now),
     entry("/categories", { priority: 0.95 }, now),
     entry("/how-it-works", { priority: 0.85 }, now),
     entry("/pricing", { priority: 0.9 }, now),
