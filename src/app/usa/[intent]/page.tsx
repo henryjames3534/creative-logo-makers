@@ -13,9 +13,10 @@ import { getCategory } from "@/data/categories";
 import { categoryLaunchHref } from "@/data/serviceRoutes";
 import {
   GSC_PRIORITY_SLUGS,
-  USA_INTENTS,
   getIntentBySlug,
   intentPath,
+  isUsaIndexableIntent,
+  listIndexableUsaIntents,
   relatedUsaKeywords,
 } from "@/data/usa-intents";
 import { US_CITIES, locationPath } from "@/data/us-locations";
@@ -35,13 +36,9 @@ type Props = { params: Promise<{ intent: string }> };
 export const revalidate = 604_800;
 export const dynamicParams = true;
 
-/** Prebuild hand-crafted + GSC priority intents; catalog pages still on-demand ISR. */
+/** Prebuild every indexable USA intent (hand-crafted + real GSC queries). */
 export function generateStaticParams() {
-  const slugs = new Set<string>(USA_INTENTS.map((i) => i.slug));
-  for (const s of GSC_PRIORITY_SLUGS) {
-    if (getIntentBySlug(s)) slugs.add(s);
-  }
-  return [...slugs].map((intent) => ({ intent }));
+  return listIndexableUsaIntents().map((i) => ({ intent: i.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -53,6 +50,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: intent.description,
     path: intentPath(intent.slug),
     keywords: [intent.keyword, ...intent.related, `${intent.keyword} USA`],
+    // Planner thin variants: live for users, noindex so they stop demoting the domain
+    noIndex: !isUsaIndexableIntent(intent),
   });
 }
 

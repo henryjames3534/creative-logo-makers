@@ -3,11 +3,11 @@ import Link from "next/link";
 import { Button } from "@/components/Button";
 import { Container } from "@/components/Section";
 import {
-  ALL_USA_KEYWORD_PAGES,
   GSC_PRIORITY_SLUGS,
   USA_INTENTS,
   getIntentBySlug,
   intentPath,
+  listIndexableUsaIntents,
 } from "@/data/usa-intents";
 import { pageMetadata } from "@/lib/seo";
 
@@ -26,7 +26,7 @@ export const metadata: Metadata = pageMetadata({
   ],
 });
 
-/** Keep hub light for Google — full A–Z lives on /usa/letter/[letter]. */
+/** Keep hub light for Google — A–Z of indexable keywords on /usa/letter/[letter]. */
 export const revalidate = 86400;
 
 function letterKey(keyword: string) {
@@ -35,11 +35,12 @@ function letterKey(keyword: string) {
 }
 
 export default function UsaIntentsHubPage() {
-  const total = ALL_USA_KEYWORD_PAGES.length;
+  const indexable = listIndexableUsaIntents();
+  const total = indexable.length;
   const featured = USA_INTENTS;
 
   const counts = new Map<string, number>();
-  for (const page of ALL_USA_KEYWORD_PAGES) {
+  for (const page of indexable) {
     const key = letterKey(page.keyword);
     counts.set(key, (counts.get(key) || 0) + 1);
   }
@@ -59,12 +60,11 @@ export default function UsaIntentsHubPage() {
           USA keyword pages for design services
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-ink/75">
-          Directory of{" "}
+          Commercial USA keyword pages we actively rank for —{" "}
           <strong className="font-semibold text-ink">
             {total.toLocaleString()}
           </strong>{" "}
-          USA design keyword pages. Start with priority phrases below, or browse
-          by letter — each letter page stays fast for crawlers and visitors.
+          indexable phrases. Start with priority below, or browse by letter.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-2">

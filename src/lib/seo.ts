@@ -64,7 +64,12 @@ export function pageMetadata({
       images: [image],
     },
     robots: noIndex
-      ? { index: false, follow: false, googleBot: { index: false, follow: false } }
+      ? {
+          // Keep follow so equity can still flow to money pages
+          index: false,
+          follow: true,
+          googleBot: { index: false, follow: true },
+        }
       : {
           index: true,
           follow: true,

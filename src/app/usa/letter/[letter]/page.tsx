@@ -2,10 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/Section";
-import {
-  ALL_USA_KEYWORD_PAGES,
-  intentPath,
-} from "@/data/usa-intents";
+import { intentPath, listIndexableUsaIntents } from "@/data/usa-intents";
 import { pageMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ letter: string }> };
@@ -51,9 +48,9 @@ export default async function UsaLetterPage({ params }: Props) {
   const letter = normalizeLetter(raw);
   if (!letter) notFound();
 
-  const pages = ALL_USA_KEYWORD_PAGES.filter(
-    (p) => letterKey(p.keyword) === letter,
-  ).sort((a, b) => a.keyword.localeCompare(b.keyword));
+  const pages = listIndexableUsaIntents()
+    .filter((p) => letterKey(p.keyword) === letter)
+    .sort((a, b) => a.keyword.localeCompare(b.keyword));
 
   const label = letter === "other" ? "#" : letter;
 

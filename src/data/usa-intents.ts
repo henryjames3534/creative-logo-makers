@@ -1069,6 +1069,24 @@ export const GSC_PRIORITY_SLUGS = [
   "real-estate-logo-design",
 ] as const;
 
+/**
+ * Index only real commercial pages (hand-crafted + GSC queries).
+ * Planner catalog (~5k thin variants) stays live but must not compete in Google.
+ */
+export function isUsaIndexableIntent(intent: UsaIntent): boolean {
+  if (handCraftedBySlug.has(intent.slug)) return true;
+  if ((GSC_PRIORITY_SLUGS as readonly string[]).includes(intent.slug)) {
+    return true;
+  }
+  if (intent.source === "gsc") return true;
+  return false;
+}
+
+/** Sitemap + crawl budget — excludes planner doorway volume. */
+export function listIndexableUsaIntents(): UsaIntent[] {
+  return ALL_USA_KEYWORD_PAGES.filter(isUsaIndexableIntent);
+}
+
 /** Footer / hub samples — stable slice of commercial keywords */
 export function usaKeywordFooterLinks(limit = 16): { href: string; label: string }[] {
   const preferred = [
@@ -1093,13 +1111,14 @@ export function usaKeywordFooterLinks(limit = 16): { href: string; label: string
 }
 
 export function relatedUsaKeywords(slug: string, limit = 10): UsaIntent[] {
+  const pool = listIndexableUsaIntents();
   const current = getIntentBySlug(slug);
-  if (!current) return ALL_USA_KEYWORD_PAGES.slice(0, limit);
-  const same = ALL_USA_KEYWORD_PAGES.filter(
+  if (!current) return pool.slice(0, limit);
+  const same = pool.filter(
     (p) => p.slug !== slug && p.serviceSlug === current.serviceSlug,
   );
   if (same.length >= limit) return same.slice(0, limit);
-  const rest = ALL_USA_KEYWORD_PAGES.filter(
+  const rest = pool.filter(
     (p) => p.slug !== slug && p.serviceSlug !== current.serviceSlug,
   );
   return [...same, ...rest].slice(0, limit);

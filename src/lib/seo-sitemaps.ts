@@ -4,10 +4,10 @@ import { designers } from "@/data/designers";
 import { studioServices } from "@/data/studio";
 import { caseStudies } from "@/data/case-studies";
 import {
-  ALL_USA_KEYWORD_PAGES,
   GSC_PRIORITY_SLUGS,
   USA_INTENTS,
   intentPath,
+  listIndexableUsaIntents,
 } from "@/data/usa-intents";
 import {
   LOCATION_SEO_SERVICES,
@@ -151,16 +151,20 @@ export function buildAllSeoSitemapEntries(
   );
 
   const featuredSlugs = new Set(USA_INTENTS.map((i) => i.slug));
+  const prioritySlugs = new Set<string>(GSC_PRIORITY_SLUGS as readonly string[]);
 
-  const intentPages = ALL_USA_KEYWORD_PAGES.map((i) =>
+  // Only indexable USA intents — planner doorway volume (~5k) stays off sitemap
+  const intentPages = listIndexableUsaIntents().map((i) =>
     entry(
       intentPath(i.slug),
       {
         priority: featuredSlugs.has(i.slug)
-          ? 0.92
-          : i.source === "gsc"
-            ? 0.88
-            : 0.7,
+          ? 0.95
+          : prioritySlugs.has(i.slug)
+            ? 0.93
+            : i.source === "gsc"
+              ? 0.88
+              : 0.8,
         changeFrequency: "weekly",
       },
       now,
